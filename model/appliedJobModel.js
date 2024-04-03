@@ -52,7 +52,7 @@ const appliedJobSchema = mongoose.Schema({
         type: Number
     },
     Total_experience: {
-        type: String
+        type: Number
     },
     time_range_for_interview: {
         type: String

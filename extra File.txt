@@ -224,7 +224,13 @@ This team structure provides a framework for efficiently managing various aspect
 
 
 
+
+
+
+permissions: ['getAllEmp', 'active_inactive_emp' , 'getJobs_posted_by_employee', 
+                           'get_Female_jobseeker_profile','get_jobseeker_profile' ,
+                           'active_inactive_job', 'getEmployeeDetails' , 'getJobs_posted_by_employee', 
+                            'active_inactive_job' , 
+                        'getAll_Jobs']
+
   
-
-
-

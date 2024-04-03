@@ -4,7 +4,8 @@ const Admin_and_staffController = require('../controller/AdminController')
 const multer = require('multer')
 const upload = require('../upload')
 
-                                       /*  Admin and staff Section */
+
+                                       /*  Admin Section */
         // Api for  login
 
                      router.post('/login', Admin_and_staffController.login)
@@ -18,6 +19,14 @@ const upload = require('../upload')
                      router.post('/addStaff/:adminId', upload.single('profileImage'), Admin_and_staffController.addStaff)
         // Api for getAll_Staffs
                      router.get('/getAll_Staffs', Admin_and_staffController.getAll_Staffs)
+                              
+                                          /*staff section */
+        // Api for particular staff Details
+                     router.get('/getStaff_Details/:staff_id',  Admin_and_staffController.getStaff_Details)
+        // Api for updatestaff
+                     router.put('/updatestaff/:staff_id', upload.single('profileImage'),  Admin_and_staffController.updatestaff)
+        // APi for astaff_ChangePassword
+                      router.post('/staff_ChangePassword/:staff_id',  Admin_and_staffController.staff_ChangePassword)
 
                                              /* Employee Section */
         // Api for getAllEmp
@@ -29,7 +38,8 @@ const upload = require('../upload')
                                               /* JOb Section */
         // Api for active_inactive_job
                      router.post('/active_inactive_job/:jobId', Admin_and_staffController.active_inactive_job)
-                          
+        // Api for getAllFemale_Candidate
+                     router.get('/getAllFemale_Candidate', Admin_and_staffController.getAllFemale_Candidate)
 
 
 

@@ -2,6 +2,7 @@ const employeeModel = require('../model/employeeModel')
 const bcrypt = require('bcrypt')
 const jobModel = require('../model/jobModel')
 const appliedjobModel = require('../model/appliedJobModel')
+const sendjobEmail  = require('../utils/jobAppliedEmail')
 
                                         /* employee Section */
 
@@ -476,77 +477,262 @@ const appliedjobModel = require('../model/appliedJobModel')
 
         // Api for get jobs posted by employee
 
-                const getJobs_posted_by_employee = async( req , res)=>{
+        const getJobs_posted_by_employee = async( req , res)=>{
+            try {
+                     const empId = req.params.empId
+                     // check for empId
+                if(!empId)
+                {
+                    return res.status(400).json({
+                          success : false ,
+                          message : 'employee Id required'
+                    })
+                }
+        
+                  // check for employee jobs
+            const emp_jobs = await jobModel.find({
+                     emp_Id : empId,
+                    
+        
+            })
+        
+            if(!emp_jobs)
+            {
+                return res.status(400).json({
+                       success : false ,
+                       message : 'No Jobs Found'
+                })
+            }
+        
+            const jobsData = emp_jobs.map(job => {
+                const salary_pay = `${job.salary_pay[0].Minimum} - ${job.salary_pay[0].Maximum}, ${job.salary_pay[0].Rate}`;
+                return {
+                    _id: job._id,
+                    job_title: job.job_title,
+                    company_name: job.company_name,               
+                    Number_of_emp_needed: job.Number_of_emp_needed,
+                    job_type: job.job_type,
+                    job_schedule: job.job_schedule,
+                    salary_pay: salary_pay,
+                    job_Description: job.job_Description,
+                    company_address: job.company_address,
+                    employee_email: job.employee_email,
+                    requirement_timeline: job.requirement_timeline,
+                    startDate: job.startDate,
+                    endDate: job.endDate,
+                    phone_no: job.phone_no,
+                    key_qualification: job.key_qualification,
+                    Experience: job.Experience,
+                    template_type: job.template_type,
+                    company_Industry: job.company_Industry,
+                    job_photo: job.job_photo,
+                    status: job.status
+                };
+            });
+        
+            return res.status(200).json({
+                success: true,
+                message: 'All Jobs',
+                JobsCount: emp_jobs.length,
+                emp_jobs: jobsData
+            });
+        
+            } catch (error) {
+                return res.status(500).json({
+                       success : false ,
+                       message : 'server error',
+                       error_message : error.message
+                })
+            }
+        }
+        
+    // Api for get Female jobseeker profile for the job
+           
+                const get_Female_jobseeker_profile = async( req , res)=>{
                     try {
-                             const empId = req.params.empId
-                             // check for empId
-                        if(!empId)
+                           const jobId = req.params.jobId
+                        // check for jobId
+                        if(!jobId)
                         {
                             return res.status(400).json({
-                                  success : false ,
-                                  message : 'employee Id required'
+                                 success : false ,
+                                 message : 'jobId Required'
                             })
                         }
 
-                          // check for employee jobs
-                    const emp_jobs = await jobModel.find({
-                             emp_Id : empId,
-                            
+                        // check for job
+                        const job = await jobModel.findOne({ _id : jobId })
+                        if(!job)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'job not found'
+                            })
+                        }
 
-                    })
+                        // check for Female job seeker profile for the job
 
-                    if(!emp_jobs)
-                    {
-                        return res.status(400).json({
-                               success : false ,
-                               message : 'No Jobs Found'
-                        })
-                    }
+                     const Female_jobseeker = await appliedjobModel.find({
+                             gender : 'Female',
+                             jobId : jobId
+                     })
+                        if(!Female_jobseeker)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'no Female candidate have applied for these job '
+                            })
+                        }
 
-                    return res.status(200).json({
-                          success : true ,
-                          message : 'Jobs Details',
-                          jobsCount : emp_jobs.length,
-                          Details : emp_jobs
-                    })
-
+                        return res.status(200).json({
+                             success : true ,
+                             message : 'Female candidate Profile',
+                             Female_jobseekerCount : Female_jobseeker.length,
+                             Details: Female_jobseeker.map((candidate) => ({
+                                first_Name: candidate.first_Name,
+                                last_Name: candidate.last_Name,
+                                user_Email: candidate.user_Email,
+                                city: candidate.city,
+                                state: candidate.state,
+                                phone_no: candidate.phone_no,
+                                gender: candidate.gender,
+                                resume: candidate.uploadResume,
+                                Highest_Education: candidate.Highest_Education,
+                                relevant_Experience: candidate.job_experience, 
+                                Total_experience: candidate.Total_experience,
+                            }))
+                        });
+                     
                     } catch (error) {
                         return res.status(500).json({
-                               success : false ,
-                               message : 'server error',
-                               error_message : error.message
+                             success : false ,
+                             message : 'server error',
+                             error_message : error.message
                         })
                     }
+                } 
+
+        // Get All job seeker profile 
+        const get_jobseeker_profile = async( req , res)=>{
+            try {
+                   const jobId = req.params.jobId
+                // check for jobId
+                if(!jobId)
+                {
+                    return res.status(400).json({
+                         success : false ,
+                         message : 'jobId Required'
+                    })
                 }
+
+                // check for job
+                const job = await jobModel.findOne({ _id : jobId })
+                if(!job)
+                {
+                    return res.status(400).json({
+                         success : false ,
+                         message : 'job not found'
+                    })
+                }
+
+                // check for Other job seeker profile for the job
+
+             const Other_jobseeker = await appliedjobModel.find({
+                       jobId : jobId,
+                       gender : { $ne : 'Female' }
+                     
+             })
+                if(!Other_jobseeker)
+                {
+                    return res.status(400).json({
+                         success : false ,
+                         message : 'no Other_jobseeker candidate have applied for these job '
+                    })
+                }
+
+                return res.status(200).json({
+                     success : true ,
+                     message : 'candidate Profiles',
+                     Other_jobseekerCount : Other_jobseeker.length,
+                     Details: Other_jobseeker.map((candidate) => ({
+                        first_Name: candidate.first_Name,
+                        last_Name: candidate.last_Name,
+                        user_Email: candidate.user_Email,
+                        city: candidate.city,
+                        state: candidate.state,
+                        phone_no: candidate.phone_no,
+                        gender: candidate.gender,
+                        resume: candidate.uploadResume,
+                        Highest_Education: candidate.Highest_Education,
+                        relevant_Experience: candidate.job_experience, 
+                        Total_experience: candidate.Total_experience,
+                    }))
+                });
+             
+            } catch (error) {
+                return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+                })
+            }
+        } 
 
                                                                     /*Job Seeker sections */
         // Api for get all Jobs
 
-                const getAll_Jobs = async( req , res)=>{
-                     try {
-                             // check for all jobs
-                             const allJobs = await jobModel.find({ })
-                             if(!allJobs)
-                             {
-                                return res.status(400).json({
-                                     success : false ,
-                                     message : 'No job found'
-                                })
-                             }
-                             return res.status(200).json({
-                                 success : true ,
-                                 message : 'All Jobs',
-                                 JobsCount : allJobs.length,
-                                 allJobs : allJobs
-                             })
-                     } catch (error) {
-                        return res.status(500).json({
-                                success : false ,
-                                message : 'server error',
-                                error_message : error.message
-                        })
-                     }
+        const getAll_Jobs = async (req, res) => {
+            try {
+                // Fetch all jobs
+                const allJobs = await jobModel.find({});
+                if (allJobs.length === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'No job found'
+                    });
                 }
+                
+                const jobsData = allJobs.map(job => {
+                    const salary_pay = `${job.salary_pay[0].Minimum} - ${job.salary_pay[0].Maximum}, ${job.salary_pay[0].Rate}`;
+                    return {
+                        _id: job._id,
+                        job_title: job.job_title,
+                        company_name: job.company_name,               
+                        Number_of_emp_needed: job.Number_of_emp_needed,
+                        job_type: job.job_type,
+                        job_schedule: job.job_schedule,
+                        salary_pay: salary_pay,
+                        job_Description: job.job_Description,
+                        company_address: job.company_address,
+                        employee_email: job.employee_email,
+                        requirement_timeline: job.requirement_timeline,
+                        startDate: job.startDate,
+                        endDate: job.endDate,
+                        phone_no: job.phone_no,
+                        key_qualification: job.key_qualification,
+                        Experience: job.Experience,
+                        template_type: job.template_type,
+                        company_Industry: job.company_Industry,
+                        job_photo: job.job_photo,
+                        status: job.status
+                    };
+                });
+        
+                return res.status(200).json({
+                    success: true,
+                    message: 'All Jobs',
+                    JobsCount: allJobs.length,
+                    allJobs: jobsData
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'server error',
+                    error_message: error.message
+                });
+            }
+        }
+        
 
         // Api for Search Jobs
         const searchJob = async (req, res) => {
@@ -625,92 +811,166 @@ const appliedjobModel = require('../model/appliedJobModel')
 
         // APi for apply on job
 
-            const apply_on_job = async( req , res)=>{
-                   try {
-                             const jobId  = req.params.jobId
-                        const { first_Name , last_Name , user_Email , city , state , phone_no , gender ,
-                                   Highest_Education ,job_experience , Total_experience ,  time_range_for_interview  } = req.body
-                            
-                                  // check for JobId
-                            if(!jobId)
-                            {
-                                return res.status(400).json({
-                                     success : false ,
-                                     message : 'job Id required'
-                                })
-                            }
-
-                             // check for required fields
-                const requiredFields = ["first_Name", "last_Name", "user_Email", "city",
-                                 "state", "phone_no", "gender", "Highest_Education", "job_experience",
-                                     "Total_experience", "time_range_for_interview" 
-                 ];
-
-
-            for (const field of requiredFields) {
-                if (!req.body[field]) {
-                    return res
-                        .status(400)
-                        .json({
-                            message: `Missing ${field.replace("_", " ")}`,
-                            success: false,
-                        });
-                }
-            }
-
-                        // check for job
-                    const job = await jobModel.findOne({ _id : jobId })
-                       if(job)
-                       {
-                        return res.status(400).json({
-                             success : false ,
-                             message : 'job not found'
-                        })
-                       }
-
-                           // access job Details
-                        const job_Heading = job.job_title
-                        const Salary = `${job.salary_pay.Minimum} - ${job.salary_pay.Maximum}, ${job.salary_pay.Rate}`;
-                        const job_expired_Date = job.endDate
-                        const job_status = job.status
-
-                        // check for job seeker that he can't apply again on the same job
+                    const apply_on_job = async (req, res) => {
+                        try {
+                            const jobId = req.params.jobId;
+                            const {
+                                first_Name,
+                                last_Name,
+                                user_Email,
+                                city,
+                                state,
+                                phone_no,
+                                gender,
+                                Highest_Education,
+                                job_experience,
+                                Total_experience,
+                                time_range_for_interview
+                            } = req.body;
                     
-                         const jobseeker_apply = await appliedjobModel.findOne({
-                            user_Email : user_Email,
-                            jobId : jobId
-                         })
+                            // Check for JobId
+                            if (!jobId) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: 'job Id required'
+                                });
+                            }
+                    
+                            // Check for required fields
+                            const requiredFields = ["first_Name", "last_Name", "user_Email", "city",
+                                "state", "phone_no", "gender", "Highest_Education", "job_experience",
+                                "Total_experience", 
+                            ];
+                    
+                            for (const field of requiredFields) {
+                                if (!req.body[field]) {
+                                    return res.status(400).json({
+                                        message: `Missing ${field.replace("_", " ")}`,
+                                        success: false,
+                                    });
+                                }
+                            }
+                    
+                            // Check for job
+                            const job = await jobModel.findOne({
+                                _id: jobId,
+                                status : 1
+                            });
+                            if (!job) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: 'active job not found'
+                                });
+                            }
+                    
+                            // Access job Details
+                            const job_Heading = job.job_title;
+                            const Salary = `${job.salary_pay[0].Minimum} - ${job.salary_pay[0].Maximum}, ${job.salary_pay[0].Rate}`;
+                            const job_expired_Date = job.endDate;
+                            const job_status = job.status;
+                            const company_name = job.company_name;
+                    
+                            // Check if job seeker has already applied for this job
+                            const jobseeker_apply = await appliedjobModel.findOne({
+                                user_Email : user_Email,
+                                jobId: jobId
+                            });
+                    
+                            if (jobseeker_apply) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: 'you already applied on this job'
+                                });
+                            }
+                                            
+                                                // Upload resume file
 
-                          if(jobseeker_apply)
-                          {
+                        const uploadResume = req.file ? req.file : null;
+                        if (!uploadResume) {
                             return res.status(400).json({
-                                  success : false ,
-                                  message : 'you already applied on these job'
-                            })
-                          }
+                                success: false,
+                                message: 'Resume required'
+                            });
+                        }
 
-                          // upload resume file
-                        const uploadResume = req.file.filename
-                        if(!uploadResume)
-                        {
+                        // Check if the uploaded file is a PDF
+                        const allowedExtensions = ['.pdf'];
+                        let fileExtension = uploadResume.originalname ? uploadResume.originalname.split('.').pop().toLowerCase() : null;
+                        fileExtension = fileExtension.trim()
+
+
+                        if (!fileExtension || !allowedExtensions.includes('.' + fileExtension)) {
+                        
                             return res.status(400).json({
-                                 success : false ,
-                                 message : 'Resume required'
-                            })
+                                success: false,
+                                message: 'Only PDF files are allowed for resume upload'
+                            });
                         }
 
 
-                   } catch (error) {
-                    return res.status(500).json({
-                         success : false ,
-                         message : 'server error',
-                         error_message : error.message
-                    })
-                   }
-            }
+                            // Add new data
+                            const newData = new appliedjobModel({
+                                first_Name,
+                                last_Name,
+                                user_Email,
+                                city,
+                                state,
+                                phone_no,
+                                gender,
+                                Highest_Education,
+                                job_experience,
+                                Total_experience,
+                                time_range_for_interview,
+                                uploadResume : uploadResume.filename,
+                                job_Heading,
+                                Salary,
+                                job_expired_Date,
+                                job_status,
+                                jobId : jobId
+                            });
+                    
+                            await newData.save();
+                    
+                            const emailContent = `<!DOCTYPE html>
+                            <html lang="en">
+                            <head>
+                                <meta charset="UTF-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <title></title>
+                            </head>
+                            <body style="font-family: Arial, sans-serif; background-color: #f2f2f2; padding: 20px;">
+                
+                                <div style="background-color: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+                                    <h2 style="color: #333; text-align: center; margin-bottom: 20px;">Job Application Confirmation</h2>
+                                    <p>Thank you for applying for the <strong> ${job_Heading} </strong> position at <strong> ${company_name}</strong>.  Your application has been received, and we appreciate your interest in joining our team. Our hiring team will carefully review your qualifications, and if your skills and experience align with our requirements, we will be in touch to discuss next steps. In the meantime, feel free to explore more about our company and the opportunities we offer. Thank you again for considering <strong> ${company_name} </strong> as your potential employer.</p>
+                                    <p>Your job application for " <strong> ${job_Heading} </strong> " has been successfully received. A confirmation email will be sent to you shortly.</p>
+                                    <p>If you have any questions, feel free to contact us.</p> <br>
+                                
+
+                                 <P><strong> ${company_name} </strong> </P> 
+
+               
+                            </body>
+                            </html>`;
+                    
+                            sendjobEmail  (user_Email, `Job Application Confirmation ..!`, emailContent);
+                    
+                            return res.status(200).json({
+                                success: true,
+                                message: 'job Applied successfully'
+                            });
+                        } catch (error) {
+                            return res.status(500).json({
+                                success: false,
+                                message: 'server error',
+                                error_message: error.message
+                            });
+                        }
+                    }
+        
 
 
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
-    getAll_Jobs ,searchJob
+    getAll_Jobs ,searchJob , apply_on_job , get_Female_jobseeker_profile , get_jobseeker_profile
 }
