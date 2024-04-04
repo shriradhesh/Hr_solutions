@@ -3,6 +3,9 @@ const bcrypt = require('bcrypt')
 const jobModel = require('../model/jobModel')
 const appliedjobModel = require('../model/appliedJobModel')
 const sendjobEmail  = require('../utils/jobAppliedEmail')
+const moment = require("moment");
+const cron = require("node-cron");
+const send_EmployeeEmail = require('../utils/employeeEmail')
 
                                         /* employee Section */
 
@@ -65,7 +68,27 @@ const sendjobEmail  = require('../utils/jobAppliedEmail')
                                  profileImage : profileImage ,
                                  status : 1
                              })
-
+                             const EmployeeContent = `
+                             <p> Hello ${name}</p>
+                             <p>Here are your account Login details:</p>
+                             <table style="border-collapse: collapse; width: 50%; margin: auto; border: 1px solid #4CAF50; border-radius: 10px;">
+                             <tr>
+                                 <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Email:</strong></td>
+                                 <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${email}</td>
+                             </tr>
+                             <tr>
+                                 <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Password:</strong></td>
+                                 <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${password}</td>
+                             </tr>
+                             <tr>
+                                 <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>phone No:</strong></td>
+                                 <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${phone_no}</td>
+                             </tr>
+                             
+                         </table>
+                         `;
+                         // Send email to the staff
+                         await send_EmployeeEmail (email, `Your Account successfully Created`, EmployeeContent);
                                 await newData.save()
                             return res.status(200).json({
                                   success : true ,
@@ -334,8 +357,10 @@ const sendjobEmail  = require('../utils/jobAppliedEmail')
                     job_title,
                     job_Description,
                     job_type,
-                    job_schedule,
-                    salary_pay,
+                    job_schedule,                    
+                    Minimum_pay,
+                    Maximum_pay,
+                    Rate,
                     Number_of_emp_needed,
                     requirement_timeline,
                     startDate,
@@ -356,7 +381,7 @@ const sendjobEmail  = require('../utils/jobAppliedEmail')
         
                 // check for required fields
                 const requiredFields = ["job_title", "job_Description", "job_type", "job_schedule",
-                    "salary_pay", "Number_of_emp_needed",
+                    "Minimum_pay", "Maximum_pay" , "Rate", "Number_of_emp_needed",
                     "requirement_timeline", "startDate", "job_type", "endDate", "key_qualification", "Experience",
                     "company_address", "template_type"
                 ];
@@ -397,15 +422,12 @@ const sendjobEmail  = require('../utils/jobAppliedEmail')
                 const phone_no = employee.phone_no;
                 const company_Industry = employee.company_industry;
                 // job photo or logo
-                const job_photo = req.file.filename;
-        
-                // Initialize SalaryDetails as an empty array
-                let SalaryDetails = [];
-        
-                // If salary_pay is provided, process and set the details
-                if (salary_pay) {
-                    SalaryDetails = JSON.parse(salary_pay);
+                 // Set job_photo if a file has been uploaded
+                let job_photo = null;
+                if (req.file) {
+                    job_photo = req.file.filename;
                 }
+               
         
                 // Initialize keys as an empty array
                 let keys = [];
@@ -440,7 +462,7 @@ const sendjobEmail  = require('../utils/jobAppliedEmail')
                     job_Description,
                     job_type,
                     job_schedule,
-                    salary_pay: SalaryDetails,
+                    salary_pay : [{ Minimum_pay, Maximum_pay, Rate }],
                     Number_of_emp_needed,
                     requirement_timeline,
                     startDate,
@@ -505,7 +527,7 @@ const sendjobEmail  = require('../utils/jobAppliedEmail')
             }
         
             const jobsData = emp_jobs.map(job => {
-                const salary_pay = `${job.salary_pay[0].Minimum} - ${job.salary_pay[0].Maximum}, ${job.salary_pay[0].Rate}`;
+                const salary_pay = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
                 return {
                     _id: job._id,
                     job_title: job.job_title,
@@ -693,7 +715,7 @@ const sendjobEmail  = require('../utils/jobAppliedEmail')
                 }
                 
                 const jobsData = allJobs.map(job => {
-                    const salary_pay = `${job.salary_pay[0].Minimum} - ${job.salary_pay[0].Maximum}, ${job.salary_pay[0].Rate}`;
+                    const salary_pay = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
                     return {
                         _id: job._id,
                         job_title: job.job_title,
@@ -732,6 +754,12 @@ const sendjobEmail  = require('../utils/jobAppliedEmail')
                 });
             }
         }
+
+              
+
+               
+
+
         
 
         // Api for Search Jobs
@@ -865,7 +893,7 @@ const sendjobEmail  = require('../utils/jobAppliedEmail')
                     
                             // Access job Details
                             const job_Heading = job.job_title;
-                            const Salary = `${job.salary_pay[0].Minimum} - ${job.salary_pay[0].Maximum}, ${job.salary_pay[0].Rate}`;
+                            const Salary = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
                             const job_expired_Date = job.endDate;
                             const job_status = job.status;
                             const company_name = job.company_name;
@@ -969,6 +997,8 @@ const sendjobEmail  = require('../utils/jobAppliedEmail')
                     }
         
 
+    
+                    
 
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,

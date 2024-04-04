@@ -234,3 +234,47 @@ permissions: ['getAllEmp', 'active_inactive_emp' , 'getJobs_posted_by_employee',
                         'getAll_Jobs']
 
   
+const express = require('express');
+const router = express.Router();
+const AppliedJob = require('../models/appliedJobModel');
+
+// Route to update job seeker status based on the action
+router.put('/updateStatus/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { action } = req.body;
+    let status;
+    
+    switch (action) {
+      case 'scheduleInterview':
+        status = 2; // Interview Scheduled
+        break;
+      case 'completeInterview':
+        status = 3; // Interview assesment
+        break;
+      case 'shortlist':
+        status = 4; // complete
+        break;
+      case 'shortlist':
+        status = 5; // Shortlisted
+        break;
+      case 'reject':
+        status = 6; // Rejected
+        break;
+      default:
+        return res.status(400).json({ message: "Invalid action" });
+    }
+
+    const updatedJob = await AppliedJob.findByIdAndUpdate(id, { jobSeeker_status: status }, { new: true });
+    if (!updatedJob) {
+      return res.status(404).json({ message: "Applied job not found" });
+    }
+    res.json(updatedJob);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+module.exports = router;
+

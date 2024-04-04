@@ -9,6 +9,7 @@ const jobModel = require('../model/jobModel')
 const send_adminEmail = require('../utils/adminEmail')
 const sendstaffEmail = require('../utils/staffEmail')
 const appliedjobModel = require('../model/appliedJobModel')
+const send_candidateEmail = require('../utils/candidateEmail')
 
 
                                                  /* Admin and staff Section */
@@ -599,6 +600,280 @@ const appliedjobModel = require('../model/appliedJobModel')
                     })
                 }
            } 
+
+    // Api for requirement process
+    const candidate_recruitment_process = async (req, res) => {
+        try {
+            const candidateId = req.params.candidateId;
+            const { seeker_status } = req.body;
+    
+            // Check for candidateId
+            if (!candidateId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'candidate Id Required'
+                });
+            }
+    
+            // Check for candidate
+            const candidate = await appliedjobModel.findOne({
+                _id: candidateId
+            });
+    
+            if (!candidate) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'candidate not found'
+                });
+            }
+                
+                   // access candidate details
+                   const first_Name = candidate.first_Name
+                   const last_Name = candidate.last_Name
+                   const job_Heading = candidate.job_Heading
+                   
+                   const jobId =  candidate.jobId
+
+              // check for jobId
+                    const checkJob = await jobModel.findOne({
+                        _id : jobId
+                    })
+
+                    if(!checkJob)
+                    {
+                        return res.status(400).json({
+                            success : false ,
+                            message : 'job not found'
+                        })
+                    }
+                  
+                     // access job details
+                     const company_name = checkJob.company_name
+                     const startDate = checkJob.startDate
+                     const endDate = checkJob.endDate
+                     const company_address = checkJob.company_address
+                     const empId = checkJob.emp_Id
+
+                     // check for nextDate
+                     const nextDate = new Date(startDate);
+                     nextDate.setDate(startDate.getDate() + 1)                  
+                    
+                     const nextDateFormatted = nextDate.toISOString().slice(0, 23);
+
+                // check for employee
+                const checkemp = await employeeModel.findOne({ _id : empId})
+
+                   const emp_name = checkemp.name
+
+                    // Email content for  job scheduling
+           const  emailcontent2 = `<!DOCTYPE html>
+           <html lang="en">
+           <head>
+           <meta charset="UTF-8">
+           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+           <title>Interview Invitation</title>
+           </head>
+           <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
+           
+             <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+               <h2 style="text-align: center; color: #333; margin-bottom: 20px;">Interview Invitation</h2>
+               <div style="padding: 20px;">
+                 <p>Dear <strong>${first_Name} ${last_Name}</strong>,</p>
+                 <p>We are impressed with your application for the <strong>${job_Heading}</strong> position at <strong>${company_name}</strong>. We would like to invite you for an interview on <strong>${startDate}</strong> at <strong>10 am</strong>. The interview will be held at <strong>${company_address}</strong>.</p>
+                 <p>Please confirm your availability, and let us know if this works for you. We are eager to meet you and discuss your fit for the role.</p>
+                 <p>Best regards,</p>
+                 <p><strong>${emp_name}</strong> <br>
+                 <strong>${company_name}</strong></p>
+               </div>
+             </div>
+           </body>
+           </html>
+           `
+
+
+                // Email content for assesment
+
+              const emailcontent3 = `<!DOCTYPE html>
+              <html lang="en">
+              <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Second Round Assessment Invitation</title>
+              </head>
+              <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
+              
+                <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                  <h2 style="text-align: center; color: #333; margin-bottom: 20px;"> Assessment Invitation</h2>
+                  <div style="padding: 20px;">
+                    <p>Hello <strong style="color: #000;">${first_Name} ${last_Name}</strong>,</p>
+                    <p>Hope you're doing well!</p>
+                    <p>Congratulations on making it to the next round for the <strong style="color: #000;">${job_Heading}</strong> position at <strong style="color: #000;">${company_name}</strong>. We were impressed by your performance in the initial stage and would like to invite you to the second round assessment.</p>
+                    <p>Details:</p>
+                    <p>Date: <strong style="color: #000;">${nextDateFormatted}</strong></p>
+                    <p>Time: <strong style="color: #000;">10 AM</strong></p>
+                    <p>Location: <strong style="color: #000;">${company_address}</strong></p>
+                    <p>Please confirm your availability for this session. If the proposed date and time don't work for you, just let us know, and we'll find an alternative.</p>
+                    <p>Looking forward to continuing our discussions.</p>
+                    <p>Best regards,</p>
+                    <p><strong style="color: #000;">${emp_name}</strong> <br>
+                    <strong style="color: #000;">${company_name}</strong></p>
+                  </div>
+                </div>
+              </body>
+              </html>
+              `
+              
+
+                // Email content for HR Discussion
+               const emailcontent4 = `<!DOCTYPE html>
+               <html lang="en">
+               <head>
+               <meta charset="UTF-8">
+               <meta name="viewport" content="width=device-width, initial-scale=1.0">
+               <title>HR Discussion Invitation</title>
+               </head>
+               <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
+               
+                 <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                   <h2 style="text-align: center; color: #333; margin-bottom: 20px;">HR Discussion Invitation</h2>
+                   <div style="padding: 20px;">
+                     <p>Hello <strong style="color: #000;">${first_Name} ${last_Name}</strong>,</p>
+                     <p>I hope you're doing well!</p>
+                     <p>Congratulations on progressing to the next stage of our hiring process for the <strong style="color: #000;">${job_Heading}</strong> position at <strong style="color: #000;">${company_name}</strong>. We're excited to invite you to an <strong style="color: #000;">HR Discussion session</strong>.</p>
+                     <p>Details:</p>
+                     <p>Date: <strong style="color: #000;">${endDate}</strong></p>
+                     <p>Time: <strong style="color: #000;">10 AM</strong></p>
+                     <p>Location: <strong style="color: #000;">${company_address}</strong></p>
+                     <p>Please let us know if this time works for you. If not, we can find an alternative that suits your schedule.</p>
+                     <p>Looking forward to chatting with you soon!</p>
+                     <p>Best regards,</p>
+                     <p><strong style="color: #000;">${emp_name}</strong> <br>
+                     <strong style="color: #000;">${company_name}</strong></p>
+                   </div>
+                 </div>
+               </body>
+               </html>
+               `
+           
+               // Email content for shortlist
+
+               const emailcontent6 = `<!DOCTYPE html>
+               <html lang="en">
+               <head>
+               <meta charset="UTF-8">
+               <meta name="viewport" content="width=device-width, initial-scale=1.0">
+               <title>Offer Letter Notification</title>
+               </head>
+               <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
+               
+                 <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                   <h2 style="text-align: center; color: #333; margin-bottom: 20px;">Offer Letter Notification</h2>
+                   <div style="padding: 20px;">
+                     <p>Dear <strong style="color: #000;">${first_Name} ${last_Name}</strong>,</p>
+                     <p>I hope this email finds you well.</p>
+                     <p>I am pleased to inform you that <strong style="color: #000;">you have been selected as one of the shortlisted candidates</strong> for the <strong style="color: #000;">${job_Heading}</strong> position at <strong style="color: #000;">${company_name}</strong>. Your qualifications and experiences have impressed us, and we believe you would be a valuable addition to our team.</p>
+                     <p>We are in the process of finalizing the details of your offer letter, which will include information about your compensation, benefits, and other pertinent details. Rest assured, we are working diligently to ensure a smooth and timely release of the offer letter to you.</p>
+                     <p>Once the offer letter is ready, we will send it to you via email for your review and consideration. If you have any questions or require further information in the meantime, please feel free to reach out to us.</p>
+                     <p>We are excited about the possibility of welcoming you to our team and look forward to working together.</p>
+                     <p>Congratulations once again, and thank you for your interest in joining <strong style="color: #000;">${company_name}</strong>.</p>
+                     <p>Best regards,</p>
+                     <p><strong style="color: #000;">${emp_name}</strong> <br>
+                     <strong style="color: #000;">${company_name}</strong></p>
+                   </div>
+                 </div>
+               </body>
+               </html>
+               `
+
+               //Email Content for Reject 
+
+               const emailcontent7 = `<!DOCTYPE html>
+               <html lang="en">
+               <head>
+               <meta charset="UTF-8">
+               <meta name="viewport" content="width=device-width, initial-scale=1.0">
+               <title>Application Status Update</title>
+               </head>
+               <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
+               
+                 <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                   <h2 style="text-align: center; color: #333; margin-bottom: 20px;">Application Status Update</h2>
+                   <div style="padding: 20px;">
+                     <p>Hello <strong style="color: #000;">${first_Name} ${last_Name}</strong>,</p>
+                     <p>I hope you're doing well.</p>
+                     <p>Thank you for applying for the <strong style="color: #000;">${job_Heading}</strong> position at <strong style="color: #000;">${company_name}</strong>. We appreciated the opportunity to consider you for the role.</p>
+                     <p>After careful review, we've decided to move forward with other candidates whose qualifications better match our current needs. We want to thank you for your interest and time spent with us.</p>
+                     <p>We wish you all the best in your job search and future endeavors. If you have any questions or need further assistance, feel free to reach out.</p>
+                     <p>Best regards,</p>
+                     <p><strong style="color: #000;">${emp_name}</strong></p>
+                     <p><strong style="color: #000;">${company_name}</strong></p>
+                   </div>
+                 </div>
+               </body>
+               </html>
+               `
+
+
+
+            let candidate_status;
+            switch (seeker_status) {
+                case 'schedule_Interview':
+                    candidate_status = 2;
+                    send_candidateEmail (candidate.user_Email, `Your Interview Has been Scheduled ..!`, emailcontent2)
+
+                    break;
+    
+                case 'assessment':
+                    candidate_status = 3;
+                    send_candidateEmail (candidate.user_Email, `Assesment Round..!`, emailcontent3)
+                    break;
+
+                case 'HR_Discussion':
+                        candidate_status = 4;
+                        send_candidateEmail (candidate.user_Email, `HR Discussion Round..!`, emailcontent4)
+                        break;
+    
+                case 'complete':
+                    candidate_status = 5;
+                    break;
+    
+                case 'shortlist':
+                    candidate_status = 6;
+                     send_candidateEmail (candidate.user_Email, `Congratulation You have been Shortlisted..!`, emailcontent6)
+                    break;
+    
+                case 'reject':
+                    candidate_status = 7;
+                    send_candidateEmail (candidate.user_Email, `For Better Luck Next Time..!`, emailcontent7)
+                    break;
+    
+                default:
+                    return res.status(400).json({ status: false, message: "Invalid seeker_status" });
+            }
+    
+            // Update jobSeeker_status of the candidate
+            const updatedCandidate = await appliedjobModel.findOneAndUpdate({ _id: candidateId }, { jobSeeker_status: candidate_status }, { new: true });
+    
+            if (!updatedCandidate) {
+                return res.status(400).json({ status : false , message: "Applied job not found" });
+            }
+               
+              
+                res.status(200).json({
+                     success : true ,
+                     message : 'jobseeker_status updated',
+                     updated_Candidate : updatedCandidate
+                })
+            
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'server error',
+                error_message: error.message
+            });
+        }
+    };
+    
                                                             /* Employee Section */
         // Api for get All Employees
               const getAllEmp = async( req , res)=>{
@@ -765,7 +1040,11 @@ const appliedjobModel = require('../model/appliedJobModel')
                 })
             }
           }
+
+
+
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
-    active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate , getAllFemale_Candidate
+    active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate , getAllFemale_Candidate,
+    candidate_recruitment_process
 }

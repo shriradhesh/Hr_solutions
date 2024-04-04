@@ -64,11 +64,12 @@ const appliedJobSchema = mongoose.Schema({
     },
     jobSeeker_status : {
            type : Number,
-           enum : [1,2,3,4,5],
+           enum : [1,2,3,4,5,6,7],
            default : 1
                                        // 1 for pending ,
-                                       // 2 for Interview Scheduled , 3 for Interview Completed , 
-                                       // 4 for Shortlisted , 5 for rejected
+                                       // 2 for Interview Scheduled , 3 for assesment , 
+                                       // 4 for Completed , 5 for Shortlisted
+                                       // 6 for rejected , 7 for third round or HR discussion
     }
 
 }, { timestamps: true });

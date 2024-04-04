@@ -40,6 +40,8 @@ const upload = require('../upload')
                      router.post('/active_inactive_job/:jobId', Admin_and_staffController.active_inactive_job)
         // Api for getAllFemale_Candidate
                      router.get('/getAllFemale_Candidate', Admin_and_staffController.getAllFemale_Candidate)
+        // APi for candidate_recruitment_process
+                     router.post('/candidate_recruitment_process/:candidateId', Admin_and_staffController.candidate_recruitment_process)
 
 
 

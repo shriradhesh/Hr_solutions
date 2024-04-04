@@ -23,10 +23,10 @@ const jobSchema = new mongoose.Schema({
         enum: ['Day Shift', 'Morning Shift', 'Rotational Shift', 'Night Shift', 'Monday to Friday', 'Evening Shift', 'US Shift', 'UK Shift', 'Others']
     },
     salary_pay: [{
-        Minimum: {
+        Minimum_pay: {
             type: String
         },
-        Maximum: {
+        Maximum_pay: {
             type: String
         },
         Rate: {
