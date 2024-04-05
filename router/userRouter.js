@@ -35,7 +35,14 @@ const userController = require('../controller/userController')
         // Api for apply_on_job
                 router.post('/apply_on_job/:jobId', upload.single('uploadResume'), userController.apply_on_job)
 
+                                   /*Notification section */
 
+        // Api for getNotification_emp
+                router.get('/getNotification_emp/:empId', userController.getNotification_emp)
+        // Api for seenNotification
+                router.post('/seenNotification/:notification_id', userController.seenNotification)
+        // Api for get unseenNotificationCount
+                router.get('/unseenNotificationCount/:empId', userController.unseenNotificationCount)
 
 
 

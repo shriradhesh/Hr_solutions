@@ -16,11 +16,11 @@ const jobSchema = new mongoose.Schema({
     },
     job_type: {
         type: String,
-        enum: ['Full-Time', 'Part-Time', 'Temporary', 'Contract', 'Internship', 'Commission', 'Fresher', 'Volunteer', 'Walk-In']
+        // enum: ['Full-Time', 'Part-Time', 'Temporary', 'Contract', 'Internship', 'Commission', 'Fresher', 'Volunteer', 'Walk-In']
     },
     job_schedule: {
         type: String,
-        enum: ['Day Shift', 'Morning Shift', 'Rotational Shift', 'Night Shift', 'Monday to Friday', 'Evening Shift', 'US Shift', 'UK Shift', 'Others']
+        // enum: ['Day Shift', 'Morning Shift', 'Rotational Shift', 'Night Shift', 'Monday to Friday', 'Evening Shift', 'US Shift', 'UK Shift', 'Others']
     },
     salary_pay: [{
         Minimum_pay: {
@@ -31,7 +31,7 @@ const jobSchema = new mongoose.Schema({
         },
         Rate: {
             type: String,
-            enum: ['per Month', 'per Year', 'per Week', 'per Day', 'per Hour']
+            // enum: ['per Month', 'per Year', 'per Week', 'per Day', 'per Hour']
         }
     }],
     job_Description: {
@@ -45,7 +45,7 @@ const jobSchema = new mongoose.Schema({
     },
     requirement_timeline: {
         type: String,
-        enum: ['1 to 3 Days', '3 to 7 Days', '1 to 3 Week', 'more than Month']
+        // enum: ['1 to 3 Days', '3 to 7 Days', '1 to 3 Week', 'more than Month']
     },
     startDate: {
         type: Date

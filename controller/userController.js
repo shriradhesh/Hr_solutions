@@ -6,6 +6,7 @@ const sendjobEmail  = require('../utils/jobAppliedEmail')
 const moment = require("moment");
 const cron = require("node-cron");
 const send_EmployeeEmail = require('../utils/employeeEmail')
+const empNotificationModel = require('../model/employeeNotification')
 
                                         /* employee Section */
 
@@ -66,7 +67,7 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                                  Number_of_emp ,
                                  company_industry ,
                                  profileImage : profileImage ,
-                                 status : 1
+                                 status : 0
                              })
                              const EmployeeContent = `
                              <p> Hello ${name}</p>
@@ -135,7 +136,7 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                  {
                     return res.status(400).json({
                          success : false ,
-                         message : 'Your account is suspended. Please contact the admin for further details.'
+                         message : 'Your account is Not Approval yet. Please contact the admin for further details.'
                     })
                  }
     
@@ -357,7 +358,7 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                     job_title,
                     job_Description,
                     job_type,
-                    job_schedule,                    
+                    job_schedule,
                     Minimum_pay,
                     Maximum_pay,
                     Rate,
@@ -379,23 +380,23 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                     });
                 }
         
-                // check for required fields
-                const requiredFields = ["job_title", "job_Description", "job_type", "job_schedule",
-                    "Minimum_pay", "Maximum_pay" , "Rate", "Number_of_emp_needed",
-                    "requirement_timeline", "startDate", "job_type", "endDate", "key_qualification", "Experience",
-                    "company_address", "template_type"
-                ];
+                // // check for required fields
+                // const requiredFields = ["job_title", "job_Description", "job_type", "job_schedule",
+                //     "Minimum_pay", "Maximum_pay", "Rate", "Number_of_emp_needed",
+                //     , "startDate", "endDate", "key_qualification", "Experience",
+                //     "company_address", "template_type"
+                // ];
         
-                for (const field of requiredFields) {
-                    if (!req.body[field]) {
-                        return res
-                            .status(400)
-                            .json({
-                                message: `Missing ${field.replace("_", " ")}`,
-                                success: false,
-                            });
-                    }
-                }
+                // for (const field of requiredFields) {
+                //     if (!req.body[field]) {
+                //         const fieldName = field.replace("_", " ");
+                //         return res.status(400).json({
+                //             message: `Missing ${fieldName}`,
+                //             success: false,
+                //         });
+                //     }
+                // }
+                
         
                 // check for employee
                 const employee = await employeeModel.findOne({
@@ -408,26 +409,34 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                     });
                 }
                 const empstatus = employee.status
-                if(empstatus === 0)
-                {
-                   return res.status(400).json({
-                        success : false ,
-                        message : 'Your account is suspended. Please contact the admin for further details.'
-                   })
+                if (empstatus === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Your account is suspended. Please contact the admin for further details.'
+                    })
                 }
-
-                // access employee Details
-                const company_name = employee.company_name;
-                const employee_email = employee.email;
-                const phone_no = employee.phone_no;
-                const company_Industry = employee.company_industry;
-                // job photo or logo
-                 // Set job_photo if a file has been uploaded
+        
+                // Parse template_type and Number_of_emp_needed to integers
+                const parsedTemplateType = parseInt(template_type);
+                const parsedNumberOfEmpNeeded = parseInt(Number_of_emp_needed);
+        
+                // Parse startDate and endDate to Date objects
+                const parsedStartDate = new Date(startDate);
+                const parsedEndDate = new Date(endDate);
+        
+                // Access employee details
+                const {
+                    company_name,
+                    email: employee_email,
+                    phone_no,
+                    company_industry: company_Industry
+                } = employee;
+        
+                // Set job_photo if a file has been uploaded
                 let job_photo = null;
                 if (req.file) {
                     job_photo = req.file.filename;
                 }
-               
         
                 // Initialize keys as an empty array
                 let keys = [];
@@ -437,15 +446,15 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                     keys = JSON.parse(key_qualification);
                 }
         
-                // check if a similar job for the company already exists in a time period
+                // Check if a similar job for the company already exists in a time period
                 const existJob = await jobModel.findOne({
                     job_title: job_title,
                     company_name: company_name,
                     startDate: {
-                        $lte: endDate
+                        $lte: parsedEndDate
                     },
                     endDate: {
-                        $gte: startDate
+                        $gte: parsedStartDate
                     }
                 });
                 if (existJob) {
@@ -462,29 +471,50 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                     job_Description,
                     job_type,
                     job_schedule,
-                    salary_pay : [{ Minimum_pay, Maximum_pay, Rate }],
-                    Number_of_emp_needed,
+                    salary_pay: [{
+                        Minimum_pay,
+                        Maximum_pay,
+                        Rate
+                    }],
+                    Number_of_emp_needed: parsedNumberOfEmpNeeded,
                     requirement_timeline,
-                    startDate,
-                    endDate,
+                    startDate: parsedStartDate,
+                    endDate: parsedEndDate,
                     key_qualification: keys,
                     Experience,
                     company_address,
-                    template_type,
+                    template_type: parsedTemplateType,
                     company_name,
                     employee_email,
                     phone_no,
                     company_Industry,
                     job_photo,
-                    status : 1
+                    status: 1
                 });
         
+               
+        
+                try {
+                    var newNotification = await empNotificationModel.create({
+                        empId: empId,
+                        message: 'Your Job posted Successfully',
+                        date: parsedStartDate,
+                        status: 1,
+                    });
+                
+                    await newNotification.save();
+                } catch (notificationError) {
+                    // Handle notification creation error
+                    console.error('Error creating notification:', notificationError);
+                    // Optionally, you can choose to return an error response here or handle it in another way
+                }
+                
                 await newJob.save();
         
                 return res.status(200).json({
                     success: true,
                     message: 'Job posted successfully',
-                    jobId : newJob._id
+                    jobId: newJob._id
                 });
         
             } catch (error) {
@@ -495,6 +525,7 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                 });
             }
         };
+        
 
 
         // Api for get jobs posted by employee
@@ -611,6 +642,7 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                              message : 'Female candidate Profile',
                              Female_jobseekerCount : Female_jobseeker.length,
                              Details: Female_jobseeker.map((candidate) => ({
+                                _id : candidate._id,
                                 first_Name: candidate.first_Name,
                                 last_Name: candidate.last_Name,
                                 user_Email: candidate.user_Email,
@@ -622,6 +654,9 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                                 Highest_Education: candidate.Highest_Education,
                                 relevant_Experience: candidate.job_experience, 
                                 Total_experience: candidate.Total_experience,
+                                jobSeeker_status : candidate.jobSeeker_status
+
+
                             }))
                         });
                      
@@ -677,6 +712,7 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                      message : 'candidate Profiles',
                      Other_jobseekerCount : Other_jobseeker.length,
                      Details: Other_jobseeker.map((candidate) => ({
+                        _id : candidate._id,
                         first_Name: candidate.first_Name,
                         last_Name: candidate.last_Name,
                         user_Email: candidate.user_Email,
@@ -688,6 +724,9 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                         Highest_Education: candidate.Highest_Education,
                         relevant_Experience: candidate.job_experience, 
                         Total_experience: candidate.Total_experience,
+                        jobSeeker_status : candidate.jobSeeker_status
+
+
                     }))
                 });
              
@@ -716,6 +755,23 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                 
                 const jobsData = allJobs.map(job => {
                     const salary_pay = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
+                   // Check if job has expired
+                const today = new Date();
+                const endDate = new Date(job.endDate);
+            if (endDate < today) {
+                // Job has expired, send notification
+                try {
+                    const newNotification =  empNotificationModel.create({
+                        empId: job.emp_Id,
+                        message: `your posted Job ${job.job_title} for company ${job.company_name} expired`,
+                        date: today,
+                        status: 1,
+                    });
+                     newNotification.save();
+                } catch (notificationError) {
+                    console.error('Error creating notification:', notificationError);
+                }
+            }                   
                     return {
                         _id: job._id,
                         job_title: job.job_title,
@@ -736,7 +792,8 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                         template_type: job.template_type,
                         company_Industry: job.company_Industry,
                         job_photo: job.job_photo,
-                        status: job.status
+                        status: job.status,
+                        empId : job.emp_Id
                     };
                 });
         
@@ -753,14 +810,40 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                     error_message: error.message
                 });
             }
-        }
+        }         
 
-              
+        // schedule a job to update trip status
 
-               
+ cron.schedule('* * * * *', async () => {
+                                  try {
+                                    const currentDate = new Date();
+                                
+                                    // find trips with end Date over
+                                    const expiredJob = await jobModel.find({
+                                      endDate: {
+                                        $lt: currentDate,
+                                      },
+                                      status: { $ne: 0 }, 
+                                    });
+                                
+                                    if (expiredJob.length > 0) {
+                                      await jobModel.updateMany(
+                                        {
+                                          _id: {
+                                            $in: expiredJob.map((job) => job._id),
+                                          },
+                                        },
+                                        {
+                                          status: 0,
+                                        }
+                                      );
+                                    }
+                                  } catch (error) {
+                                    console.error('Error while updating job status:', error);
+                                  }
+                                });
 
-
-        
+           
 
         // Api for Search Jobs
         const searchJob = async (req, res) => {
@@ -897,6 +980,7 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                             const job_expired_Date = job.endDate;
                             const job_status = job.status;
                             const company_name = job.company_name;
+                            const empId = job.emp_Id
                     
                             // Check if job seeker has already applied for this job
                             const jobseeker_apply = await appliedjobModel.findOne({
@@ -956,7 +1040,21 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                                 job_status,
                                 jobId : jobId
                             });
-                    
+                            
+                            try {
+                                var newNotification = await empNotificationModel.create({
+                                    empId: empId,
+                                    message: `${first_Name} applied on job ${job_Heading}`,
+                                    date: new Date(),
+                                    status: 1,
+                                });
+                            
+                                await newNotification.save();
+                            } catch (notificationError) {
+                                // Handle notification creation error
+                                console.error('Error creating notification:', notificationError);
+                                // Optionally, you can choose to return an error response here or handle it in another way
+                            }
                             await newData.save();
                     
                             const emailContent = `<!DOCTYPE html>
@@ -982,6 +1080,7 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                             </html>`;
                     
                             sendjobEmail  (user_Email, `Job Application Confirmation ..!`, emailContent);
+
                     
                             return res.status(200).json({
                                 success: true,
@@ -996,11 +1095,149 @@ const send_EmployeeEmail = require('../utils/employeeEmail')
                         }
                     }
         
+                                                            /* Notification section */
+    // Api for get Notification of the particular employee
+       const getNotification_emp = async( req , res)=>{
+                try {
+                      const empId = req.params.empId
+                    // check for empId
+                    if(!empId)
+                    {
+                        return res.status(400).json({
+                             success : false ,
+                             message : 'empId required'
+                        })
+                    }
 
-    
+                    // check for employee
+                    const checkemp = await employeeModel.findOne({
+                             _id : empId
+                    })
+                    if(!checkemp)
+                    {
+                        return res.status(400).json({ 
+                             success : false ,
+                             message : 'client not exist'
+                        })
+                    }
                     
+                    // check for client notification
+                 const c_Notification = await empNotificationModel.find({
+                     empId : empId,
+                     status : 1
+                 })
+
+                   if(!c_Notification)
+                   {
+                    return res.status(200).json({
+                         success : false ,
+                         message : 'No Notification Yet'
+                    })
+                   }
+
+                    
+                     const sortedNotification = await c_Notification.sort((a, b) => b.createdAt - a.createdAt);
+
+                   return res.status(200).json({
+                      success : true ,
+                      message : 'all Notifications of client',
+                      NotificationCount : sortedNotification.length,
+                      notification_details : sortedNotification
+                   })
+
+
+                } catch (error) {
+                      return res.status(500).json({
+                         success : false ,
+                         message : 'server error',
+                         error_message : error.message
+                      })
+                }
+       }
+    // Api for seen notification
+       const seenNotification = async (req, res) => {
+        try {
+            const notification_id = req.params.notification_id;
+      
+            // check for required fields
+            if (!notification_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Notification Id required'
+                });
+            }
+      
+            // Check for notification in both models
+            let notification = await empNotificationModel.findOne({ _id: notification_id });      
+      
+            if (notification) {
+                // Update the notification status
+                notification.status = 0;
+                await notification.save();
+      
+                return res.status(200).json({
+                    success: true,
+                    message: 'Notification seen '
+                });
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Notification not found'
+                });
+            }
+        } catch (error) {
+           
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message : error.message
+            });
+        }
+      };
+  // Api for get unseenNotification count
+      const unseenNotificationCount = async( req , res)=>{
+          try {
+                  const empId = req.params.empId
+                // check for empId
+            if(!empId)
+            {
+                return res.status(400).json({
+                     success : false ,
+                     message : 'client Id required'
+                })
+            }
+
+            // check for Notification
+
+            const unseenNotification = await empNotificationModel.find({
+                   empId : empId,
+                   status : 1
+            })
+
+            if(!unseenNotification)
+            {
+                return res.status(200).json({
+                     success : false ,
+                     message : 'no unseen Notification found'
+                })
+            }
+
+              return res.status(200).json({
+                 success : true ,
+                 message : 'unseen Notification count',
+                 unseenNotificationCount :  unseenNotification.length
+              })
+          } catch (error) {
+            return res.status(500).json({
+                 success : false ,
+                 message : 'server error',
+                 error_message : error.message
+            })
+          }
+      }
 
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
-    getAll_Jobs ,searchJob , apply_on_job , get_Female_jobseeker_profile , get_jobseeker_profile
+    getAll_Jobs ,searchJob , apply_on_job , get_Female_jobseeker_profile , get_jobseeker_profile , getNotification_emp,
+    seenNotification, unseenNotificationCount
 }

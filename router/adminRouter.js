@@ -19,6 +19,8 @@ const upload = require('../upload')
                      router.post('/addStaff/:adminId', upload.single('profileImage'), Admin_and_staffController.addStaff)
         // Api for getAll_Staffs
                      router.get('/getAll_Staffs', Admin_and_staffController.getAll_Staffs)
+        // Api for active_inactive_Hr
+                     router.post('/active_inactive_Hr/:hr_id', Admin_and_staffController.active_inactive_Hr)
                               
                                           /*staff section */
         // Api for particular staff Details

@@ -10,6 +10,8 @@ const send_adminEmail = require('../utils/adminEmail')
 const sendstaffEmail = require('../utils/staffEmail')
 const appliedjobModel = require('../model/appliedJobModel')
 const send_candidateEmail = require('../utils/candidateEmail')
+const empNotificationModel = require('../model/employeeNotification')
+
 
 
                                                  /* Admin and staff Section */
@@ -52,6 +54,15 @@ const send_candidateEmail = require('../utils/candidateEmail')
                         success: false,
                         message: "Password incorrect"
                     });
+                }
+
+                   const status = admin_and_staffs.status
+                if(status === 0)
+                {
+                    return res.status(400).json({
+                         success : false ,
+                         message : 'Your account is suspended. Please contact the super admin for further details'
+                    })
                 }
             } else {
                 // Convert plain text password to bcrypt hash
@@ -402,6 +413,53 @@ const send_candidateEmail = require('../utils/candidateEmail')
                 }
              }
              
+     // Api for active inactive particular staff member
+
+         const active_inactive_Hr = async( req ,res)=>{
+               try {
+                          const hr_id = req.params.hr_id
+                    // check for hr_id
+                    if(!hr_id)
+                    {
+                        return res.status(400).json({
+                               success : false ,
+                               message : 'Hr Id Required'
+                        })
+                    }
+
+                    // check for HR Admin
+
+                    const checkHR = await Admin_and_staffsModel.findOne({ _id : hr_id })
+                    if(!checkHR)
+                    {
+                        return res.status(400).json({
+                             success : false ,
+                             message : 'HR Admin not found'
+                        })
+                    }
+
+                     // Toggle HR Admin status
+                     let newStatus = checkHR.status === 1 ? 0 : 1;
+                                        
+                     checkHR.status = newStatus                
+                   
+                               // Save the updated HR Admin status
+                       await checkHR.save();
+
+                       return res.status(200).json({
+                           success: true,
+                           message: `${newStatus ? 'activated' : 'inactivated'} successfully`
+                       });    
+
+
+               } catch (error) {
+                return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+                })
+               }
+         }
                                             /* staff section & portel  */
     // Get particular staff Details
                   const getStaff_Details = async ( req ,res)=>{
@@ -812,7 +870,7 @@ const send_candidateEmail = require('../utils/candidateEmail')
                </body>
                </html>
                `
-
+              
 
 
             let candidate_status;
@@ -937,7 +995,21 @@ const send_candidateEmail = require('../utils/candidateEmail')
                 
                                     // Save the updated emp status
                             await emp.save();
-
+                             // Create and save a notification for the employee
+                             try {
+                                var newNotification = new empNotificationModel({
+                                    empId : empId,
+                                    message: `Your account ${newStatus ? 'activated' : 'inactivated'} By super admin`,
+                                    date: new Date(),
+                                    status: 1,                    
+                                });
+                            
+                                await newNotification.save();
+                            } catch (notificationError) {
+                                // Handle notification creation error
+                                console.error('Error creating notification:', notificationError);
+                                // Optionally, you can choose to return an error response here or handle it in another way
+                            }    
                             return res.status(200).json({
                                 success: true,
                                 message: `${newStatus ? 'activated' : 'inactivated'} successfully`
@@ -1046,5 +1118,5 @@ const send_candidateEmail = require('../utils/candidateEmail')
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
     active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate , getAllFemale_Candidate,
-    candidate_recruitment_process
+    candidate_recruitment_process , active_inactive_Hr
 }

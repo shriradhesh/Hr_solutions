@@ -2,7 +2,7 @@ const nodemailer = require('nodemailer');
 
 const send_candidateEmail  = async (recipientEmail, subject, content) => {
     try {
-        console.log("Recipient Email:", recipientEmail);
+     
         const transporter = nodemailer.createTransport({
             host: 'smtp.gmail.com',
             port: 587,
