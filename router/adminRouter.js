@@ -35,6 +35,12 @@ const upload = require('../upload')
                      router.get('/getAllEmp', Admin_and_staffController.getAllEmp)
         // Api for active_inactive_emp
                      router.post('/active_inactive_emp/:empId', Admin_and_staffController.active_inactive_emp)
+        // Api for send_notification_to_client
+                     router.post('/send_notification_to_client', Admin_and_staffController.send_notification_to_client)
+        // Api for sendNotification_to_allClient
+                     router.post('/sendNotification_to_allClient', Admin_and_staffController.sendNotification_to_allClient)
+        // Api for send notification
+                     router.post('/send_notification/:superAdmin_Id', Admin_and_staffController.send_notification)
 
 
                                               /* JOb Section */

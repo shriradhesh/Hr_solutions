@@ -366,13 +366,12 @@ const empNotificationModel = require('../model/employeeNotification')
                     requirement_timeline,
                     startDate,
                     endDate,
-                    key_qualification,
+                    skills, 
                     Experience,
                     company_address,
                     template_type
                 } = req.body;
-        
-                // check for employee ID
+                                    
                 if (!empId) {
                     return res.status(400).json({
                         success: false,
@@ -380,82 +379,22 @@ const empNotificationModel = require('../model/employeeNotification')
                     });
                 }
         
-                // // check for required fields
-                // const requiredFields = ["job_title", "job_Description", "job_type", "job_schedule",
-                //     "Minimum_pay", "Maximum_pay", "Rate", "Number_of_emp_needed",
-                //     , "startDate", "endDate", "key_qualification", "Experience",
-                //     "company_address", "template_type"
-                // ];
-        
-                // for (const field of requiredFields) {
-                //     if (!req.body[field]) {
-                //         const fieldName = field.replace("_", " ");
-                //         return res.status(400).json({
-                //             message: `Missing ${fieldName}`,
-                //             success: false,
-                //         });
-                //     }
-                // }
-                
-        
-                // check for employee
-                const employee = await employeeModel.findOne({
-                    _id: empId
-                });
+                const employee = await employeeModel.findOne({ _id: empId, status: 1 });
                 if (!employee) {
                     return res.status(400).json({
                         success: false,
-                        message: 'Employee details not found'
+                        message: 'Employee details not found or account is suspended'
                     });
                 }
-                const empstatus = employee.status
-                if (empstatus === 0) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Your account is suspended. Please contact the admin for further details.'
-                    })
-                }
+                        console.log(typeof(startDate));
+                const formattedStartDate = new Date(startDate);
+                const formattedEndDate = new Date(endDate);
         
-                // Parse template_type and Number_of_emp_needed to integers
-                const parsedTemplateType = parseInt(template_type);
-                const parsedNumberOfEmpNeeded = parseInt(Number_of_emp_needed);
-        
-                // Parse startDate and endDate to Date objects
-                const parsedStartDate = new Date(startDate);
-                const parsedEndDate = new Date(endDate);
-        
-                // Access employee details
-                const {
-                    company_name,
-                    email: employee_email,
-                    phone_no,
-                    company_industry: company_Industry
-                } = employee;
-        
-                // Set job_photo if a file has been uploaded
-                let job_photo = null;
-                if (req.file) {
-                    job_photo = req.file.filename;
-                }
-        
-                // Initialize keys as an empty array
-                let keys = [];
-        
-                // If key_qualification is provided, process and set the details
-                if (key_qualification) {
-                    keys = JSON.parse(key_qualification);
-                }
-        
-                // Check if a similar job for the company already exists in a time period
                 const existJob = await jobModel.findOne({
-                    job_title: job_title,
-                    company_name: company_name,
-                    startDate: {
-                        $lte: parsedEndDate
-                    },
-                    endDate: {
-                        $gte: parsedStartDate
-                    }
+                    job_title,
+                    company_name: employee.company_name,
+                    startDate: { $lte: formattedStartDate },
+                    endDate: { $gte: formattedEndDate }
                 });
                 if (existJob) {
                     return res.status(400).json({
@@ -464,60 +403,49 @@ const empNotificationModel = require('../model/employeeNotification')
                     });
                 }
         
-                // Create new data for the job
                 const newJob = new jobModel({
                     emp_Id: empId,
                     job_title,
                     job_Description,
                     job_type,
                     job_schedule,
-                    salary_pay: [{
-                        Minimum_pay,
-                        Maximum_pay,
-                        Rate
-                    }],
-                    Number_of_emp_needed: parsedNumberOfEmpNeeded,
-                    requirement_timeline,
-                    startDate: parsedStartDate,
-                    endDate: parsedEndDate,
-                    key_qualification: keys,
+                    salary_pay: [{ Minimum_pay, Maximum_pay, Rate }],
+                    Number_of_emp_needed,
+                    startDate: formattedStartDate,
+                    endDate: formattedEndDate,
+                    key_qualification: skills, // Assign skills directly to key_qualification
                     Experience,
                     company_address,
-                    template_type: parsedTemplateType,
-                    company_name,
-                    employee_email,
-                    phone_no,
-                    company_Industry,
-                    job_photo,
+                    template_type,
+                    company_name: employee.company_name,
+                    employee_email: employee.email,
+                    phone_no: employee.phone_no,
+                    company_Industry: employee.company_industry,
                     status: 1
                 });
         
-               
-        
-                try {
-                    var newNotification = await empNotificationModel.create({
-                        empId: empId,
-                        message: 'Your Job posted Successfully',
-                        date: parsedStartDate,
-                        status: 1,
-                    });
-                
-                    await newNotification.save();
-                } catch (notificationError) {
-                    // Handle notification creation error
-                    console.error('Error creating notification:', notificationError);
-                    // Optionally, you can choose to return an error response here or handle it in another way
-                }
-                
                 await newJob.save();
+        // Job has expired, send notification
+        try {
+            const newNotification =  empNotificationModel.create({
+                empId: empId,
+                message: `your Job ${job_title} post successfully`,
+                date: new Date(),
+                status: 1,
+            });
+             newNotification.save();
+        } catch (notificationError) {
+            console.error('Error creating notification:', notificationError);
+        }
+        
         
                 return res.status(200).json({
                     success: true,
                     message: 'Job posted successfully',
                     jobId: newJob._id
                 });
-        
             } catch (error) {
+                console.error(error);
                 return res.status(500).json({
                     success: false,
                     message: 'Server error',
@@ -525,6 +453,12 @@ const empNotificationModel = require('../model/employeeNotification')
                 });
             }
         };
+        
+        
+        
+        
+        
+        
         
 
 

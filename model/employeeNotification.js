@@ -24,6 +24,11 @@ const notificationSchema = new mongoose.Schema({
            date: {
             type: Date,          
         },
+
+        empIds : [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'employeeModel',
+         }],
 }, {timestamps : true })
 
  const empNotificationModel = mongoose.model('emp_notification', notificationSchema)

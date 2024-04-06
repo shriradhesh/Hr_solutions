@@ -12,7 +12,7 @@ const jobSchema = new mongoose.Schema({
         ref: 'employeeModel'
     },
     Number_of_emp_needed: {
-        type: Number
+        type: String
     },
     job_type: {
         type: String,
@@ -57,24 +57,20 @@ const jobSchema = new mongoose.Schema({
         type: Number
     },
     key_qualification: [{
-        skill: {
-            type: String
-        }
+        type: String  // Assuming skills are strings
     }],
     Experience: {
         type: String
     },
     template_type : {
-        type : Number,
-        enum : [1,2,3,4,5],
-        default : 1
+        type : String,
+        // enum : [1,2,3,4,5],
+        
     },
     company_Industry : {
         type : String
     },
-    job_photo : {
-        type : String
-    },
+    
     status : {
         type : Number,
         enum : [1 , 0],
@@ -85,4 +81,4 @@ const jobSchema = new mongoose.Schema({
 
 const jobModel = mongoose.model('Job', jobSchema)
 
-module.exports = jobModel
+module.exports = jobModel;

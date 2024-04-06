@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const express = require('express')
 const bcrypt = require('bcrypt')
 const path = require('path')
-
+const send_EmployeeEmail = require('../utils/employeeEmail')
 const Admin_and_staffsModel = require('../model/Admin_and_staffs')
 const employeeModel = require('../model/employeeModel')
 const jobModel = require('../model/jobModel')
@@ -280,7 +280,251 @@ const empNotificationModel = require('../model/employeeNotification')
                        }
                   } 
                                                     
+// APi for send notification to client
+                 const send_notification_to_client = async ( req , res)=>{
+                         try {
+                               const { empId , title , message}= req.body
 
+                            // validate input field
+                            const requiredFields = ['title' , 'message']
+
+                            for ( const field of requiredFields)
+                            {
+                                if(!req.body[field])
+                                {
+                                    return res.status(400).json({
+                                           success : false ,
+                                           message : `Missing ${field.replace('_', ' ')} field`
+                                    })
+                                }
+                            }
+
+                            if(!empId)
+                            {
+                                return res.status(400).json({
+                                     success : false ,
+                                     message : 'Client Id required'
+                                })
+                            }
+
+                            // check for client
+                            const checkEmp = await employeeModel.findOne({
+                                  _id : empId
+                            })
+
+                            if(!checkEmp)
+                            {
+                                return res.status(400).json({
+                                     success : false ,
+                                     message : 'client not found'
+                                })
+                            }
+
+
+
+                        // Prepare email content for client
+                        let messageContent = ` <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>${title}</title>
+                        </head>
+                        <body style="font-family: Arial, sans-serif; background-color: #f2f2f2; padding: 20px;">
+                        
+                            <div style="background-color: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+                                <h2 style="color: #333; text-align: center; margin-bottom: 20px;">${title}</h2>
+                                <p style="color: #555; font-size: 16px; line-height: 1.6;">Dear ${checkEmp.name},</p>
+                                <p style="color: #555; font-size: 16px; line-height: 1.6;">Greetings of the Day,</p>
+                                <p style="color: #555; font-size: 16px; line-height: 1.6;"><strong>Title:</strong> <span style="color: #FF5733;">${title}</span></p>
+                                <p style="color: #555; font-size: 16px; line-height: 1.6;"><strong>Message:</strong> <span style="color: #3366FF;">${message}</span></p>
+                                <p style="color: #555; font-size: 16px; line-height: 1.6;">If you have any questions, feel free to contact us.</p>
+                            </div>
+                        
+                        </body>
+                        </html>
+                        `
+                        send_EmployeeEmail (checkEmp.email , 'Notification from Admin', messageContent)
+
+                        try {
+                            var newNotification = await empNotificationModel.create({
+                                empId: empId,
+                                message: message,
+                                date: new Date(),
+                                status: 1,
+                            });
+                        
+                            await newNotification.save();
+                        } catch (notificationError) {
+                            // Handle notification creation error
+                            console.error('Error creating notification:', notificationError);
+                            // Optionally, you can choose to return an error response here or handle it in another way
+                        }
+
+                        return res.status(200).json({
+                             success : true ,
+                             message : 'notification send'
+                        })
+
+                         } catch (error) {
+                               return res.status(500).json({
+                                  success : false ,
+                                  message : 'server Error',
+                                  error_message : error.message
+                               })
+                         }
+                 }
+                
+        // Api for send Notification to all client
+        const sendNotification_to_allClient = async (req, res) => {
+            try {
+                const { title, message } = req.body;
+                const requiredFields = ['title', 'message'];
+                
+                for (const field of requiredFields) {
+                    if (!req.body[field]) {
+                        return res.status(400).json({
+                            success: false,
+                            message: `Missing ${field.replace('_', ' ')} field`
+                        });
+                    }
+                }
+        
+                // Get all clients
+                const allClients = await employeeModel.find({});
+        
+                if (allClients.length === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'No clients found'
+                    });
+                }
+        
+                // Prepare email content
+                const messageContent = `
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>${title}</title>
+                    </head>
+                    <body style="font-family: Arial, sans-serif; background-color: #f2f2f2; padding: 20px;">
+                        <div style="background-color: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+                            <h2 style="color: #333; text-align: center; margin-bottom: 20px;">${title}</h2>
+                            <p style="color: #555; font-size: 16px; line-height: 1.6;">Greetings of the Day,</p>
+                            <p style="color: #555; font-size: 16px; line-height: 1.6;"><strong>Title:</strong> <span style="color: #FF5733;">${title}</span></p>
+                            <p style="color: #555; font-size: 16px; line-height: 1.6;"><strong>Message:</strong> <span style="color: #3366FF;">${message}</span></p>
+                            <p style="color: #555; font-size: 16px; line-height: 1.6;">If you have any questions, feel free to contact us.</p>
+                        </div>
+                    </body>
+                    </html>
+                `;
+        
+                const notifications = [];
+        
+                // Send the same notification to all clients
+                for (const client of allClients) {
+                    // Send email to client
+                    send_EmployeeEmail(client.email, 'Notification', messageContent);
+        
+                    // Save notification record for the client
+                    const savedNotification = await empNotificationModel.create({
+                        title,
+                        message,
+                        date: new Date(),
+                        empIds: client._id
+                    });
+                    
+                    notifications.push(savedNotification);
+                }
+        
+                // Respond with success message
+                return res.status(200).json({
+                    success: true,
+                    message: 'Notification sent successfully to all clients',
+                    
+                });
+        
+            } catch (error) {
+                // Handle server error
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+        
+
+        // APi for send Notification to all client nd particular client
+             const send_notification = async( req , res)=>{
+                   try {
+                          const superAdmin_Id = req.params.superAdmin_Id
+                        if(!superAdmin_Id)
+                        {
+                            return res.status(400).json({
+                                 message : 'superAdmin Id requried'
+                            })
+                        }
+                    
+                 // check for superAdmin
+                 const superAdmin = await Admin_and_staffsModel.findOne({
+                       _id : superAdmin_Id,
+                       role : 'super Admin'
+                 })
+
+                 if(!superAdmin)
+                 {
+                    return res.status(400).json({
+                          success : false ,
+                          message : 'super admin not found'
+                    })
+                 }
+
+            const super_adminChoice = req.body.super_adminChoice
+             let notificationFunction 
+             if(super_adminChoice === 1)
+             {
+                notificationFunction = send_notification_to_client
+             }
+             else if (super_adminChoice === 2)
+             {
+                notificationFunction = sendNotification_to_allClient
+             }
+             else
+             {
+                return res.status(400).json({
+                     success : false ,
+                     message : 'please select one Option'
+                })
+             }
+
+             // call the selected notification function
+             await notificationFunction( req ,res)
+
+             // only send success response if the notification function didn't send a response
+
+             if(!res.headersSent)
+             {
+                return res.status(200).json({
+                     success : true ,
+                     message : 'notification send'
+                })
+             }
+                  
+
+
+                   } catch (error) {
+                     return res.status(500).json({
+                           success : false ,
+                           message : 'server Error',
+                           error_message : error.message
+                     })
+                   }
+             }
+        
+              
 
                                                       /* Staff Section */
     // Api for add staff 
@@ -1072,51 +1316,53 @@ const empNotificationModel = require('../model/employeeNotification')
                                 }
 
         // APi for get all female Candidate Resume
-          const getAllFemale_Candidate = async ( req , res)=>{
-            try {
-                  // check for all Female candidates
-                  const allFemale_Candidate = await appliedjobModel.find({
-                        gender : "Female"
-                  })
-                  if(!allFemale_Candidate)
-                  {
-                    return res.status(400).json({
-                         success : false,
-                         message : 'No Female Candidates profile Found'
-                    })
-                  }
-                  return res.status(200).json({
-                    success : true ,
-                    message : 'Female candidate Profile',
-                    allFemale_CandidateCount : allFemale_Candidate.length,
-                    Details: allFemale_Candidate.map((candidate) => ({
-                       first_Name: candidate.first_Name,
-                       last_Name: candidate.last_Name,
-                       user_Email: candidate.user_Email,
-                       city: candidate.city,
-                       state: candidate.state,
-                       phone_no: candidate.phone_no,
-                       gender: candidate.gender,
-                       resume: candidate.uploadResume,
-                       Highest_Education: candidate.Highest_Education,
-                       relevant_Experience: candidate.job_experience, 
-                       Total_experience: candidate.Total_experience,
-                       jobId : candidate.jobId
-                   }))
-               });
-            } catch (error) {
-                return res.status(500).json({
-                        success : false ,
-                        message : 'server error',
-                        error_message : error.message
-                })
-            }
-          }
+                            const getAllFemale_Candidate = async ( req , res)=>{
+                                try {
+                                    // check for all Female candidates
+                                    const allFemale_Candidate = await appliedjobModel.find({
+                                            gender : "Female"
+                                    })
+                                    if(!allFemale_Candidate)
+                                    {
+                                        return res.status(400).json({
+                                            success : false,
+                                            message : 'No Female Candidates profile Found'
+                                        })
+                                    }
+                                    return res.status(200).json({
+                                        success : true ,
+                                        message : 'Female candidate Profile',
+                                        allFemale_CandidateCount : allFemale_Candidate.length,
+                                        Details: allFemale_Candidate.map((candidate) => ({
+                                        _id : candidate._id,
+                                        first_Name: candidate.first_Name,
+                                        last_Name: candidate.last_Name,
+                                        user_Email: candidate.user_Email,
+                                        city: candidate.city,
+                                        state: candidate.state,
+                                        phone_no: candidate.phone_no,
+                                        gender: candidate.gender,
+                                        resume: candidate.uploadResume,
+                                        Highest_Education: candidate.Highest_Education,
+                                        relevant_Experience: candidate.job_experience, 
+                                        Total_experience: candidate.Total_experience,
+                                        jobId : candidate.jobId
+                                    }))
+                                });
+                                } catch (error) {
+                                    return res.status(500).json({
+                                            success : false ,
+                                            message : 'server error',
+                                            error_message : error.message
+                                    })
+                                }
+                            }
 
 
 
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
     active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate , getAllFemale_Candidate,
-    candidate_recruitment_process , active_inactive_Hr
+    candidate_recruitment_process , active_inactive_Hr , send_notification_to_client , sendNotification_to_allClient,
+    send_notification
 }

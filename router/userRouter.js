@@ -19,7 +19,7 @@ const userController = require('../controller/userController')
 
                                        /* POST job section */
         // Api for postJob
-                router.post('/postJob/:empId', upload.single('job_photo'), userController.postJob)
+                router.post('/postJob/:empId', userController.postJob)
         // Api for getJobs_posted_by_employee
                 router.get('/getJobs_posted_by_employee/:empId' , userController.getJobs_posted_by_employee)
         // Api for get_Female_jobseeker_profile
