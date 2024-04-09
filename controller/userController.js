@@ -7,6 +7,10 @@ const moment = require("moment");
 const cron = require("node-cron");
 const send_EmployeeEmail = require('../utils/employeeEmail')
 const empNotificationModel = require('../model/employeeNotification')
+const privacy_policyModel = require('../model/privacy_policy')
+const term_condition = require('../model/term_condition')
+const services = require('../model/servicePage')
+
 
                                         /* employee Section */
 
@@ -386,7 +390,7 @@ const empNotificationModel = require('../model/employeeNotification')
                         message: 'Employee details not found or account is suspended'
                     });
                 }
-                        console.log(typeof(startDate));
+                        
                 const formattedStartDate = new Date(startDate);
                 const formattedEndDate = new Date(endDate);
         
@@ -454,13 +458,6 @@ const empNotificationModel = require('../model/employeeNotification')
             }
         };
         
-        
-        
-        
-        
-        
-        
-
 
         // Api for get jobs posted by employee
 
@@ -637,7 +634,7 @@ const empNotificationModel = require('../model/employeeNotification')
                 {
                     return res.status(400).json({
                          success : false ,
-                         message : 'no Other_jobseeker candidate have applied for these job '
+                         message : 'no Other candidate have applied for these job '
                     })
                 }
 
@@ -673,6 +670,56 @@ const empNotificationModel = require('../model/employeeNotification')
             }
         } 
 
+    // APi for Delete particular job
+    const deleteJob = async (req, res) => {
+        try {
+            const jobId = req.params.jobId;
+    
+            // Check if jobId is provided
+            if (!jobId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Job Id is required'
+                });
+            }
+    
+            // Find the job
+            const job = await jobModel.findOne({ _id: jobId });
+    
+            // If job not found
+            if (!job) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Job not found'
+                });
+            }
+    
+            // Check applied candidates for this job
+            const appliedCandidates = await appliedjobModel.find({ jobId: jobId });
+    
+            if (appliedCandidates.length > 0) {
+                // Delete all applied candidates for this job
+                await appliedjobModel.deleteMany({ jobId: jobId });
+            }
+    
+            // Delete the job
+            await job.deleteOne();
+    
+            return res.status(200).json({
+                success: true,
+                message: 'Job deleted successfully'
+            });
+    
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server Error',
+                error_message: error.message
+            });
+        }
+    };
+    
+    
                                                                     /*Job Seeker sections */
         // Api for get all Jobs
 
@@ -1168,10 +1215,100 @@ const empNotificationModel = require('../model/employeeNotification')
                  error_message : error.message
             })
           }
-      }
+      }                                                 
+                                                    /* Privacy Policy */
+ // Api for get all client privacy & policy
 
+                    const get_privacy_policy = async( req ,res)=>{
+                        try {
+                              const all_privacy_policy = await privacy_policyModel.findOne({ })
+                              if(!all_privacy_policy)
+                              {
+                                 return res.status(400).json({
+                                      success : false ,
+                                      message : 'no privacy & policy found'
+                                 })
+                             }
+                                     
+                                 return res.status(200).json({
+                                      success : true ,
+                                      message : 'privacy & policy',
+                                      Details : all_privacy_policy
+                                 })                                  
+                              
+                             
+                        } catch (error) {
+                         return res.status(500).json({
+                              success : false ,
+                              message : 'server error',
+                              error_message : error.message
+                         })
+                        }
+                 }
+
+
+                                                   /* Term & Condition Section */
+
+                                                   const get__admin_term_condition = async( req ,res)=>{
+                                                    try {
+                                                           // check for all client term & condition
+                                                        const get_t_c = await term_condition.find({ })
+                                                          if(!get_t_c)
+                                                          {
+                                                            return res.status(400).json({
+                                                                  success : false ,
+                                                                  message : 'no term & Condition Details found'
+                                                            })
+                                                          }
+                                                              
+                                                            return res.status(200).json({
+                                                                 success : true ,
+                                                                 message : 'term & conditions',
+                                                                 Details : get_t_c
+                                                            })
+                                                        
+                                                    } catch (error) {
+                                                           return res.status(500).json({
+                                                              success : false ,
+                                                              message : 'server error',
+                                                              error_message : error.message
+                                                           })
+                                                    }
+                                                }
+                            
+                            
+  
+                                            /* Api for service page Section */
+        
+                  // Api for get Services Details
+              const getServices_of_smart_start = async( req , res)=>{
+                   try {
+                              // check for services 
+                        const checkService = await services.find({ })
+                        if(!checkService)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'No services found',
+                            })
+                        }
+                          return res.status(200).json({
+                             success : true ,
+                             message : 'All Services',
+                             Details : checkService
+                          })
+                   } catch (error) {
+                    return res.status(500).json({
+                         success : false ,
+                         message : 'server error',
+                         error_message : error.message
+                    })
+                   }
+              }
+                                          
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
     getAll_Jobs ,searchJob , apply_on_job , get_Female_jobseeker_profile , get_jobseeker_profile , getNotification_emp,
-    seenNotification, unseenNotificationCount
+    seenNotification, unseenNotificationCount , deleteJob ,
+    getServices_of_smart_start , get_privacy_policy , get__admin_term_condition
 }

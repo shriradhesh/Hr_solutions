@@ -26,6 +26,9 @@ const userController = require('../controller/userController')
                 router.get('/get_Female_jobseeker_profile/:jobId', userController.get_Female_jobseeker_profile)
         // Api for get_jobseeker_profile
                 router.get('/get_jobseeker_profile/:jobId', userController.get_jobseeker_profile)
+         // Api for deleteJob
+                router.delete('/deleteJob/:jobId', userController.deleteJob)
+
         
                                       /* JOb Seeker section */
         // Api for allJobs
@@ -43,6 +46,22 @@ const userController = require('../controller/userController')
                 router.post('/seenNotification/:notification_id', userController.seenNotification)
         // Api for get unseenNotificationCount
                 router.get('/unseenNotificationCount/:empId', userController.unseenNotificationCount)
+
+                                         /* Privacy Policy Section */
+
+        // Api for getAllEmp_privacy_policy
+        router.get('/get_privacy_policy', userController.get_privacy_policy)
+
+
+                                       /*  Term & condition Section */
+       // Api for get_emp_term_condition
+       router.get('/get__admin_term_condition', userController.get__admin_term_condition)
+
+                                      /* Services Page */
+         // Api for getServices page Details
+                 router.get('/getServices_of_smart_start', userController.getServices_of_smart_start)
+                
+        
 
 
 

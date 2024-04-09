@@ -46,10 +46,34 @@ const upload = require('../upload')
                                               /* JOb Section */
         // Api for active_inactive_job
                      router.post('/active_inactive_job/:jobId', Admin_and_staffController.active_inactive_job)
+                
         // Api for getAllFemale_Candidate
                      router.get('/getAllFemale_Candidate', Admin_and_staffController.getAllFemale_Candidate)
         // APi for candidate_recruitment_process
                      router.post('/candidate_recruitment_process/:candidateId', Admin_and_staffController.candidate_recruitment_process)
+
+
+                                             /* Privacy & policy Section */
+       
+     // Api for create_privacy_policy for particular client
+
+                   router.post('/create_privacy_policy/:adminId', Admin_and_staffController.create_privacy_policy)
+     // Api for get_emp_privacy_policy
+                          router.get('/get_admin_privacy_policy/:adminId', Admin_and_staffController.get_admin_privacy_policy)
+                       
+                                              /* Term & Condition Section */
+     // Api for create_term_condition
+                 router.post('/create_term_condition/:adminId', Admin_and_staffController.create_term_condition)
+      // Api for get_emp_term_condition
+                          router.get('/get_admin_term_condition/:adminId', Admin_and_staffController.get_admin_term_condition)
+        
+
+                                               /* Service Page */
+        // Api for create_services
+                        router.post('/create_services/:adminId',upload.single('image'), Admin_and_staffController.create_services)
+        // Api for getService
+                        router.get('/getService/:adminId',Admin_and_staffController.getService )
+
 
 
 

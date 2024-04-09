@@ -11,6 +11,10 @@ const sendstaffEmail = require('../utils/staffEmail')
 const appliedjobModel = require('../model/appliedJobModel')
 const send_candidateEmail = require('../utils/candidateEmail')
 const empNotificationModel = require('../model/employeeNotification')
+const privacy_policyModel = require('../model/privacy_policy')
+const term_condition = require('../model/term_condition')
+const services = require('../model/servicePage')
+
 
 
 
@@ -511,10 +515,7 @@ const empNotificationModel = require('../model/employeeNotification')
                      success : true ,
                      message : 'notification send'
                 })
-             }
-                  
-
-
+             }   
                    } catch (error) {
                      return res.status(500).json({
                            success : false ,
@@ -1270,50 +1271,49 @@ const empNotificationModel = require('../model/employeeNotification')
                                                 
                                                      /*Job Section */
 // Active inactive particular job
-                                const active_inactive_job = async ( req , res)=>{
-                                try {
-                                        const jobId = req.params.jobId
-                                    // check for jobId
-                                    if(!jobId)
-                                    {
-                                        return res.status(400).json({
-                                                success : false ,
-                                                message : 'jobId Required'
-                                        })
-                                    }            
-                                    // check for JOb existance
-            
-                                    const job = await jobModel.findOne({
-                                            _id : jobId
-                                    })
-                                    if(!job)
-                                    {
-                                    return res.status(400).json({
-                                            success : false ,
-                                            message : 'job not exist'
-                                    })
-                                    }
-                                    // Toggle job status
-                                    let newStatus = job.status === 1 ? 0 : 1;
-                                        
-                                      job.status = newStatus                
-                                    
-                                                // Save the updated job status
-                                        await job.save();
-            
-                                        return res.status(200).json({
-                                            success: true,
-                                            message: `${newStatus ? 'activated' : 'inactivated'} successfully`
-                                        });                    
-                    
-                                } catch (error) {
-                                    return res.status(500).json({
-                                            success : false ,
-                                            message : 'server error',
-                                            error_message : error.message
-                                    })
-                                }
-                                }
+const active_inactive_job = async (req, res) => {
+    try {
+        const jobId = req.params.jobId;
+
+        // Check for jobId
+        if (!jobId) {
+            return res.status(400).json({
+                success: false,
+                message: 'jobId Required'
+            });
+        }
+
+        // Check for Job existence
+        const job = await jobModel.findOne({
+            _id: jobId
+        });
+
+        if (!job) {
+            return res.status(400).json({
+                success: false,
+                message: 'Job not exist'
+            });
+        }
+
+        // Toggle job status
+        job.status = job.status === 1 ? 0 : 1;
+
+        // Save the updated job status
+        await job.save();
+
+        return res.status(200).json({
+            success: true,
+            message: `${job.status ? 'Activated' : 'Inactivated'} successfully`
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
 
         // APi for get all female Candidate Resume
                             const getAllFemale_Candidate = async ( req , res)=>{
@@ -1358,11 +1358,427 @@ const empNotificationModel = require('../model/employeeNotification')
                                 }
                             }
 
+                                                   /* Privacy & Policy Section */
+
+                                                   
+                                                     
+            const create_privacy_policy = async( req ,res)=>{
+                try {
+                           const adminId = req.params.adminId
+                           const { Heading , Description} = req.body
+                     // check for empId
+                     if(!adminId)
+                     {
+                         return res.status(400).json({
+                               success : false ,
+                               message : 'AdminId required'
+                         })
+                     }
+                         // check for Admin
+                     const adminExist = await Admin_and_staffsModel.findOne({
+                            _id : adminId
+                     })
+                     if(!adminExist)
+                     {
+                         return res.status(400).json({
+                                success : false ,
+                                message : 'Admin Details not exist'
+                         })
+                     }                   
+
+                     // check for privacy policy existance
+
+                     const exist_privacy_policy = await privacy_policyModel.findOne({
+                              AdminId : adminId,
+                               
+                     })
+
+                     if(exist_privacy_policy)
+                     {
+                                  exist_privacy_policy.Heading = Heading
+                                  exist_privacy_policy.Description = Description
+
+                                  await exist_privacy_policy.save()
+
+                                  return res.status(200).json({
+                                       success : true ,
+                                       message : 'privacy policy updated successfully'
+                                  })
+                     }
+                     else
+                     {
+                            // check for required fields
+
+                            if(!Heading)
+                            {
+                             return res.status(400).json({
+                                  success : false ,
+                                  message : 'Heading Required'
+                             })
+                            }
+
+                            if(!Description)
+                            {
+                             return res.status(400).json({
+                                  success : false ,
+                                  message : 'Description Required'
+                             })
+                            }
+
+                            // create new Data
+
+                            const newData = new privacy_policyModel({
+                                    AdminId : adminId,
+                                    Heading : Heading,
+                                    Description : Description,                                    
+                            })
+
+                              await newData.save()
+
+                              return res.status(200).json({
+                                     success : true ,
+                                     message : 'Privacy policy created successfully'
+                              })
+                     }                     
+
+                      
+                } catch (error) {
+                   return res.json({
+                            success : false ,
+                            message : 'server error',
+                            error_message : error.message
+                   })
+                }
+         }
+
+         // Api for get particular Client privacy & policy
+                const get_admin_privacy_policy = async( req ,res)=>{
+                    try {
+                       
+                         const adminId = req.params.adminId
+                     // check for adminId
+                 if(!adminId)
+                 {
+                     return res.status(400).json({
+                          success : false ,
+                          message : 'adminId Required'
+                     })
+                 }
+
+                    // check Admin privacy policy
+                 const Admin_privacy_policy = await privacy_policyModel.findOne({
+                          AdminId : adminId
+                 })
+                     if(!Admin_privacy_policy)
+                    {
+                             return res.status(400).json({
+                                  success : false ,
+                                  message : 'no privacy policy found '
+                             })
+                     }
+                    return res.status(200).json({
+                          success : true ,
+                          message : 'Admin Privacy & Policy',
+                          Details : {
+                               _id : Admin_privacy_policy._id,    
+                               admin_id : Admin_privacy_policy.AdminId,
+                               Heading : Admin_privacy_policy.Heading,
+                              Description : Admin_privacy_policy.Description
+                          }
+                    })
+
+                    } catch (error) {
+                        return res.status(500).json({
+                            success : false ,
+                            message : 'server error',
+                            error_message : error.message
+                        })
+                    }
+                }
 
 
+            
+
+                                    /* Term & Conditions Section */
+
+        // Api for get All client Term & Condition
+
+                  
+                    const create_term_condition = async( req ,res)=>{
+
+                        try {
+                                const adminId  = req.params.adminId
+                                const { Heading , Description} = req.body
+                                // check for empId
+                            if(!adminId)
+                            {
+                                return res.status(400).json({
+                                     success : false ,
+                                     message : 'adminId required'
+                                })
+                            }
+    
+                               // check for Admin Details
+                               const checkAdmin = await Admin_and_staffsModel.findOne({ _id : adminId })
+    
+                               if(!checkAdmin)
+                               {
+                                return res.status(400).json({
+                                     success : false ,
+                                     message : 'admin Details not found'
+                                })
+                               }
+    
+                                 
+                        
+                            // check for already exist term _ condition 
+                        
+                               const exist_t_c = await term_condition.findOne({
+                                        AdminId : adminId
+                               })
+                                  if(exist_t_c)
+                                  {
+                                        exist_t_c.Heading = Heading
+                                        exist_t_c.Description = Description
+    
+                                    await exist_t_c.save()
+                                      return res.status(200).json({
+                                             success : true,
+                                             message : 'term & condition updated successfully'
+                                      })
+                                  }
+                                  else
+                                  {
+                                         // check for required fields
+    
+                                      if(!Heading)
+                                      {
+                                        return res.status(400).json({
+                                             success : false ,
+                                             message : 'Heading Required'
+                                        })
+                                      }
+    
+                                      if(!Description)
+                                      {
+                                        return res.status(400).json({
+                                              success : false ,
+                                              message : 'Description Required'
+                                        })
+                                      }
+    
+                                          // create new Data
+    
+                                          const newData = new term_condition({
+                                                 AdminId : adminId,
+                                                 Heading : Heading,
+                                                 Description : Description,
+                                                
+                                          })
+                                               await newData.save()
+    
+                                                return res.status(200).json({
+                                                     success : true ,
+                                                     message : 'term & condition created successfully'
+                                                })
+                                  }                                
+    
+                                
+                        } catch (error) {
+                            return res.status(500).json({
+                                   success : false ,
+                                   message : 'server error',
+                                   error_message : error.message
+                            })
+                        }
+                }
+    
+                const get_admin_term_condition = async( req , res)=>{
+    
+                    try {
+                               const adminId = req.params.adminId
+                          // check for adminId
+                          if(!adminId)
+                          {
+                              return res.status(400).json({
+                                       success : false ,
+                                       message : 'adminId required'
+                              })
+                          }
+                          // check for client term & condition
+                      const emp_t_c = await term_condition.findOne({
+                                    AdminId : adminId
+                      })
+                          if(!emp_t_c)
+                          {
+                              return res.status(400).json({
+                                   success : false ,
+                                   message : 'Term & conditons not found'
+                              })
+                          }
+                
+                          return res.status(200).json({
+                                success : true,
+                                message : 'term & Condtions',
+                                Details : {
+                                       _id : emp_t_c._id,
+                                        Admin_id : emp_t_c.AdminId,
+                                       Heading :  emp_t_c.Heading,
+                                        Description : emp_t_c.Description
+                                }
+                          })
+                    } catch (error) {
+                         return res.status(500).json({
+                                    success : false ,
+                                    message : 'server error',
+                                    error_message : error.message
+                         })
+                    }
+                }
+                           
+                
+          
+                                                            /*  Service Page */
+        
+           // Api for create Services
+           
+           const create_services = async (req, res) => {
+            try {
+                const adminId = req.params.adminId;
+                const { Heading, Description } = req.body;
+        
+                // Check if adminId is provided
+                if (!adminId) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'adminId required'
+                    });
+                }
+        
+                // Check if admin exists and is a super admin
+                const checkAdmin = await Admin_and_staffsModel.findOne({
+                    _id: adminId,
+                    role: 'super Admin'
+                });
+                if (!checkAdmin) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Admin not found or not authorized'
+                    });
+                }
+        
+                // Check if service already exists for adminId
+                let existingService = await services.findOne({ AdminId : adminId });
+        
+                // If service exists, update it; otherwise, create a new service
+                if (existingService) {
+                    existingService.Heading = Heading;
+                    existingService.Description = Description;
+                    if (req.file) {
+                        existingService.image = req.file.filename;
+                    }
+                    existingService.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Service updated successfully'
+                    });
+                } else {
+                       // check for required fields
+                       if(!Heading)
+                       {
+                           return res.status(400).json({
+                                   success : false ,
+                                   message : 'Heading Required'
+                           })
+                       }
+
+                          if(!Description)
+                          {
+                            return res.status(400).json({
+                                   success : false ,
+                                   message : 'Description Required'
+                            })
+                          }        
+                    let image = null;
+                    if (req.file) {
+                        image = req.file.filename;
+                    }
+        
+                    // Create new service
+                    const newService = new services({
+                        Heading : Heading,
+                        Description : Description,
+                        AdminId : adminId ,
+                        image
+                    });
+        
+                    await newService.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'New service created successfully'
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error'
+                });
+            }
+        };
+        
+
+           // APi for get services details
+               const getService = async ( req , res)=>{
+                   try {
+                          const adminId = req.params.adminId
+                        // check for admin Id
+                        if(!adminId)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'adminId required'
+                            })
+                        }
+                        // check for admin services
+
+                        const checkService = await services.findOne({
+                                 AdminId : adminId
+                        })
+
+                           if(!checkService)
+                           {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'no services Found'
+                            })
+                           }
+
+                           return res.status(200).json({
+                             success : true ,
+                             message : 'services',
+                             Details : {
+                                   _id : checkService._id,
+                                   AdminId : checkService.AdminId,
+                                   Heading :  checkService.Heading,
+                                   Description : checkService.Description,
+                                   image : checkService.image
+                             }
+                           })
+                   } catch (error) {
+                    return res.status(500).json({
+                            success : false ,
+                            message : 'server error',
+                            error_message : error.message
+                    })
+                   }
+               }
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
     active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate , getAllFemale_Candidate,
     candidate_recruitment_process , active_inactive_Hr , send_notification_to_client , sendNotification_to_allClient,
-    send_notification
+    send_notification ,  create_services , getService ,  create_privacy_policy , get_admin_privacy_policy,
+    create_term_condition , get_admin_term_condition 
 }
