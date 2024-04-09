@@ -60,7 +60,12 @@ const userController = require('../controller/userController')
                                       /* Services Page */
          // Api for getServices page Details
                  router.get('/getServices_of_smart_start', userController.getServices_of_smart_start)
-                
+
+                                        /* CMS */
+        // Api for dashboard_counts
+                 router.get('/dashboard_counts', userController.dashboard_counts)
+
+
         
 
 

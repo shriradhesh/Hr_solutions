@@ -3,6 +3,7 @@ const router = express.Router()
 const Admin_and_staffController = require('../controller/AdminController')
 const multer = require('multer')
 const upload = require('../upload')
+const Admin = require('../model/Admin_and_staffs')
 
 
                                        /*  Admin Section */
@@ -73,6 +74,21 @@ const upload = require('../upload')
                         router.post('/create_services/:adminId',upload.single('image'), Admin_and_staffController.create_services)
         // Api for getService
                         router.get('/getService/:adminId',Admin_and_staffController.getService )
+
+                        
+                                                   /* CMS Page */
+            /* Testimonial Section */
+
+   // Api for create Testimonial for cms
+                router.post('/create_testimonial', upload.single('user_image'), Admin_and_staffController.create_testimonial)
+     // Api for getAll_testimonial
+                router.get('/getAll_testimonial', Admin_and_staffController.getAll_testimonial)   
+    // Api for get_testimonial
+                router.get('/get_testimonial/:testimonial_id', Admin_and_staffController.get_testimonial)     
+    // Api for update_testimonial
+                router.put('/update_testimonial/:testimonial_id', upload.single('user_image'), Admin_and_staffController.update_testimonial)
+    // Api for delete_testimonial
+                router.delete('/delete_testimonial/:testimonial_id', Admin_and_staffController.delete_testimonial)   
 
 
 

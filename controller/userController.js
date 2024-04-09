@@ -793,7 +793,7 @@ const services = require('../model/servicePage')
             }
         }         
 
-        // schedule a job to update trip status
+        
 
  cron.schedule('* * * * *', async () => {
                                   try {
@@ -826,7 +826,8 @@ const services = require('../model/servicePage')
 
            
 
-        // Api for Search Jobs
+      
+        
         const searchJob = async (req, res) => {
             try {
                 const { job_title, company_address } = req.body;
@@ -1306,9 +1307,81 @@ const services = require('../model/servicePage')
                    }
               }
                                           
+                                                            /*CMS section */
+                // Api for dashboard counts
+            const dashboard_counts = async( req ,res)=>{
+                    try {
+                            // check for all active jobs
+                        const checkActive_jobs = await jobModel.find({
+                               status : 1
+                        })
+                        if(!checkActive_jobs)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'no active job found'
+                            })
+                        }
+                         
+                        // check for all clients
+                        const all_clients = await employeeModel.find({ })
+                        if(!all_clients)
+                        {
+                            return res.status(400).json({
+                                  success : false ,
+                                  message : 'no clients found'
+                            })
+                        }
+
+                        // check for all candidate 
+                      const all_candidate = await appliedjobModel.find({ })
+                        if(!all_candidate)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'no candidates found'
+                            })
+                        }
+
+                         // check for female candidates
+
+                         const all_femaleCandidates = await appliedjobModel.find({
+                               gender : 'Female'
+                         })
+
+                        if(!all_femaleCandidates)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'no female candidate found'
+                            })
+                        }
+
+                         return res.status(200).json({
+                             success : true ,
+                             message : 'Dashboard Details',
+                             active_jobs_count : checkActive_jobs.length,
+                             all_clients_count : all_clients.length,
+                             all_cv_count : all_candidate.length,
+                             all_femaleCandidates_count : all_femaleCandidates.length
+
+                         })
+                       
+                    } catch (error) {
+                        return res.status(500).json({
+                               success : false ,
+                               message : 'server error',
+                               error_message : error.message  
+                        })
+                    }
+            }
+
+        
+
+
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
     getAll_Jobs ,searchJob , apply_on_job , get_Female_jobseeker_profile , get_jobseeker_profile , getNotification_emp,
     seenNotification, unseenNotificationCount , deleteJob ,
-    getServices_of_smart_start , get_privacy_policy , get__admin_term_condition
+    getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts
 }

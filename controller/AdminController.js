@@ -14,6 +14,8 @@ const empNotificationModel = require('../model/employeeNotification')
 const privacy_policyModel = require('../model/privacy_policy')
 const term_condition = require('../model/term_condition')
 const services = require('../model/servicePage')
+const cms_testimonialModel = require('../model/cms_testimonial')
+
 
 
 
@@ -1775,10 +1777,233 @@ const active_inactive_job = async (req, res) => {
                     })
                    }
                }
+                                        
+                                                 /* CMS Page */
+            /* Testimonial Section */
+        
+        // Api for create Testimonial Page
+        const create_testimonial = async (req, res) => {
+            try {
+                const { username, title, Description } = req.body;
+        
+                // check for required fields
+                if (!username) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'username required'
+                    });
+                }
+        
+                if (!title) { // Corrected condition to check for the existence of the title field
+                    return res.status(400).json({
+                        success: false,
+                        message: 'title required'
+                    });
+                }
+        
+                if (!Description) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Description required'
+                    });
+                }
+        
+                let user_image = null;
+                // check for user_image
+                if (req.file) {
+                    user_image = req.file.filename;
+                }
+        
+                // Create new Data
+                const newData = new cms_testimonialModel({
+                    username : username,
+                    title : title,
+                    Description : Description,
+                    user_image : user_image
+                });
+        
+                // Save the new testimonial to the database
+                await newData.save();
+        
+                return res.status(200).json({
+                    success: true,
+                    message: 'Testimonial created successfully',
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server Error',
+                    error_message: error.message
+                });
+            }
+        };
+        
+        // Api for get All testimonial 
+            const getAll_testimonial = async( req ,res)=>{
+                   try {
+                           // check for all testimonial 
+                        const all_testimonial = await cms_testimonialModel.find({
+                              
+                        })
+                        if(!all_testimonial)
+                        {
+                            return res.status(400).json({
+                                  success : false ,
+                                  message : 'no testimonial Details found'
+                            })
+                        }
+
+                        return res.status(200).json({
+                               success : true ,
+                               message : 'all testimonial',
+                               Details : all_testimonial
+                        })
+                    
+                   } catch (error) {
+                    return res.status(500).json({
+                          success : false,
+                          message : 'server error',
+                          error_message : error.message
+                    })
+                   }
+            }
+
+            // get particular testimonial Detail
+              
+               const get_testimonial = async( req , res)=>{
+                       try {
+                             const testimonial_id = req.params.testimonial_id
+                        // check for testimonial_id
+                        if(!testimonial_id)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'testimonial Id required'
+                            })
+                        }
+
+                        // check for testimonial Detail
+                         const t_detail = await cms_testimonialModel.findOne({
+                                _id : testimonial_id
+                         })
+
+                           if(!t_detail)
+                           {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'no Details found'
+                            })
+                           }
+                            return res.status(200).json({
+                                 success : true ,
+                                 message : 'testimonial Detail',
+                                 Details : t_detail
+                            })
+                        
+                       } catch (error) {
+                           return res.status(500).json({
+                                  success : false ,
+                                  message : 'server error',
+                                  error_message : error.message
+                           })
+                       }
+               }
+        // Api for update  testimonial Details
+        const update_testimonial = async (req, res) => {
+            try {
+                const testimonial_id = req.params.testimonial_id;
+                const { username, title, Description } = req.body;
+        
+                // Check for required fields
+                if (!testimonial_id) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'testimonial_id required'
+                    });
+                }
+        
+                // Check for testimonial 
+                const exist_testimonial = await cms_testimonialModel.findById(testimonial_id);
+        
+                if (!exist_testimonial) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'No testimonial found'
+                    });
+                }
+        
+                // Update testimonial fields
+                exist_testimonial.username = username;
+                exist_testimonial.title = title;
+                exist_testimonial.Description = Description;
+        
+                // Check if there's an uploaded file
+                if (req.file) {
+                    exist_testimonial.user_image = req.file.filename;
+                }
+        
+                // Save the updated testimonial
+                await exist_testimonial.save();
+        
+                return res.status(200).json({
+                    success: true,
+                    message: 'Testimonial updated successfully'
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+        
+    // Api for delete testimonial 
+          const delete_testimonial = async ( req , res)=>{
+                   try {
+                        const testimonial_id = req.params.testimonial_id
+                    // check for ID
+                    if(!testimonial_id)
+                    {
+                        return res.status(400).json({
+                               success : false ,
+                               message : 'testimonial Id required'
+                        })
+                    }
+
+                    // check for testimonial details
+                        const check_t = await cms_testimonialModel.findOne({
+                             _id : testimonial_id
+                        })
+                        if(!check_t)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'no testimonial Detail found'
+                            })
+                        }
+                           await check_t.deleteOne()
+
+                           return res.status(200).json({
+                               success : true ,
+                               message : 'testimonial Delete successfully'
+                           })
+                   } catch (error) {
+                    return res.status(500).json({
+                         success : false ,
+                         message : 'server error',
+                         error_message : error.message
+                    })
+                   }
+          }
+                                                        
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
     active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate , getAllFemale_Candidate,
     candidate_recruitment_process , active_inactive_Hr , send_notification_to_client , sendNotification_to_allClient,
     send_notification ,  create_services , getService ,  create_privacy_policy , get_admin_privacy_policy,
-    create_term_condition , get_admin_term_condition 
+    create_term_condition , get_admin_term_condition ,
+    
+              /*  CMS PAGE */
+     create_testimonial , getAll_testimonial , get_testimonial , update_testimonial , delete_testimonial
 }
