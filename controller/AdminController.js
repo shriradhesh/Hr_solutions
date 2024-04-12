@@ -970,6 +970,8 @@ const cms_testimonialModel = require('../model/cms_testimonial')
 
                    const emp_name = checkemp.name
 
+                  
+
                     // Email content for  job scheduling
            const  emailcontent2 = `<!DOCTYPE html>
            <html lang="en">
@@ -1117,7 +1119,7 @@ const cms_testimonialModel = require('../model/cms_testimonial')
                </body>
                </html>
                `
-              
+             
 
 
             let candidate_status;
