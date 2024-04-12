@@ -28,6 +28,8 @@ const userController = require('../controller/userController')
                 router.get('/get_jobseeker_profile/:jobId', userController.get_jobseeker_profile)
          // Api for deleteJob
                 router.delete('/deleteJob/:jobId', userController.deleteJob)
+         // Api for deleteCandidate
+                router.delete('/deleteCandidate/:candidateId', userController.deleteCandidate)
 
         
                                       /* JOb Seeker section */

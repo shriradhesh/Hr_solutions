@@ -375,6 +375,8 @@ const services = require('../model/servicePage')
                     company_address,
                     template_type
                 } = req.body;
+                       
+              
                                     
                 if (!empId) {
                     return res.status(400).json({
@@ -391,8 +393,12 @@ const services = require('../model/servicePage')
                     });
                 }
                         
+
                 const formattedStartDate = new Date(startDate);
                 const formattedEndDate = new Date(endDate);
+
+
+                
         
                 const existJob = await jobModel.findOne({
                     job_title,
@@ -535,6 +541,8 @@ const services = require('../model/servicePage')
                 const get_Female_jobseeker_profile = async( req , res)=>{
                     try {
                            const jobId = req.params.jobId
+                           const { jobSeeker_status } = req.query
+                        
                         // check for jobId
                         if(!jobId)
                         {
@@ -553,12 +561,18 @@ const services = require('../model/servicePage')
                                  message : 'job not found'
                             })
                         }
+                        const filter = {}
 
+                        if(jobSeeker_status)
+                        {
+                            filter.jobSeeker_status = jobSeeker_status;
+                        }
                         // check for Female job seeker profile for the job
 
                      const Female_jobseeker = await appliedjobModel.find({
                              gender : 'Female',
-                             jobId : jobId
+                             jobId : jobId,
+                             ...filter
                      })
                         if(!Female_jobseeker)
                         {
@@ -604,6 +618,8 @@ const services = require('../model/servicePage')
         const get_jobseeker_profile = async( req , res)=>{
             try {
                    const jobId = req.params.jobId
+                   const { jobSeeker_status } = req.query
+
                 // check for jobId
                 if(!jobId)
                 {
@@ -622,12 +638,19 @@ const services = require('../model/servicePage')
                          message : 'job not found'
                     })
                 }
+                const filter = {}
+
+                if(jobSeeker_status)
+                {
+                    filter.jobSeeker_status = jobSeeker_status;
+                }
 
                 // check for Other job seeker profile for the job
 
              const Other_jobseeker = await appliedjobModel.find({
                        jobId : jobId,
-                       gender : { $ne : 'Female' }
+                       gender : { $ne : 'Female' },
+                       ...filter
                      
              })
                 if(!Other_jobseeker)
@@ -694,13 +717,13 @@ const services = require('../model/servicePage')
                 });
             }
     
-            // Check applied candidates for this job
-            const appliedCandidates = await appliedjobModel.find({ jobId: jobId });
+            // // Check applied candidates for this job
+            // const appliedCandidates = await appliedjobModel.find({ jobId: jobId });
     
-            if (appliedCandidates.length > 0) {
-                // Delete all applied candidates for this job
-                await appliedjobModel.deleteMany({ jobId: jobId });
-            }
+            // if (appliedCandidates.length > 0) {
+            //     // Delete all applied candidates for this job
+            //     await appliedjobModel.deleteMany({ jobId: jobId });
+            // }
     
             // Delete the job
             await job.deleteOne();
@@ -718,9 +741,49 @@ const services = require('../model/servicePage')
             });
         }
     };
+
+ // Api for delete particular candidate/ jobseeker for the job'
+          const deleteCandidate = async( req , res)=>{
+                  try {
+                          const candidateId = req.params.candidateId
+                    // check for candidateId
+                    if(!candidateId)
+                    {
+                        return res.status(400).json({
+                              success : false ,
+                              message : 'Candidate ID required'
+                        })
+                    }
+
+                    // check for candidate details
+                const check_candidate = await appliedjobModel.findOne({
+                       _id : candidateId
+                })
+                   if(!check_candidate)
+                   {
+                    return res.status(400).json({
+                          success : false ,
+                          message : 'candidate Details not found'
+                    })
+                   }
+
+                      await check_candidate.deleteOne()
+
+                    return res.status(200).json({
+                         success : true ,
+                         message : 'candidate Profile Deleted successfully'
+                    })
+                  } catch (error) {
+                    return res.status(500).json({
+                         success : false ,
+                         message : 'Server error',
+                         error_message : error.message
+                    })
+                  }
+          }
     
     
-                                                                    /*Job Seeker sections */
+                                                             /*Job Seeker sections */
         // Api for get all Jobs
 
         const getAll_Jobs = async (req, res) => {
@@ -825,7 +888,7 @@ const services = require('../model/servicePage')
                                 });
 
            
-
+// Api for search Job
       
         
         const searchJob = async (req, res) => {
@@ -1383,5 +1446,5 @@ module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
     getAll_Jobs ,searchJob , apply_on_job , get_Female_jobseeker_profile , get_jobseeker_profile , getNotification_emp,
     seenNotification, unseenNotificationCount , deleteJob ,
-    getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts
+    getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts , deleteCandidate
 }

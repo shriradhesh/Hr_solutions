@@ -1179,6 +1179,7 @@ const cms_testimonialModel = require('../model/cms_testimonial')
         }
     };
     
+
                                                             /* Employee Section */
         // Api for get All Employees
               const getAllEmp = async( req , res)=>{
@@ -1320,9 +1321,17 @@ const active_inactive_job = async (req, res) => {
         // APi for get all female Candidate Resume
                             const getAllFemale_Candidate = async ( req , res)=>{
                                 try {
+                                       const { jobSeeker_status } = req.query
+                                       const filter = {}
+
+                                    if(jobSeeker_status)
+                                    {
+                                        filter.jobSeeker_status = jobSeeker_status;
+                                    }
                                     // check for all Female candidates
                                     const allFemale_Candidate = await appliedjobModel.find({
-                                            gender : "Female"
+                                            gender : "Female",
+                                            ...filter
                                     })
                                     if(!allFemale_Candidate)
                                     {
@@ -1501,7 +1510,7 @@ const active_inactive_job = async (req, res) => {
 
             
 
-                                    /* Term & Conditions Section */
+                                                         /* Term & Conditions Section */
 
         // Api for get All client Term & Condition
 
@@ -1999,7 +2008,7 @@ const active_inactive_job = async (req, res) => {
                                                         
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
-    active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate , getAllFemale_Candidate,
+    active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate ,
     candidate_recruitment_process , active_inactive_Hr , send_notification_to_client , sendNotification_to_allClient,
     send_notification ,  create_services , getService ,  create_privacy_policy , get_admin_privacy_policy,
     create_term_condition , get_admin_term_condition ,
