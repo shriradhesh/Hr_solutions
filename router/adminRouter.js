@@ -53,6 +53,9 @@ const Admin = require('../model/Admin_and_staffs')
         // APi for candidate_recruitment_process
                      router.post('/candidate_recruitment_process/:candidateId', Admin_and_staffController.candidate_recruitment_process)
 
+                                             /* ATS Section */
+        // Api for get All_candidates
+                     router.get('/getAll_candidates', Admin_and_staffController.getAll_candidates)  
 
                                              /* Privacy & policy Section */
        
@@ -89,10 +92,18 @@ const Admin = require('../model/Admin_and_staffs')
                 router.put('/update_testimonial/:testimonial_id', upload.single('user_image'), Admin_and_staffController.update_testimonial)
     // Api for delete_testimonial
                 router.delete('/delete_testimonial/:testimonial_id', Admin_and_staffController.delete_testimonial)   
-
-
-
-
+    // Api for cms_job_posting_section1
+                router.post('/cms_job_posting_section1/:adminId', Admin_and_staffController.cms_job_posting_section1 )
+    // Api for getJobs_posted_procedure_section1
+                router.get('/getJobs_posted_procedure_section1/:adminId', Admin_and_staffController.getJobs_posted_procedure_section1)
+    // Api for cms_need_any_job_section
+                 router.post('/cms_need_any_job_section/:adminId', upload.single('logo'), Admin_and_staffController.cms_need_any_job_section)
+    // Api for get_cms_need_any_job_section
+                router.get('/get_cms_need_any_job_section/:adminId', Admin_and_staffController.get_cms_need_any_job_section)
+    // Api for cms_post_your_job_section
+                router.post('/cms_post_your_job_section/:adminId', upload.single('logo'), Admin_and_staffController.cms_post_your_job_section)
+    // Api for get_cms_post_your_job
+               router.get('/get_cms_post_your_job/:adminId', Admin_and_staffController.get_cms_post_your_job)
 
 
 

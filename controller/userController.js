@@ -10,6 +10,12 @@ const empNotificationModel = require('../model/employeeNotification')
 const privacy_policyModel = require('../model/privacy_policy')
 const term_condition = require('../model/term_condition')
 const services = require('../model/servicePage')
+const stringSimilarity = require('string-similarity');
+const cms_job_posting_sectionModel = require('../model/cms_job_posting_section1')
+const cms_need_any_job_section_Model = require('../model/cms_need_any_job_section') 
+const cms_postjobModel = require('../model/cms_post_your_job')
+
+
 
 
                                         /* employee Section */
@@ -1439,12 +1445,88 @@ const services = require('../model/servicePage')
                     }
             }
 
+        // Api for  getJobs_posted_procedure_section1 
+        const cms_getJobs_posted_procedure_section1 = async (req, res) => {
+    try {
+        const details = await cms_job_posting_sectionModel.find({ });
         
+        if (!details || details.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No details found'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Details',
+            Details: details
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+}
+  // Api for section 2
+const cms_get_need_any_job_section = async (req, res) => {
+    try {
+        const details = await cms_need_any_job_section_Model.find({ });
+        
+        if (!details || details.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No details found'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Details',
+            Details: details
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+}
+
+// Api for section 3
+const get_cms_post_your_job = async (req, res) => {
+    try {
+        const details = await cms_postjobModel.find({ });
+        
+        if (!details || details.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No details found'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Details',
+            Details: details
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+}
 
 
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
     getAll_Jobs ,searchJob , apply_on_job , get_Female_jobseeker_profile , get_jobseeker_profile , getNotification_emp,
     seenNotification, unseenNotificationCount , deleteJob ,
-    getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts , deleteCandidate
+    getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts , deleteCandidate,
+    cms_getJobs_posted_procedure_section1 , cms_get_need_any_job_section ,get_cms_post_your_job
 }

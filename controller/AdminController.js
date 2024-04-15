@@ -15,7 +15,10 @@ const privacy_policyModel = require('../model/privacy_policy')
 const term_condition = require('../model/term_condition')
 const services = require('../model/servicePage')
 const cms_testimonialModel = require('../model/cms_testimonial')
-
+const stringSimilarity = require('string-similarity');
+const cms_job_posting_sectionModel = require('../model/cms_job_posting_section1')
+const cms_need_any_job_section_Model = require('../model/cms_need_any_job_section') 
+const cms_postjobModel = require('../model/cms_post_your_job')
 
 
 
@@ -1182,6 +1185,99 @@ const cms_testimonialModel = require('../model/cms_testimonial')
     };
     
 
+     // APi for get all candidates
+     const getAll_candidates = async (req, res) => {
+        try {
+            const { gender, job_Heading, company_name, relevant_experience, Total_experience } = req.query;
+            let filter = {};
+            let filter1 = {};
+    
+            // Apply gender filter if provided
+            if (gender) {
+                filter.gender = gender;
+            }
+    
+            // Apply other filters
+            if (job_Heading) {
+                filter1.job_Heading = job_Heading;
+            }
+            if (company_name) {
+                filter1.company_name = company_name;
+            }
+            if (relevant_experience) {
+                filter1.job_experience = relevant_experience;
+            }
+            if (Total_experience) {
+                filter1.Total_experience = Total_experience;
+            }
+    
+            // Retrieve all candidates based on the filters
+            const all_candidates = await appliedjobModel.find({ ...filter, ...filter1 });
+    
+            // Check if candidates were found
+            if (!all_candidates || all_candidates.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No candidates details found'
+                });
+            }
+    
+            // Access each candidate's job ID
+            const candidateJobIds = all_candidates.map(candidate => candidate.jobId);
+    
+            // Retrieve jobs related to the candidateJobIds
+            const checkJobs = await jobModel.find({ _id: { $in: candidateJobIds } });
+    
+            // Check if jobs were found
+            if (!checkJobs || checkJobs.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No jobs found'
+                });
+            }
+    
+            // Create a map of job IDs to company names
+            const jobCompanyMap = {};
+            checkJobs.forEach(job => {
+                jobCompanyMap[job._id.toString()] = job.company_name;
+            });
+    
+            // Create response data with candidate details and company names
+            const responseData = all_candidates.map(candidate => ({
+                _id: candidate._id,
+                first_Name: candidate.first_Name,
+                last_Name: candidate.last_Name,
+                candidate_email: candidate.user_Email,
+                gender: candidate.gender,
+                phone_no: candidate.phone_no,
+                jobId: candidate.jobId,
+                job_Heading: candidate.job_Heading,
+                company_name: jobCompanyMap[candidate.jobId.toString()], 
+                jobSeeker_status: candidate.jobSeeker_status,
+                candidate_resume: candidate.uploadResume,
+                relevant_experience: candidate.job_experience,
+                Total_experience: candidate.Total_experience
+            }));
+    
+            // Respond with the list of candidates details
+            return res.status(200).json({
+                success: true,
+                message: 'Candidate Details',
+                candidates: responseData
+            })
+           
+    
+    
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
+        }
+    };
+    
+
                                                             /* Employee Section */
         // Api for get All Employees
               const getAllEmp = async( req , res)=>{
@@ -1626,13 +1722,13 @@ const active_inactive_job = async (req, res) => {
                           {
                               return res.status(400).json({
                                    success : false ,
-                                   message : 'Term & conditons not found'
+                                   message : 'Term & conditions not found'
                               })
                           }
                 
                           return res.status(200).json({
                                 success : true,
-                                message : 'term & Condtions',
+                                message : 'term & Conditions',
                                 Details : {
                                        _id : emp_t_c._id,
                                         Admin_id : emp_t_c.AdminId,
@@ -2007,14 +2103,368 @@ const active_inactive_job = async (req, res) => {
                     })
                    }
           }
+
+            /* job posting procedure section */
+
+
+        
+         // Api for cms_job_posting_section_1
+
+         const cms_job_posting_section1 = async (req, res) => {
+            try {
+                const adminId = req.params.adminId;
+                const { Heading, Description } = req.body;
+        
+                // Check for adminId
+                if (!adminId) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Admin Id required'
+                    });
+                }
+        
+                // Check for existing section
+                let exist_section1 = await cms_job_posting_sectionModel.findOne({ AdminId: adminId });
+        
+                if (exist_section1) {
+                    // Update existing section
+                    exist_section1.Heading = Heading;
+                    exist_section1.Description = Description;
+                    await exist_section1.save();
+                    return res.status(200).json({
+                        success: true,
+                        message: 'cms_job_posting_section1 updated'
+                    });
+                } else {
+                    // Check for required fields
+                    if (!Heading) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Heading Required'
+                        });
+                    }
+        
+                    if (!Description) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Description Required'
+                        });
+                    }
+        
+                    // Create new Data 
+                    const newData = new cms_job_posting_sectionModel({
+                        AdminId: adminId,
+                        Heading: Heading,
+                        Description: Description
+                    });
+        
+                    await newData.save();
+                    return res.status(200).json({
+                        success: true,
+                        message: 'New cms_job_posting_section1 created'
+                    });
+                }
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+                                   
+            
+          // Api for get job_postuing _procesudre 1
+
+          const getJobs_posted_procedure_section1 = async( req ,res)=>{
+                   try {
+                            const adminId = req.params.adminId
+                        // check for adminId
+                        if(!adminId)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'admin Id required'
+                            })
+                        }
+
+                        // check for details
+                    const gjpps1 = await cms_job_posting_sectionModel.findOne({
+                              AdminId : adminId
+                    })
+                    if(!gjpps1)
+                    {
+                        return res.status(400).json({
+                             success : false ,
+                             message : 'no Details found'
+                        })
+                    }
+                      return res.status(200).json({
+                         success : true ,
+                         message : 'Details',
+                         Details : gjpps1
+                      })
+                   } catch (error) {
+                    return res.status(500).json({
+                          success : false ,
+                          message : 'server error',
+                          error_message : error.message
+                    })
+                   }
+          }
+
+
+
+           /* job posting procedure section 2 ---- need any job ?? */
+
+           const cms_need_any_job_section = async (req, res) => {
+            try {
+                const adminId = req.params.adminId;
+                const { Heading, Description } = req.body;
+        
+                // Check for adminId
+                if (!adminId) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Admin Id required'
+                    });
+                }
+        
+                // Check for existing section
+                let exist_cms_need_any_job_section = await cms_need_any_job_section_Model.findOne({ AdminId: adminId });
+        
+                if (exist_cms_need_any_job_section) {
+                    // Update existing section
+                    exist_cms_need_any_job_section.Heading = Heading;
+                    exist_cms_need_any_job_section.Description = Description;
+        
+                    if (req.file) {
+                        exist_cms_need_any_job_section.logo = req.file.filename;
+                    }
+        
+                    await exist_cms_need_any_job_section.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Details updated successfully'
+                    });
+                } else {
+                    // Check for required fields
+                    if (!Heading) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Heading Required'
+                        });
+                    }
+        
+                    if (!Description) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Description Required'
+                        });
+                    }
+        
+                    // Check for logo
+                    let logo = null;
+                    if (req.file) {
+                        logo = req.file.filename;
+                    }
+        
+                    // Create new Data
+                    const newData = new cms_need_any_job_section_Model({
+                        AdminId: adminId,
+                        Heading: Heading,
+                        Description: Description,
+                        logo: logo
+                    });
+        
+                    await newData.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'New Details created successfully'
+                    });
+                }
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+         
+        // APi for get cms_need_any_job_section
+           const get_cms_need_any_job_section = async( req ,res)=>{
+                    try {
+                                const adminId = req.params.adminId
+                                // check for adminId
+                        if(!adminId)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'adminId Required'
+                            })
+                        }
+
+                        // check for details
+                        const checkDetails = await cms_need_any_job_section_Model.findOne({
+                             AdminId : adminId
+                        })
+
+                        if(!checkDetails)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'Details not found'
+                            })
+                        }
+
+                        return res.status(200).json({
+                             success : false ,
+                             message : 'Details',
+                             Details : checkDetails
+                        })
+                    } catch (error) {
+                        return res.status(500).json({
+                              success : false ,
+                              message : 'server error',
+                              error_message : error.message
+                        })
+                    }
+           }
+        
+              /* job posting procedure section  ----post your job ?? */
+
+              const cms_post_your_job_section = async (req, res) => {
+                try {
+                    const adminId = req.params.adminId;
+            
+                    // Check for adminId
+                    if (!adminId) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Admin Id required'
+                        });
+                    }
+            
+                    const { Heading, Description } = req.body;
+            
+                    // Check for exist cms_post
+                    const exist_post_job = await cms_postjobModel.findOne({ AdminId: adminId });
+            
+                    if (exist_post_job) {
+                        // Update existing section
+                        exist_post_job.Heading = Heading;
+                        exist_post_job.Description = Description;
+            
+                        if (req.file) {
+                            exist_post_job.logo = req.file.filename;
+                        }
+            
+                        await exist_post_job.save();
+            
+                        return res.status(200).json({
+                            success: true,
+                            message: 'Details updated successfully'
+                        });
+                    } else {
+                        // Check for Heading
+                        if (!Heading) {
+                            return res.status(400).json({
+                                success: false,
+                                message: 'Heading is required'
+                            });
+                        }
+            
+                        // Check for Description
+                        if (!Description) {
+                            return res.status(400).json({
+                                success: false,
+                                message: 'Description is required'
+                            });
+                        }
+            
+                        // Add logo 
+                        const logo = req.file ? req.file.filename : null;
+            
+                        // Add new Data
+                        const newData = new cms_postjobModel({
+                            AdminId: adminId,
+                            logo: logo,
+                            Heading: Heading,
+                            Description: Description
+                        });
+            
+                        await newData.save();
+            
+                        return res.status(200).json({
+                            success: true,
+                            message: 'New Details created successfully'
+                        });
+                    }
+                } catch (error) {
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Server error',
+                        error_message: error.message
+                    });
+                }
+            };
+
+    // Api for get cms_post_your_job Details
+               const get_cms_post_your_job = async (req , res) => {
+                   try {
+                            const adminId = req.params.adminId
+
+                            // check for adminId
+                    if(!adminId)
+                    {
+                        return res.status(400).json({
+                               success : false , message : 'adminId required'
+                        })
+                    }
+
+                    // check for details
+                    const getDetails = await cms_postjobModel.findOne({
+                           AdminId : adminId
+                    })
+
+                    if(!getDetails)
+                    {
+                        return res.status(400).json({
+                             success : false ,
+                             message : 'Details not found'
+                        })
+                    }
+
+                    return res.status(200).json({
+                              success : true ,
+                              message : 'Details',
+                              Details : getDetails
+                    })
+
+
+                   } catch (error) {
+                      return res.status(500).json({
+                            success : false,
+                            message : 'server Error',
+                            error_message : error.message
+                              
+                      })
+                   }
+               }
                                                         
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
     active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate ,
     candidate_recruitment_process , active_inactive_Hr , send_notification_to_client , sendNotification_to_allClient,
     send_notification ,  create_services , getService ,  create_privacy_policy , get_admin_privacy_policy,
-    create_term_condition , get_admin_term_condition ,
+    create_term_condition , get_admin_term_condition , getAll_candidates ,
     
               /*  CMS PAGE */
-     create_testimonial , getAll_testimonial , get_testimonial , update_testimonial , delete_testimonial
+     create_testimonial , getAll_testimonial , get_testimonial , update_testimonial , delete_testimonial,
+     cms_job_posting_section1 , getJobs_posted_procedure_section1 , cms_need_any_job_section,
+     get_cms_need_any_job_section , cms_post_your_job_section , get_cms_post_your_job
+     
 }
