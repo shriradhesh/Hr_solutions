@@ -72,6 +72,8 @@ const userController = require('../controller/userController')
                  router.get('/cms_get_need_any_job_section', userController.cms_get_need_any_job_section)
         // Api for get_cms_post_your_job
                  router.get('/get_cms_post_your_job', userController.get_cms_post_your_job)
+        // Api for cms_getjob_market_data
+                router.get('/cms_getjob_market_data', userController.cms_getjob_market_data)
 
 
         

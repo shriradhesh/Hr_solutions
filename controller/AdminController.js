@@ -19,6 +19,9 @@ const stringSimilarity = require('string-similarity');
 const cms_job_posting_sectionModel = require('../model/cms_job_posting_section1')
 const cms_need_any_job_section_Model = require('../model/cms_need_any_job_section') 
 const cms_postjobModel = require('../model/cms_post_your_job')
+const cms_jobMarketData = require('../model/cms_job_market_data')
+const cms_Blogsection1Model = require('../model/cmsBlogsection1')
+const cmsBlogsection2Model = require('../model/cmsBlogSecion2')
 
 
 
@@ -2454,7 +2457,417 @@ const active_inactive_job = async (req, res) => {
                       })
                    }
                }
-                                                        
+                    
+               
+           /* job posting procedure section  ----job market data ?? */
+
+           const cms_job_market_data_section = async (req, res) => {
+            try {
+                const adminId = req.params.adminId;
+        
+                // Check for adminId
+                if (!adminId) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Admin Id required'
+                    });
+                }
+        
+                const { Heading, Description } = req.body;
+        
+                // Check for exist cms_post
+                const exist_post_job = await cms_jobMarketData.findOne({ AdminId: adminId });
+        
+                if (exist_post_job) {
+                    // Update existing section
+                    exist_post_job.Heading = Heading;
+                    exist_post_job.Description = Description;
+        
+                    if (req.file) {
+                        exist_post_job.logo = req.file.filename;
+                    }
+        
+                    await exist_post_job.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Details updated successfully'
+                    });
+                } else {
+                    // Check for Heading
+                    if (!Heading) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Heading is required'
+                        });
+                    }
+        
+                    // Check for Description
+                    if (!Description) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Description is required'
+                        });
+                    }
+        
+                    // Add logo 
+                    const logo = req.file ? req.file.filename : null;
+        
+                    // Add new Data
+                    const newData = new cms_jobMarketData({
+                        AdminId: adminId,
+                        logo: logo,
+                        Heading: Heading,
+                        Description: Description
+                    });
+        
+                    await newData.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'New Details created successfully'
+                    });
+                }
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+
+
+         // Api for get job market data Details
+         const get_cms_job_market_data = async (req , res) => {
+            try {
+                     const adminId = req.params.adminId
+
+                     // check for adminId
+             if(!adminId)
+             {
+                 return res.status(400).json({
+                        success : false , message : 'adminId required'
+                 })
+             }
+
+             // check for details
+             const getDetails = await cms_jobMarketData.findOne({
+                    AdminId : adminId
+             })
+
+             if(!getDetails)
+             {
+                 return res.status(400).json({
+                      success : false ,
+                      message : 'Details not found'
+                 })
+             }
+
+             return res.status(200).json({
+                       success : true ,
+                       message : 'Details',
+                       Details : getDetails
+             })
+
+
+            } catch (error) {
+               return res.status(500).json({
+                     success : false,
+                     message : 'server Error',
+                     error_message : error.message
+                       
+               })
+            }
+        }
+
+           /* Cms Blog section */
+
+        //    section1
+
+    // Api for section1
+                   const cms_blog_section1 = async( req , res)=>{
+                           try {
+                                  const adminId = req.params.adminId
+                            const { Heading , Description } = req.body
+                                // check for adminId
+                            if(!adminId)
+                            {
+                                return res.status(400).json({
+                                     success : false,
+                                     message : 'admin ID required'
+                                })
+                            }
+
+                            // check for exist blog
+                        const existB = await cms_Blogsection1Model.findOne({
+                                  AdminId : adminId
+                        })
+                           if(existB)
+                           {
+                                   existB.Heading = Heading
+                                   existB.Description = Description
+
+                                   existB.save()
+                                   return res.status(200).json({
+                                          success : true ,
+                                          message :'Details Updated successfully'
+                                   })
+                           }
+                              else
+                              {
+                                   // check for required filelds
+                                if(!Heading)
+                                {
+                                    return res.status(400).json({
+                                         success : false ,
+                                         message : 'Heading required'
+                                    })
+                                }
+                                 if(!Description)
+                                 {
+                                    return res.status(400).json({
+                                          success : false,
+                                          message : 'Description Required'
+                                    })
+                                 }
+
+
+                                 // check for newData
+
+                                 const newData = new cms_Blogsection1Model({
+                                     AdminId : adminId,
+                                     Heading : Heading,
+                                     Description : Description
+                                 })
+
+                                   await newData.save()
+                                   return res.status(200).json({
+                                          success : true ,
+                                          message : 'new Details created successfully'
+                                   })
+                              }
+                           } catch (error) {
+                            return res.status(500).json({
+                                  success : false ,
+                                  message : 'server error',
+                                  error_message : error.message
+                            })
+                           }
+                   }
+
+            // Api for get Details 
+                   const getcmsBlog_section1 = async(req ,res )=>{
+                             try {
+                                    // check for details
+                                 const B1 = await cms_Blogsection1Model.find({
+                                     
+                                 })
+                                 if(!B1)
+                                 {
+                                    return res.status(400).json({
+                                           success : false,
+                                           message : 'no Details found'
+                                    })
+                                 }
+                                    return res.status(200).json({
+                                           success : true ,
+                                           message : 'Details',
+                                           Details : B1
+                                    })
+                             } catch (error) {
+                                  return res.status(500).json({
+                                         success : false ,
+                                         message : 'server error',
+                                         error_message : error.message
+                                  })
+                             }
+                   }
+
+            //    section2
+
+            // Api for cms Blog section2
+
+            const cmsBlog_section2 = async( req ,res)=>{
+                  try {
+                         const { name , Heading , Description  } = req.body
+                        
+                        // check for required fields
+                    if(!name)
+                    {
+                        return res.status(400).json({
+                             success : false ,
+                             message : 'name Required'
+                        })
+                    }
+                    if(!Heading)
+                    {
+                        return res.status(400).json({
+                             success : false ,
+                             message : 'Heading Required'
+                        })
+                    }
+
+                    if(!Description)
+                    {
+                        return res.status(400).json({
+                             success : false ,
+                             message : 'Description required'
+                        })
+                    }
+
+                  // check for photo
+
+                     let photo = null;
+                     if(req.body)
+                     {
+                        photo = req.file.filename
+                     }
+                    
+
+                     // check for new record
+                    const newData = new cmsBlogsection2Model({
+                          name  : name ,
+                          Heading : Heading,
+                          Description : Description,
+                          photo : photo,
+                          comment : 12
+                    })
+
+                         newData.save()
+                     return res.status(200).json({
+                          success : true ,
+                          message : 'new Blog created successfully'
+                     })
+                  } catch (error) {
+                      return res.status(500).json({
+                          success : false ,
+                          message : 'server error',
+                          error_message : error.message
+                      })
+                  }
+            }
+
+                // Api for get Blog Details
+            
+           const getBlogDetails = async( req , res)=>{
+                  try {
+                          const allBlogs = await cmsBlogsection2Model.find({
+                                    
+                          })
+                          if(!allBlogs)
+                          {
+                            return res.status(400).json({
+                                   success : false ,
+                                   message : 'no Blogs Details found'
+                            })
+                          }
+
+                            return res.status(200).json({
+                                 success : true ,
+                                 message : 'all Blogs Details',
+                                 Blogs : allBlogs
+                            })
+                  } catch (error) {
+                     return res.status(500).json({
+                           success : false ,
+                           message : 'server error',
+                           error_message : error.message
+                     })
+                  }
+           }
+
+        // update particular Blog details
+        const update_cms_blog = async (req, res) => {
+            try {
+                const blogId = req.params.blogId;
+                const { Heading, Description, comment } = req.body;
+        
+                // Check for blogId
+                if (!blogId) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Blog Id required'
+                    });
+                }
+        
+                // Check for existing Blog
+                const existB = await cmsBlogsection2Model.findOne({
+                    _id: blogId
+                });
+        
+                if (!existB) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'No details found for the provided blog ID'
+                    });
+                }
+        
+                // Update the fields
+                existB.Heading = Heading;
+                existB.Description = Description;
+                existB.comment = parseInt(comment);
+        
+                if (req.file) {
+                    existB.photo = req.file.filename;
+                }
+        
+                await existB.save();
+        
+                return res.status(200).json({
+                    success: true,
+                    message: 'Details updated successfully'
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+        
+      // Api for delete particular cms Blog 
+      const deleteBlog = async (req, res) => {
+        try {
+            const blogId = req.params.blogId;
+    
+            // Check for blogId
+            if (!blogId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Blog Id required'
+                });
+            }
+    
+            // Check for blog
+            const checkB = await cmsBlogsection2Model.findOne({
+                _id: blogId
+            });
+    
+            if (!checkB) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No details found for the provided blog ID'
+                });
+            }
+    
+            await checkB.deleteOne();
+    
+            return res.status(200).json({
+                success: true,
+                message: 'CMS Blog Deleted successfully'
+            });
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
+        }
+    };
+    
+
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
     active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate ,
@@ -2465,6 +2878,8 @@ module.exports = {
               /*  CMS PAGE */
      create_testimonial , getAll_testimonial , get_testimonial , update_testimonial , delete_testimonial,
      cms_job_posting_section1 , getJobs_posted_procedure_section1 , cms_need_any_job_section,
-     get_cms_need_any_job_section , cms_post_your_job_section , get_cms_post_your_job
+     get_cms_need_any_job_section , cms_post_your_job_section , get_cms_post_your_job , cms_job_market_data_section,
+     get_cms_job_market_data , cms_blog_section1 , getcmsBlog_section1 ,cmsBlog_section2 , getBlogDetails ,
+     update_cms_blog , deleteBlog
      
 }

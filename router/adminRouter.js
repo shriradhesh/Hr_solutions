@@ -104,9 +104,24 @@ const Admin = require('../model/Admin_and_staffs')
                 router.post('/cms_post_your_job_section/:adminId', upload.single('logo'), Admin_and_staffController.cms_post_your_job_section)
     // Api for get_cms_post_your_job
                router.get('/get_cms_post_your_job/:adminId', Admin_and_staffController.get_cms_post_your_job)
-
-
-
+    // Api for cms_job_market_data_section
+               router.post('/cms_job_market_data_section/:adminId', upload.single('logo'), Admin_and_staffController.cms_job_market_data_section)
+    // Api for get_cms_job_market_data
+               router.get('/get_cms_job_market_data/:adminId', Admin_and_staffController.get_cms_job_market_data)
+    // Api for cms_blog_section1
+               router.post('/cms_blog_section1/:adminId', Admin_and_staffController.cms_blog_section1)
+    // Api for getcmsBlog_section1
+               router.get('/getcmsBlog_section1', Admin_and_staffController.getcmsBlog_section1)
+    // Api for cmsBlog_section2
+               router.post('/cmsBlog_section2',upload.single('photo'), Admin_and_staffController.cmsBlog_section2)
+    // Api for  getBlogDetails
+               router.get('/getBlogDetails', Admin_and_staffController.getBlogDetails) 
+    // Api for update_cms_blog
+                router.put('/update_cms_blog/:blogId', upload.single('photo'),  Admin_and_staffController.update_cms_blog)
+    // Api for deleteBlog
+                router.delete('/deleteBlog/:blogId', Admin_and_staffController.deleteBlog)
+     
+             
 
 
 module.exports = router
