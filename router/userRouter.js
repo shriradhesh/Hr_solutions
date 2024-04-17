@@ -17,6 +17,20 @@ const userController = require('../controller/userController')
         // APi for emp_ChangePassword
                 router.post('/emp_ChangePassword/:empId', userController.emp_ChangePassword)
 
+                                                 /*job title section */
+        // Api for add jobTitle
+                         router.post('/addJobTitle', userController.addJobTitle)
+        // Api for alljobTitle
+                        router.get('/alljobTitle', userController.alljobTitle)
+        // Api for deletejobTitle
+                         router.delete('/deletejobTitle/:jobtitle_id', userController.deletejobTitle)
+
+                                           /* Phyciomatric testing */
+        // Api for add psychometric_questions
+                        router.post('/psychometric_questions', userController.psychometric_questions)
+         // Api for getAll_psychometric_questions
+                        router.get('/getAll_psychometric_questions', userController.getAll_psychometric_questions)
+
                                        /* POST job section */
         // Api for postJob
                 router.post('/postJob/:empId', userController.postJob)

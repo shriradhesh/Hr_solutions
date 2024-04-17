@@ -15,6 +15,8 @@ const cms_job_posting_sectionModel = require('../model/cms_job_posting_section1'
 const cms_need_any_job_section_Model = require('../model/cms_need_any_job_section') 
 const cms_postjobModel = require('../model/cms_post_your_job')
 const cms_jobMarketData = require('../model/cms_job_market_data')
+const jobTitleModel = require('../model/jobTitle')
+const PsychometricModel = require('../model/Psychometric_testing')
 
 
 
@@ -361,6 +363,250 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
         }
    } 
 
+                                        /* job Title section */
+            // API for add stop in Stop Schema
+
+ const addJobTitle = async (req, res) => {
+    const { jobTitle } = req.body;
+  
+    try {
+      const requiredFields = ["jobTitle"];
+  
+      for (const field of requiredFields) {
+        if (!req.body[field]) {
+          return res
+            .status(400)
+            .json({
+              message: `Missing ${field.replace("_", " ")} field`,
+              success: false,
+            });
+        }
+      }
+  
+      // Check for jobTitle
+      const existjobTitle = await jobTitleModel.findOne({ jobTitle });
+  
+      if (existjobTitle) {
+        return res
+          .status(400)
+          .json({ message: " jobTitle already exist ", success: false });
+      }
+  
+      const newjobTitle = new jobTitleModel({
+        jobTitle: jobTitle,
+      });
+      const savedjobTitle = await newjobTitle.save();
+  
+      return res
+        .status(200)
+        .json({
+          success: true,
+          message: `jobTitle added successfully `,
+          stop: savedjobTitle,
+        });
+    } catch (error) {
+      console.error(error);
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message: `server error`,
+          error_message: error,
+        });
+    }
+  };
+
+  // get all jobTitle form the jobTitle Schema
+
+  const alljobTitle = async (req, res) => {
+    try {
+        // Fetch all jobTitles from the database
+        const jobTitles = await jobTitleModel.find({});
+        
+        // Check if jobTitles array is empty
+        if (jobTitles.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "No jobTitles found",
+            });
+        } else {
+            // Map jobTitles to required format
+            const formattedJobTitles = jobTitles.map(jobT => ({
+                jobTitle: jobT.jobTitle,
+                _id: jobT._id
+            }));
+            
+            // Send formatted jobTitles as response
+            res.status(200).json({
+                success: true,
+                message: "All jobTitles",
+                details: formattedJobTitles
+            });
+        }
+    } catch (error) {
+        // Handle server error
+        res.status(500).json({ success: false, message: "Server error", error_message: error.message });
+    }
+};
+
+
+  // Delete a particular jobTitle by jobtitle_id
+
+const deletejobTitle = async (req, res) => {
+    try {
+      const jobtitle_id = req.params.jobtitle_id;
+  
+      // Check for route existence
+      const existingjobTitle = await jobTitleModel.findOne({ _id: jobtitle_id });
+      if (!existingjobTitle) {
+        return res.status(404).json({ success: false, error: `jobTitle not found` });
+      }
+  
+      // Delete the jobTitle from the database
+      await existingjobTitle.deleteOne();
+  
+      res
+        .status(200)
+        .json({ success: true, message: "jobTitle deleted successfully" });
+    } catch (error) {
+      console.error(error);
+      res
+        .status(500)
+        .json({ success: false, message: "server error", error_message : error.message });
+    }
+  };
+
+                                        /* Psychometric Testing Section   */
+
+
+        // Api for add psychometric test questions
+     
+        const psychometric_questions = async (req, res) => {
+            try {
+                const { questions, job_title } = req.body;
+        
+                // Check if job_title is provided
+                if (!job_title) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'job_title is required'
+                    });
+                }
+        
+                // Check if questions array is provided and not empty
+                if (!Array.isArray(questions) || questions.length === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Questions array is required and must not be empty'
+                    });
+                }
+        
+                // Create a new psychometric test for the job title
+                const newPsychometric = new PsychometricModel({ job_title, questions: [] });
+        
+                // Add each question to the array
+                for (const questionObj of questions) {
+                    // Ensure questionObj is not empty
+                    if (!questionObj) {
+                        continue; // Skip empty question objects
+                    }
+        
+                    // Destructure questionObj
+                    const { question, options, correctAnswerIndex } = questionObj;
+        
+                    // Check if the question exists and is truthy
+                    if (!question) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Question is required for each question'
+                        });
+                    }
+        
+                    // Check if the options property exists, is an array, and has at least one element
+                    if (!Array.isArray(options) || options.length === 0) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Options are required for each question and must be a non-empty array'
+                        });
+                    }
+        
+                    // Check if the correctAnswerIndex property exists and is not undefined
+                    if (correctAnswerIndex === undefined) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Correct answer index is required for each question'
+                        });
+                    }
+        
+                    // Push the new question object to the array
+                    newPsychometric.questions.push({ question, options, correctAnswerIndex });
+                }
+        
+                // Save the new psychometric test
+                await newPsychometric.save();
+        
+                // Return success response
+                res.status(200).json({
+                    success: true,
+                    message: 'New psychometric test created successfully',
+                    psychometric: newPsychometric
+                });
+            } catch (error) {
+                console.error(error);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        }
+        
+        
+        
+        // get all psychometric_questions options for particular 
+        
+        const getAll_psychometric_questions = async(req , res)=>{
+               try {
+                      const { job_title} = req.body
+                    // check for job_title
+                    if(!job_title)
+                    {
+                        return res.status(400).json({
+                             success : false ,
+                             message : 'job title required'
+                        })
+                    }
+
+                     // check for all psychometric_questions
+
+                     const checkpsychometric_Q = await PsychometricModel.find({
+                        job_title: { $regex: job_title, $options: 'i' },
+                     })
+
+                     if(!checkpsychometric_Q)
+                     {
+                        return res.status(400).json({
+                             success : false ,
+                             message : `no psychometric Test found for Job_Title${job_title}`
+                        })
+                     }
+
+                     return res.status(200).json({
+                         success : true ,
+                         message : `psychometric Test for Job_Title${job_title}`,
+                         options : checkpsychometric_Q
+                                   
+                     })
+               } catch (error) {
+                return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+                })
+               }
+        }
+        
+
           
                                                  /* Job Section */
         // Api for post job
@@ -382,7 +628,9 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
                     skills, 
                     Experience,
                     company_address,
-                    template_type
+                    template_type,
+                    isPsychometricTest
+
                 } = req.body;
                        
               
@@ -407,7 +655,17 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
                 const formattedEndDate = new Date(endDate);
 
 
-                
+                                // Check if the jobTitle exists in the jobTitleMOdel
+                const existingjobTitle = await jobTitleModel.findOne({ jobTitle : job_title });
+
+                if (!existingjobTitle) {
+                return res
+                    .status(400)
+                    .json({
+                    success: false,
+                    message: `job_title '${job_title}' does not exist in job_title Database`,
+                    });
+                }
         
                 const existJob = await jobModel.findOne({
                     job_title,
@@ -421,9 +679,27 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
                         message: 'Similar job already exists within the specified time period'
                     });
                 }
+
+                     // check for psychometric testing 
+
+                    // Generate a random Hotel_Id
+                function generateRandomNumber(length) {
+                    let result = '';
+                    const characters = '0123456789';
+                    const charactersLength = characters.length;
         
+                    for (let i = 0; i < length; i++) {
+                        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+                    }
+                    return result;
+                }
+        
+                const randomNumber = generateRandomNumber(3);
+                const finalString = `JOB${randomNumber}`; 
+
                 const newJob = new jobModel({
                     emp_Id: empId,
+                    jobId : finalString,
                     job_title,
                     job_Description,
                     job_type,
@@ -440,7 +716,8 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
                     employee_email: employee.email,
                     phone_no: employee.phone_no,
                     company_Industry: employee.company_industry,
-                    status: 1
+                    status: 1,
+                    isPsychometricTest
                 });
         
                 await newJob.save();
@@ -461,7 +738,8 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
                 return res.status(200).json({
                     success: true,
                     message: 'Job posted successfully',
-                    jobId: newJob._id
+                    jobId: newJob.jobId,
+                    isPsychometricTest : isPsychometricTest
                 });
             } catch (error) {
                 console.error(error);
@@ -506,7 +784,7 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
             const jobsData = emp_jobs.map(job => {
                 const salary_pay = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
                 return {
-                    _id: job._id,
+                     jobId : job.jobId,
                     job_title: job.job_title,
                     company_name: job.company_name,               
                     Number_of_emp_needed: job.Number_of_emp_needed,
@@ -562,7 +840,7 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
                         }
 
                         // check for job
-                        const job = await jobModel.findOne({ _id : jobId })
+                        const job = await jobModel.findOne({ jobId : jobId })
                         if(!job)
                         {
                             return res.status(400).json({
@@ -596,7 +874,7 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
                              message : 'Female candidate Profile',
                              Female_jobseekerCount : Female_jobseeker.length,
                              Details: Female_jobseeker.map((candidate) => ({
-                                _id : candidate._id,
+                               jobId : candidate.jobId,
                                 first_Name: candidate.first_Name,
                                 last_Name: candidate.last_Name,
                                 user_Email: candidate.user_Email,
@@ -639,7 +917,7 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
                 }
 
                 // check for job
-                const job = await jobModel.findOne({ _id : jobId })
+                const job = await jobModel.findOne({ jobId : jobId })
                 if(!job)
                 {
                     return res.status(400).json({
@@ -716,7 +994,7 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
             }
     
             // Find the job
-            const job = await jobModel.findOne({ _id: jobId });
+            const job = await jobModel.findOne({ jobId : jobId });
     
             // If job not found
             if (!job) {
@@ -826,7 +1104,7 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
                 }
             }                   
                     return {
-                        _id: job._id,
+                        jobId: job.jobId,
                         job_title: job.job_title,
                         company_name: job.company_name,               
                         Number_of_emp_needed: job.Number_of_emp_needed,
@@ -882,8 +1160,8 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
                                     if (expiredJob.length > 0) {
                                       await jobModel.updateMany(
                                         {
-                                          _id: {
-                                            $in: expiredJob.map((job) => job._id),
+                                          jobId: {
+                                            $in: expiredJob.map((job) => job.jobId),
                                           },
                                         },
                                         {
@@ -1018,7 +1296,7 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
                     
                             // Check for job
                             const job = await jobModel.findOne({
-                                _id: jobId,
+                                jobId: jobId,
                                 status : 1
                             });
                             if (!job) {
@@ -1556,5 +1834,6 @@ module.exports = {
     getAll_Jobs ,searchJob , apply_on_job , get_Female_jobseeker_profile , get_jobseeker_profile , getNotification_emp,
     seenNotification, unseenNotificationCount , deleteJob ,
     getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts , deleteCandidate,
-    cms_getJobs_posted_procedure_section1 , cms_get_need_any_job_section ,get_cms_post_your_job , cms_getjob_market_data
-}
+    cms_getJobs_posted_procedure_section1 , cms_get_need_any_job_section ,get_cms_post_your_job , cms_getjob_market_data,
+    addJobTitle , alljobTitle , deletejobTitle , psychometric_questions , getAll_psychometric_questions
+} 

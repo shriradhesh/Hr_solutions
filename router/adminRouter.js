@@ -42,6 +42,8 @@ const Admin = require('../model/Admin_and_staffs')
                      router.post('/sendNotification_to_allClient', Admin_and_staffController.sendNotification_to_allClient)
         // Api for send notification
                      router.post('/send_notification/:superAdmin_Id', Admin_and_staffController.send_notification)
+                            
+                                       
 
 
                                               /* JOb Section */

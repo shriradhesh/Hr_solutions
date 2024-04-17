@@ -1,12 +1,16 @@
 const mongoose = require('mongoose');
 
 const jobSchema = new mongoose.Schema({
+     jobId : {
+           type : String
+     },
     job_title: {
         type: String
     },
     company_name: {
         type: String
     },
+    
     emp_Id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'employeeModel'
@@ -73,9 +77,17 @@ const jobSchema = new mongoose.Schema({
     
     status : {
         type : Number,
-        enum : [1 , 0],
+        enum : [2 , 1 , 0],
         default : 1
     },
+    isPsychometricTest : {
+        type: Boolean,
+        default: false
+    },
+    psychometric_id : {
+        type : mongoose.Schema.Types.ObjectId ,
+        ref : "PsychometricModel"
+  },
     
 });
 

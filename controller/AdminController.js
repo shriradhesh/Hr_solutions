@@ -947,7 +947,7 @@ const cmsBlogsection2Model = require('../model/cmsBlogSecion2')
 
               // check for jobId
                     const checkJob = await jobModel.findOne({
-                        _id : jobId
+                        jobId : jobId
                     })
 
                     if(!checkJob)
@@ -1191,7 +1191,7 @@ const cmsBlogsection2Model = require('../model/cmsBlogSecion2')
      // APi for get all candidates
      const getAll_candidates = async (req, res) => {
         try {
-            const { gender, job_Heading, company_name, relevant_experience, Total_experience } = req.query;
+            const { gender, job_Heading, company_name, relevant_experience, Total_experience , candidate_location , Highest_Education} = req.query;
             let filter = {};
             let filter1 = {};
     
@@ -1213,6 +1213,12 @@ const cmsBlogsection2Model = require('../model/cmsBlogSecion2')
             if (Total_experience) {
                 filter1.Total_experience = Total_experience;
             }
+            if (candidate_location) {
+                filter1.city = candidate_location;
+            }
+            if (Highest_Education) {
+                filter1.Highest_Education = Highest_Education;
+            }
     
             // Retrieve all candidates based on the filters
             const all_candidates = await appliedjobModel.find({ ...filter, ...filter1 });
@@ -1229,7 +1235,7 @@ const cmsBlogsection2Model = require('../model/cmsBlogSecion2')
             const candidateJobIds = all_candidates.map(candidate => candidate.jobId);
     
             // Retrieve jobs related to the candidateJobIds
-            const checkJobs = await jobModel.find({ _id: { $in: candidateJobIds } });
+            const checkJobs = await jobModel.find({ jobId: { $in: candidateJobIds } });
     
             // Check if jobs were found
             if (!checkJobs || checkJobs.length === 0) {
@@ -1242,7 +1248,7 @@ const cmsBlogsection2Model = require('../model/cmsBlogSecion2')
             // Create a map of job IDs to company names
             const jobCompanyMap = {};
             checkJobs.forEach(job => {
-                jobCompanyMap[job._id.toString()] = job.company_name;
+                jobCompanyMap[job.jobId.toString()] = job.company_name;
             });
     
             // Create response data with candidate details and company names
@@ -1259,7 +1265,8 @@ const cmsBlogsection2Model = require('../model/cmsBlogSecion2')
                 jobSeeker_status: candidate.jobSeeker_status,
                 candidate_resume: candidate.uploadResume,
                 relevant_experience: candidate.job_experience,
-                Total_experience: candidate.Total_experience
+                Total_experience: candidate.Total_experience,
+                Highest_Education : candidate.Highest_Education
             }));
     
             // Respond with the list of candidates details
@@ -1267,9 +1274,7 @@ const cmsBlogsection2Model = require('../model/cmsBlogSecion2')
                 success: true,
                 message: 'Candidate Details',
                 candidates: responseData
-            })
-           
-    
+            })             
     
         } catch (error) {
             return res.status(500).json({
@@ -1389,7 +1394,7 @@ const active_inactive_job = async (req, res) => {
 
         // Check for Job existence
         const job = await jobModel.findOne({
-            _id: jobId
+            jobId: jobId
         });
 
         if (!job) {
@@ -2459,7 +2464,7 @@ const active_inactive_job = async (req, res) => {
                }
                     
                
-           /* job posting procedure section  ----job market data ?? */
+           /* job posting procedure section  ---- job market data ?? */
 
            const cms_job_market_data_section = async (req, res) => {
             try {
@@ -2512,6 +2517,7 @@ const active_inactive_job = async (req, res) => {
         
                     // Add logo 
                     const logo = req.file ? req.file.filename : null;
+                         
         
                     // Add new Data
                     const newData = new cms_jobMarketData({

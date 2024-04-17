@@ -18,7 +18,7 @@ const cmsBlogsectiontwo = new mongoose.Schema({
               type : String
            },
            comment : {
-                 type : Number
+                 type : String
            }
 },
    {timestamps : true })

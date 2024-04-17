@@ -329,3 +329,89 @@ Documentation and Support:
 Provide comprehensive documentation for API endpoints, including example requests and responses.
 Implement a support ticketing system for users to report issues or request assistance.
 Offer user guides or tutorials to help users make the most of the platform's features
+
+
+
+-------------------------------------------------
+
+const active_inactive_job = async (req, res) => {
+    try {
+        const jobId = req.params.jobId;
+
+        // Check for jobId
+        if (!jobId) {
+            return res.status(400).json({
+                success: false,
+                message: 'jobId Required'
+            });
+        }
+
+        // Check for Job existence
+        const job = await jobModel.findOne({
+            _id: jobId
+        });
+
+        if (!job) {
+            return res.status(400).json({
+                success: false,
+                message: 'Job not exist'
+            });
+        }
+
+        let newStatus = 1; // Default to active
+
+        // Toggle job status
+        switch (job.status) {
+            case 1:
+                newStatus = 0; // Inactive
+                break;
+            case 0:
+                newStatus = 2; // Job Requirement Fulfilled
+                break;
+            case 2:
+                newStatus = 0; // Inactive
+                break;
+            default:
+                newStatus = 1; // Default to active if not already set
+        }
+
+        // Update job status
+        job.status = newStatus;
+
+        // Save the updated job status
+        await job.save();
+
+        let message = '';
+        switch (newStatus) {
+            case 1:
+                message = 'Activated';
+                break;
+            case 0:
+                message = 'Inactivated';
+                break;
+            case 2:
+                message = 'Job requirement fulfilled';
+                break;
+            default:
+                message = 'Unknown Status';
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: `${message} successfully`,
+            status: newStatus
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+
+
+
+
+

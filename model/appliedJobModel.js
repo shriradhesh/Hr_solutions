@@ -27,7 +27,7 @@ const appliedJobSchema = mongoose.Schema({
         type: String
     },
     jobId: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: 'jobModel'
     },
     Salary: {
