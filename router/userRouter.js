@@ -29,7 +29,7 @@ const userController = require('../controller/userController')
         // Api for add psychometric_questions
                         router.post('/psychometric_questions', userController.psychometric_questions)
          // Api for getAll_psychometric_questions
-                        router.get('/getAll_psychometric_questions', userController.getAll_psychometric_questions)
+                        router.post('/getAll_psychometric_questions', userController.getAll_psychometric_questions)
 
                                        /* POST job section */
         // Api for postJob
@@ -44,6 +44,8 @@ const userController = require('../controller/userController')
                 router.delete('/deleteJob/:jobId', userController.deleteJob)
          // Api for deleteCandidate
                 router.delete('/deleteCandidate/:candidateId', userController.deleteCandidate)
+        // Api for export_candidate
+                router.get('/export_candidate/:gender', userController.export_candidate)
 
         
                                       /* JOb Seeker section */

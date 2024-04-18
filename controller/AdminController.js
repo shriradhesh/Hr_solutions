@@ -1383,7 +1383,7 @@ const cmsBlogsection2Model = require('../model/cmsBlogSecion2')
 const active_inactive_job = async (req, res) => {
     try {
         const jobId = req.params.jobId;
-
+        const newStatus = req.body.newStatus; 
         // Check for jobId
         if (!jobId) {
             return res.status(400).json({
@@ -1404,15 +1404,42 @@ const active_inactive_job = async (req, res) => {
             });
         }
 
-        // Toggle job status
-        job.status = job.status === 1 ? 0 : 1;
+        // Validate new status
+        if (![0, 1, 2 , 3 ].includes(newStatus)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid status value'
+            });
+        }
+
+        // Update job status
+        job.status = newStatus;
 
         // Save the updated job status
         await job.save();
 
+        let message = '';
+        switch (newStatus) {
+            case 1:
+                message = 'scheduled';
+                break;
+            case 0:
+                message = 'pending';
+                break;
+            case 2:
+                message = 'Job requirement fulfilled';
+                break;
+            case 3:
+                 message = 'Inactive'
+                 break;
+            default:
+                message = 'Unknown Status';
+        }
+
         return res.status(200).json({
             success: true,
-            message: `${job.status ? 'Activated' : 'Inactivated'} successfully`
+            message: `${message}`,
+            status: newStatus
         });
     } catch (error) {
         return res.status(500).json({
@@ -1422,6 +1449,7 @@ const active_inactive_job = async (req, res) => {
         });
     }
 };
+
 
 
         // APi for get all female Candidate Resume

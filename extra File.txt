@@ -358,21 +358,21 @@ const active_inactive_job = async (req, res) => {
             });
         }
 
-        let newStatus = 1; // Default to active
+        let newStatus = 0; // Default to inactive
 
         // Toggle job status
         switch (job.status) {
-            case 1:
-                newStatus = 0; // Inactive
-                break;
             case 0:
+                newStatus = 1; // Active
+                break;
+            case 1:
                 newStatus = 2; // Job Requirement Fulfilled
                 break;
             case 2:
                 newStatus = 0; // Inactive
                 break;
             default:
-                newStatus = 1; // Default to active if not already set
+                newStatus = 0; // Default to inactive if not already set
         }
 
         // Update job status
@@ -409,6 +409,7 @@ const active_inactive_job = async (req, res) => {
         });
     }
 };
+
 
 
 

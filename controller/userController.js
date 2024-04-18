@@ -17,6 +17,7 @@ const cms_postjobModel = require('../model/cms_post_your_job')
 const cms_jobMarketData = require('../model/cms_job_market_data')
 const jobTitleModel = require('../model/jobTitle')
 const PsychometricModel = require('../model/Psychometric_testing')
+const ExcelJs = require("exceljs");
 
 
 
@@ -629,7 +630,8 @@ const deletejobTitle = async (req, res) => {
                     Experience,
                     company_address,
                     template_type,
-                    isPsychometricTest
+                    isPsychometricTest,
+                    psychometric_Test
 
                 } = req.body;
                        
@@ -716,8 +718,9 @@ const deletejobTitle = async (req, res) => {
                     employee_email: employee.email,
                     phone_no: employee.phone_no,
                     company_Industry: employee.company_industry,
-                    status: 1,
-                    isPsychometricTest
+                    status: 0,
+                    isPsychometricTest  ,
+                    psychometric_Test : psychometric_Test
                 });
         
                 await newJob.save();
@@ -874,7 +877,8 @@ const deletejobTitle = async (req, res) => {
                              message : 'Female candidate Profile',
                              Female_jobseekerCount : Female_jobseeker.length,
                              Details: Female_jobseeker.map((candidate) => ({
-                               jobId : candidate.jobId,
+                                _id : candidate._id,
+                                jobId : candidate.jobId,
                                 first_Name: candidate.first_Name,
                                 last_Name: candidate.last_Name,
                                 user_Email: candidate.user_Email,
@@ -953,7 +957,9 @@ const deletejobTitle = async (req, res) => {
                      message : 'candidate Profiles',
                      Other_jobseekerCount : Other_jobseeker.length,
                      Details: Other_jobseeker.map((candidate) => ({
+
                         _id : candidate._id,
+                        jobId : candidate.jobId,
                         first_Name: candidate.first_Name,
                         last_Name: candidate.last_Name,
                         user_Email: candidate.user_Email,
@@ -1029,6 +1035,7 @@ const deletejobTitle = async (req, res) => {
         }
     };
 
+        
  // Api for delete particular candidate/ jobseeker for the job'
           const deleteCandidate = async( req , res)=>{
                   try {
@@ -1069,6 +1076,138 @@ const deletejobTitle = async (req, res) => {
                   }
           }
     
+          // Api to export candidate with there jobseeker_status
+
+          const export_candidate = async (req, res) => {
+            try {
+                const { jobSeeker_status } = req.query;
+                const { gender } = req.params;
+        
+                // Define status labels
+                const statusLabels = {
+                    5: 'Completed',
+                    6: 'Shortlisted',
+                    7: 'Rejected'
+                };
+        
+                // Check for job seeker status
+                if (!jobSeeker_status || !statusLabels[jobSeeker_status]) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Invalid or missing job seeker status value'
+                    });
+                }
+        
+                // Check for gender
+                if (!gender) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Missing gender'
+                    });
+                }
+        
+                // Fetch candidates based on gender
+                const candidates = await appliedjobModel.find({ gender });
+        
+                // Filter candidates by job seeker status
+                const filteredCandidates = candidates.filter(candidate => candidate.jobSeeker_status == jobSeeker_status);
+        
+                // Create Excel workbook and worksheet
+                const workbook = new ExcelJs.Workbook();
+                const worksheet = workbook.addWorksheet("candidates");
+        
+                // Define the Excel Header
+                worksheet.columns = [
+                    {
+                        header: "First Name",
+                        key: "first_Name",
+                    },
+                    {
+                        header: "Last Name",
+                        key: "last_Name",
+                    },
+                    {
+                        header: "User Email",
+                        key: "user_Email",
+                    },
+                    {
+                        header: "City",
+                        key: "city",
+                    },
+                    {
+                        header: "Phone Number",
+                        key: "phone_no",
+                    },
+                    {
+                        header: "Status",
+                        key: "jobSeeker_status",
+                    },
+                    {
+                        header: "Gender",
+                        key: "gender",
+                    },
+                    {
+                        header: "Job Heading",
+                        key: "job_Heading",
+                    },
+                    {
+                        header: "Job Id",
+                        key: "jobId",
+                    },
+                    {
+                        header: "Highest Education",
+                        key: "Highest_Education",
+                    },
+                    {
+                        header: "Total Experience",
+                        key: "Total_experience",
+                    },
+                    {
+                        header: "Resume",
+                        key: "uploadResume",
+                    },
+                ];
+        
+                // Add filtered candidates data to the worksheet
+                filteredCandidates.forEach((candidate) => {
+                    worksheet.addRow({
+                        first_Name: candidate.first_Name,
+                        last_Name: candidate.last_Name,
+                        user_Email: candidate.user_Email,
+                        city: candidate.city,
+                        phone_no: candidate.phone_no,
+                        jobSeeker_status: statusLabels[jobSeeker_status],
+                        gender: candidate.gender,
+                        job_Heading: candidate.job_Heading,
+                        jobId: candidate.jobId,
+                        Highest_Education: candidate.Highest_Education,
+                        Total_experience: candidate.Total_experience,
+                        uploadResume: candidate.uploadResume,
+                    });
+                });
+        
+                // Set response headers for downloading the Excel file
+                res.setHeader(
+                    "Content-Type",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                );
+        
+                res.setHeader("Content-Disposition", `attachment; filename=${gender}_${statusLabels[jobSeeker_status]}_candidates.xlsx`);
+        
+                // Generate and send the Excel File as a response
+                await workbook.xlsx.write(res);
+        
+                // End the response
+                res.end();
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({ error: "server error" });
+            }
+        };
+        
+        
+        
+        
     
                                                              /*Job Seeker sections */
         // Api for get all Jobs
@@ -1250,7 +1389,7 @@ const deletejobTitle = async (req, res) => {
         
         
 
-                                         /* Applied job section */
+                                                     /* Applied job section */
 
         // APi for apply on job
 
@@ -1835,5 +1974,5 @@ module.exports = {
     seenNotification, unseenNotificationCount , deleteJob ,
     getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts , deleteCandidate,
     cms_getJobs_posted_procedure_section1 , cms_get_need_any_job_section ,get_cms_post_your_job , cms_getjob_market_data,
-    addJobTitle , alljobTitle , deletejobTitle , psychometric_questions , getAll_psychometric_questions
+    addJobTitle , alljobTitle , deletejobTitle , psychometric_questions , getAll_psychometric_questions , export_candidate
 } 
