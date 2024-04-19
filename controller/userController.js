@@ -484,7 +484,7 @@ const deletejobTitle = async (req, res) => {
      
         const psychometric_questions = async (req, res) => {
             try {
-                const { questions, job_title } = req.body;
+                const { job_title, question, options, correctAnswerIndex } = req.body;               
         
                 // Check if job_title is provided
                 if (!job_title) {
@@ -494,54 +494,35 @@ const deletejobTitle = async (req, res) => {
                     });
                 }
         
-                // Check if questions array is provided and not empty
-                if (!Array.isArray(questions) || questions.length === 0) {
+                // Check if question is provided and is a non-empty string
+                if (!question) {
                     return res.status(400).json({
                         success: false,
-                        message: 'Questions array is required and must not be empty'
+                        message: 'Question Required'
+                    });
+                }
+        
+                // Check if options array is provided and is not empty
+                if (!Array.isArray(options) || options.length === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Options array is required '
+                    });
+                }
+        
+                // Check if correctAnswerIndex is provided and is a number
+                if (typeof correctAnswerIndex !== 'number') {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Correct answer index must be a number'
                     });
                 }
         
                 // Create a new psychometric test for the job title
                 const newPsychometric = new PsychometricModel({ job_title, questions: [] });
         
-                // Add each question to the array
-                for (const questionObj of questions) {
-                    // Ensure questionObj is not empty
-                    if (!questionObj) {
-                        continue; // Skip empty question objects
-                    }
-        
-                    // Destructure questionObj
-                    const { question, options, correctAnswerIndex } = questionObj;
-        
-                    // Check if the question exists and is truthy
-                    if (!question) {
-                        return res.status(400).json({
-                            success: false,
-                            message: 'Question is required for each question'
-                        });
-                    }
-        
-                    // Check if the options property exists, is an array, and has at least one element
-                    if (!Array.isArray(options) || options.length === 0) {
-                        return res.status(400).json({
-                            success: false,
-                            message: 'Options are required for each question and must be a non-empty array'
-                        });
-                    }
-        
-                    // Check if the correctAnswerIndex property exists and is not undefined
-                    if (correctAnswerIndex === undefined) {
-                        return res.status(400).json({
-                            success: false,
-                            message: 'Correct answer index is required for each question'
-                        });
-                    }
-        
-                    // Push the new question object to the array
-                    newPsychometric.questions.push({ question, options, correctAnswerIndex });
-                }
+                // Push the new question object to the array
+                newPsychometric.questions.push({ question, options, correctAnswerIndex });
         
                 // Save the new psychometric test
                 await newPsychometric.save();
@@ -562,7 +543,101 @@ const deletejobTitle = async (req, res) => {
             }
         }
         
+        // Api for get Detials of psychometric_questions
+             const getquestions = async( req , res )=>{
+                    try {
+                        const psychometric_questions_Id = req.params.psychometric_questions_Id;
+                        // check for psychometric_questions_Id
+                        if(!psychometric_questions_Id)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'psychometric_questions_Id Required'
+                            })
+                        }
+
+                        // check for details
+
+                        const cd = await PsychometricModel.findOne({
+                                  _id : psychometric_questions_Id
+                        })
+
+                        if(!cd)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'no Details found'
+                            })
+                        }
+
+                           return res.status(200).json({
+                                success : true ,
+                                message : 'Questions Details',
+                                Question : cd.questions
+                           })
+                    } catch (error) {
+                         return res.status(500).json({
+                             success : false ,
+                             message : 'server error',
+                             error_message : error.message
+                         })
+                    }
+             }
+    // Api for add Question on particular one
+    const addQuestion = async (req, res) => {
         
+        try {
+                    const psychometric_questions_Id = req.params.psychometric_questions_Id;
+                const { question, options, correctAnswerIndex } = req.body;          
+            
+                
+    
+            const psychometric_question = await PsychometricModel.findOne({ _id: psychometric_questions_Id });
+    
+            if (!psychometric_question) {
+                return res.status(400).json({
+                    success: false,
+                    message: `psychometric_questions not found with the psychometric_questions ${psychometric_questions_Id}`,
+                });
+            }
+    
+            // Check if the question already exists
+            const duplicateQuestion = psychometric_question.questions.find(
+                (questionObj) => questionObj.question === question
+            );
+    
+            if (duplicateQuestion) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Question '${question}' already exists in the psychometric_question array`,
+                });
+            }
+    
+            // Add the new question to the array
+            psychometric_question.questions.push({
+                question,
+                options,
+                correctAnswerIndex,
+            });
+    
+            // Save the updated psychometric_question
+            await psychometric_question.save();
+    
+            return res.status(200).json({
+                success: true,
+                message: "Question added successfully",
+            });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({
+                success: false,
+                message: "server error",
+                error: error.message,
+            });
+        }
+    };
+    
+    
         
         // get all psychometric_questions options for particular 
         
@@ -1974,5 +2049,6 @@ module.exports = {
     seenNotification, unseenNotificationCount , deleteJob ,
     getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts , deleteCandidate,
     cms_getJobs_posted_procedure_section1 , cms_get_need_any_job_section ,get_cms_post_your_job , cms_getjob_market_data,
-    addJobTitle , alljobTitle , deletejobTitle , psychometric_questions , getAll_psychometric_questions , export_candidate
+    addJobTitle , alljobTitle , deletejobTitle , psychometric_questions , getAll_psychometric_questions , export_candidate,
+    addQuestion , getquestions
 } 

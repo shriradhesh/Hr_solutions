@@ -28,6 +28,10 @@ const userController = require('../controller/userController')
                                            /* Phyciomatric testing */
         // Api for add psychometric_questions
                         router.post('/psychometric_questions', userController.psychometric_questions)
+        // Api for getquestions
+                        router.get('/getquestions/:psychometric_questions_Id', userController.getquestions)
+        // Api for addQuestion
+                        router.post('/addQuestion/:psychometric_questions_Id', userController.addQuestion)
          // Api for getAll_psychometric_questions
                         router.post('/getAll_psychometric_questions', userController.getAll_psychometric_questions)
 
