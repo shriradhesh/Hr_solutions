@@ -24,7 +24,8 @@ const ExcelJs = require("exceljs");
 
 
 
-                                        /* employee Section */
+
+                                        /* employer Section */
 
 // Api for user Signup
      
@@ -1338,7 +1339,13 @@ const deletejobTitle = async (req, res) => {
                         company_Industry: job.company_Industry,
                         job_photo: job.job_photo,
                         status: job.status,
-                        empId : job.emp_Id
+                        empId : job.emp_Id,
+                        isPsychometricTest : job.isPsychometricTest,
+                        psychometric_Test : job.psychometric_Test
+
+
+
+
                     };
                 });
         
@@ -1564,7 +1571,6 @@ const deletejobTitle = async (req, res) => {
                                 message: 'Only PDF files are allowed for resume upload'
                             });
                         }
-
 
                             // Add new data
                             const newData = new appliedjobModel({
@@ -2041,8 +2047,6 @@ const cms_getjob_market_data = async (req, res) => {
         });
     }
 }
-
-
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
     getAll_Jobs ,searchJob , apply_on_job , get_Female_jobseeker_profile , get_jobseeker_profile , getNotification_emp,

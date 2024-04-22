@@ -22,6 +22,7 @@ const cms_postjobModel = require('../model/cms_post_your_job')
 const cms_jobMarketData = require('../model/cms_job_market_data')
 const cms_Blogsection1Model = require('../model/cmsBlogsection1')
 const cmsBlogsection2Model = require('../model/cmsBlogSecion2')
+const cmsHeadquarte_model = require('../model/cmsHeadquarter')
 
 
 
@@ -2902,6 +2903,115 @@ const active_inactive_job = async (req, res) => {
     };
     
 
+                                               /* cms Headquarter section */
+         // Api for cms Headquarter
+         const cmsHeadquarter = async (req, res) => {
+            try {
+                const adminId = req.params.adminId;
+                const { company_address, location } = req.body;
+        
+                // Check if adminId is provided
+                if (!adminId) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Admin Id required'
+                    });
+                }
+        
+                // Check if data already exists
+                let existingData = await cmsHeadquarte_model.findOne({ AdminId: adminId });
+        
+                if (existingData) {
+                    // Update existing data
+                    existingData.company_address = company_address;
+                    existingData.location = location;
+                    await existingData.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Details updated successfully'
+                    });
+                } else {
+                    // Check if required fields are provided
+                    if (!company_address) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Company address required'
+                        });
+                    }
+        
+                    if (!location) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Location required'
+                        });
+                    }
+        
+                    // Create new data
+                    const newData = new cmsHeadquarte_model({
+                        AdminId: adminId,
+                        company_address,
+                        location
+                    });
+        
+                    await newData.save();
+                    return res.status(200).json({
+                        success: true,
+                        message: 'New details created'
+                    });
+                }
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+        
+            
+        
+    // Api for get cms Headquarter details
+        const getcms_headquarter = async( req , res)=>{
+                     try {
+                             const adminId = req.params.adminId
+                        // check for adminId
+                        if(!adminId)
+                        {
+                            return res.status(400).json({ 
+                               success : false ,
+                               message : 'adminId required'
+                            })
+                        }
+
+                           // check for details
+
+                           const checkDetails = await cmsHeadquarte_model.findOne({
+                                  AdminId : adminId
+                           })
+                             if(!checkDetails)
+                             {
+                                return res.status(400).json({
+                                      success : false ,
+                                      message : 'Details not found'
+                                })
+                             }
+
+                             return res.status(200).json({
+                                 success : true ,
+                                 message : 'Details',
+                                 Details : checkDetails
+                             })
+                     } catch (error) {
+                        return res.status(500).json({
+                             success : false ,
+                             message : 'server error',
+                             error_message : error.message
+                        })
+                     }
+        }
+    
+
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
     active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate ,
@@ -2914,6 +3024,6 @@ module.exports = {
      cms_job_posting_section1 , getJobs_posted_procedure_section1 , cms_need_any_job_section,
      get_cms_need_any_job_section , cms_post_your_job_section , get_cms_post_your_job , cms_job_market_data_section,
      get_cms_job_market_data , cms_blog_section1 , getcmsBlog_section1 ,cmsBlog_section2 , getBlogDetails ,
-     update_cms_blog , deleteBlog
+     update_cms_blog , deleteBlog , cmsHeadquarter , getcms_headquarter
      
 }

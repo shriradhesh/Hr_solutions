@@ -54,7 +54,7 @@ const Admin = require('../model/Admin_and_staffs')
                      router.get('/getAllFemale_Candidate', Admin_and_staffController.getAllFemale_Candidate)
         // APi for candidate_recruitment_process
                      router.post('/candidate_recruitment_process/:candidateId', Admin_and_staffController.candidate_recruitment_process)
-
+        // 
                                              /* ATS Section */
         // Api for get All_candidates
                      router.get('/getAll_candidates', Admin_and_staffController.getAll_candidates)  
@@ -122,6 +122,10 @@ const Admin = require('../model/Admin_and_staffs')
                 router.put('/update_cms_blog/:blogId', upload.single('photo'),  Admin_and_staffController.update_cms_blog)
     // Api for deleteBlog
                 router.delete('/deleteBlog/:blogId', Admin_and_staffController.deleteBlog)
+    // Api for cmsHeadquarter
+                router.post('/cmsHeadquarter/:adminId', Admin_and_staffController.cmsHeadquarter)
+    // Api for getcms_headquarter
+                router.get('/getcms_headquarter/:adminId', Admin_and_staffController.getcms_headquarter)
      
              
 
