@@ -4,7 +4,7 @@ const multer = require('multer')
 const upload = require('../upload')
 const userController = require('../controller/userController')
 
-                                      /* Employee Section */
+                                      /* Employer Section */
         // APi for employee SignUp
 
                router.post('/employeeSignup', upload.single('profileImage'), userController.employeeSignup )
@@ -16,6 +16,25 @@ const userController = require('../controller/userController')
                 router.put('/updateEmp/:empId', upload.single('profileImage'), userController.updateEmp)
         // APi for emp_ChangePassword
                 router.post('/emp_ChangePassword/:empId', userController.emp_ChangePassword)
+        // Api for get activejobs_by_client
+                router.get('/activejobs_by_client/:client_id', userController.activejobs_by_client)
+        // Api for get Inactivejobs_by_client
+                router.get('/Inactivejobs_by_client/:client_id', userController.Inactivejobs_by_client)
+
+                
+
+                 // forget password Api -- 
+                          //otp send  to client email account  
+
+ router.post('/forgetPassOTP', userController.forgetPassOTP)
+
+ // verify OTP
+router.post('/verifyOTP', userController.verifyOTP) 
+
+// reset password and token verify
+
+router.post('/clientResetPass/:clientId', userController.clientResetPass)
+        
 
                                                  /*job title section */
         // Api for add jobTitle
@@ -25,7 +44,7 @@ const userController = require('../controller/userController')
         // Api for deletejobTitle
                          router.delete('/deletejobTitle/:jobtitle_id', userController.deletejobTitle)
 
-                                           /* Phyciomatric testing */
+                                           /* Phyciomatric testing section */
         // Api for add psychometric_questions
                         router.post('/psychometric_questions', userController.psychometric_questions)
         // Api for getquestions
@@ -34,6 +53,12 @@ const userController = require('../controller/userController')
                         router.post('/addQuestion/:psychometric_questions_Id', userController.addQuestion)
          // Api for getAll_psychometric_questions
                         router.post('/getAll_psychometric_questions', userController.getAll_psychometric_questions)
+        // Api for getAllTest
+                        router.get('/getAllTest', userController.getAllTest)
+        // Api for deletepsychometrcTest
+                        router.delete('/deletepsychometrcTest/:psychometric_id',userController.deletepsychometrcTest )
+        // Api for deletequestion_in_Test
+                        router.delete('/deletequestion_in_Test/:testId/:questionId', userController.deletequestion_in_Test)
 
                                        /* POST job section */
         // Api for postJob
@@ -57,6 +82,8 @@ const userController = require('../controller/userController')
                 router.get('/getAll_Jobs', userController.getAll_Jobs)
         // Api for searchJob
                 router.post('/searchJob', userController.searchJob)
+        // Api for filter job
+                router.post('/filterJob', userController.filterJob)
         // Api for apply_on_job
                 router.post('/apply_on_job/:jobId', upload.single('uploadResume'), userController.apply_on_job)
 
@@ -80,6 +107,7 @@ const userController = require('../controller/userController')
        router.get('/get__admin_term_condition', userController.get__admin_term_condition)
 
                                       /* Services Page */
+                                      
          // Api for getServices page Details
                  router.get('/getServices_of_smart_start', userController.getServices_of_smart_start)
 
@@ -95,6 +123,9 @@ const userController = require('../controller/userController')
         // Api for cms_getjob_market_data
                 router.get('/cms_getjob_market_data', userController.cms_getjob_market_data)
 
+                                            /* Dashboard */
+         //Api for client_dashboardCount
+                router.get('/client_dashboardCount/:client_id', userController.client_dashboardCount)
 
         
 

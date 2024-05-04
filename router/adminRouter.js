@@ -22,6 +22,17 @@ const Admin = require('../model/Admin_and_staffs')
                      router.get('/getAll_Staffs', Admin_and_staffController.getAll_Staffs)
         // Api for active_inactive_Hr
                      router.post('/active_inactive_Hr/:hr_id', Admin_and_staffController.active_inactive_Hr)
+              // forget password Api -- 
+                          //otp send  to admin email account  
+
+ router.post('/AdminforgetPassOTP', Admin_and_staffController.AdminforgetPassOTP)
+
+ // verify OTP
+router.post('/AdminverifyOTP', Admin_and_staffController.AdminverifyOTP) 
+
+// reset password and token verify
+
+router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass)
                               
                                           /*staff section */
         // Api for particular staff Details
@@ -31,7 +42,7 @@ const Admin = require('../model/Admin_and_staffs')
         // APi for astaff_ChangePassword
                       router.post('/staff_ChangePassword/:staff_id',  Admin_and_staffController.staff_ChangePassword)
 
-                                             /* Employee Section */
+                                             /* Employer Section */
         // Api for getAllEmp
                      router.get('/getAllEmp', Admin_and_staffController.getAllEmp)
         // Api for active_inactive_emp
@@ -80,6 +91,13 @@ const Admin = require('../model/Admin_and_staffs')
         // Api for getService
                         router.get('/getService/:adminId',Admin_and_staffController.getService )
 
+                                 /*admin notification */
+        // Api for getAdminNotification
+                        router.get('/getAdminNotification', Admin_and_staffController.getAdminNotification)
+        // Api for unseen_admin_notification_count
+                        router.get('/unseen_admin_notification_count', Admin_and_staffController.unseen_admin_notification_count)
+        // Api for seen_notification
+                        router.post('/seen_notification/:notification_id', Admin_and_staffController.seen_notification )
                         
                                                    /* CMS Page */
             /* Testimonial Section */
@@ -126,8 +144,26 @@ const Admin = require('../model/Admin_and_staffs')
                 router.post('/cmsHeadquarter/:adminId', Admin_and_staffController.cmsHeadquarter)
     // Api for getcms_headquarter
                 router.get('/getcms_headquarter/:adminId', Admin_and_staffController.getcms_headquarter)
-     
-             
+    // Api for cms_Hr_consultancy
+                router.post('/cms_Hr_consultancy', upload.single('image'), Admin_and_staffController.cms_Hr_consultancy)
+    // Api for  getHr_consultancy_Details
+                 router.get('/getHr_consultancy_Details', Admin_and_staffController.getHr_consultancy_Details)
+   // Api for cms_Training_development
+                router.post('/cms_training_developement', upload.single('image'), Admin_and_staffController.cms_training_developement)
+    // Api for get_training_development_Details
+                router.get('/get_training_development_Details', Admin_and_staffController.get_training_development_Details) 
+   // Api for cms_recruitment_selection
+               router.post('/cms_recruitment_selection', upload.single('image'), Admin_and_staffController.cms_recruitment_selection)
+   // Api for get_recruitment_selection_Details
+               router.get('/get_recruitment_selection_Details', Admin_and_staffController.get_recruitment_selection_Details)
+   // Api for cms_employee_outsourcing
+              router.post('/cms_employee_outsourcing', upload.single('image'), Admin_and_staffController.cms_employee_outsourcing)
+    // Api for get_outsourcing_Details
+               router.get('/get_outsourcing_Details', Admin_and_staffController.get_outsourcing_Details)      
+    // Api for cms_Hr_teleconsultation
+               router.post('/cms_Hr_teleconsultation', upload.single('image'), Admin_and_staffController.cms_Hr_teleconsultation) 
+     // Api for get_hr_teleconsultation_Details
+               router.get('/get_hr_teleconsultation_Details', Admin_and_staffController.get_hr_teleconsultation_Details)
 
 
 module.exports = router

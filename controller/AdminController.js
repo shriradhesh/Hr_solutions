@@ -23,9 +23,15 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
 const cms_Blogsection1Model = require('../model/cmsBlogsection1')
 const cmsBlogsection2Model = require('../model/cmsBlogSecion2')
 const cmsHeadquarte_model = require('../model/cmsHeadquarter')
-
-
-
+const otpModel = require('../model/otpModel')
+const sendEmails = require('../utils/sendEmails')
+const adminNotificationModel = require('../model/adminNotification')
+const { notify } = require('../router/userRouter')
+const cms_hr_consultancy_Model = require('../model/cms_Hr_consultancy')
+const cms_t_d_Model = require('../model/cms_t_d')
+const cms_recruitment_selection_Model = require('../model/cms_recruitment_selection')
+const cms_employee_outsourcing_Model = require('../model/cms_outsourcing')
+const cms_Hr_teleconsultation_model = require('../model/cms_hr_teleconsultation')
 
                                                  /* Admin and staff Section */
            
@@ -103,7 +109,9 @@ const cmsHeadquarte_model = require('../model/cmsHeadquarter')
     };
 
     // Api for get Admin Details
+
          const getAdmin = async( req , res)=>{
+               
                 try {
                       const adminId = req.params.adminId
                     // check for adminId
@@ -129,12 +137,16 @@ const cmsHeadquarte_model = require('../model/cmsHeadquarter')
                         message : 'admin Details',
                         Details : admin
                 })
-                } catch (error) {
+                
+                 }
+                    
+                catch (error) {
                       return res.status(500).json({
                                success : 'server error',
                                error_message : error.message
                       })
                 }
+                
          }
 
     // Api for update Admin Panel
@@ -278,6 +290,18 @@ const cmsHeadquarte_model = require('../model/cmsHeadquarter')
             // Send email to the staff
             await send_adminEmail (admin.email, `Password Changed successfully ..!`, adminEmailContent);
                         await admin.save();
+                        // send notification to admin
+              try {
+                const adminNotification =  adminNotificationModel.create({
+                    
+                    message: `your account password changed successfully`,
+                    date: new Date(),
+                    status: 1,
+                });
+                adminNotification.save();
+            } catch (notificationError) {
+                console.error('Error creating notification:', notificationError);
+            }
                         return res.status(200).json({
                             success: true,
                             message: "Password changed Successfully",
@@ -292,7 +316,168 @@ const cmsHeadquarte_model = require('../model/cmsHeadquarter')
                            })
                        }
                   } 
-                                                    
+                                  
+                  
+                                                                 // Forget password of the client
+             // Api for forget password (Genrate OTP)
+
+                  
+    const AdminforgetPassOTP = async (req, res) => {
+        try {
+            const { email } = req.body;
+    
+            if (!email || !isValidEmail(email)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Valid email is required"
+                });
+            }
+    
+            const admin = await Admin_and_staffsModel.findOne({ email 
+            });
+    
+            if (!admin) {
+                return res.status(400).json({ success: false, message: 'admin not found' });
+            }
+    
+            const otp = generateOTP();
+    
+            // Save the OTP in the otpModel
+            const otpData = {
+                AdminId: admin._id,
+                otp: otp
+            };
+            await otpModel.create(otpData);
+                const emailContent = `<!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Forgot Password - Reset Your Password</title>
+                </head>
+                <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4;">
+                    <div class="container" style="width: 80%; margin: 20px auto; padding: 20px; background: #ffffff; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1);">
+                        <section style="margin-top: 20px;">
+                            <h2 style="color: #333; font-size: 24px; text-align: center; margin-bottom: 20px;">Dear ${admin.name} </h2>
+                            <p style="color: #666; font-size: 16px; text-align: center; margin-bottom: 30px;">We received a request to reset your password. To proceed, please use the following One-Time Password (OTP):</p>
+                            <div class="otp-box" style="background-color: #f3fcfd; text-align: center; padding: 20px; border-radius: 10px; margin: 0 auto 30px; max-width: 200px; box-shadow: 0 0 20px rgba(0,0,0,0.1);">
+                                <div class="otp-code" style="font-size: 36px; font-weight: bold; color: #333;">${otp}</div>
+                            </div>
+                            <p class="message" style="color: #666; font-size: 14px; text-align: center; margin-bottom: 20px;">This OTP will expire in 2 minutes.</p>
+                            <p style="color: #666; font-size: 16px; text-align: center; margin-bottom: 20px;">If you didn't request a password reset, you can ignore this email.</p>
+                            <p style="color: #666; font-size: 16px; text-align: center; margin-bottom: 20px;">Thank you!</p>
+                            <div class="footer" style="text-align: center; margin-top: 40px; color: #666; font-size: 14px;">&copy;  Smart Start Ltd. All rights reserved.</div>
+                        </section>
+                    </div>
+                </body>
+                </html>
+                `
+           
+            await sendEmails(admin.email, "Password reset", emailContent);
+    
+            res.status(200).json({ success: true, 
+                                     message: "An OTP has been sent to your email",
+                                     email: admin.email , 
+                                     
+                                     });
+        } catch (error) {
+            console.error('error', error);
+            res.status(500).json({ success: false, message: "server error", error_message: error.message });
+        }
+    
+        function isValidEmail(email) {
+            // email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+    
+        function generateOTP() {
+            const otp = Math.floor(1000 + Math.random() * 9000).toString();
+            return otp.slice(0, 4);
+        }
+    };
+
+
+    // APi for verify OTP
+    const AdminverifyOTP = async(req,res)=>{
+        try {
+          const { otp } = req.body
+          if(!otp)
+          {
+            return res.status(400).json({ success : false , message : ' otp is required' })
+          }
+          const adminOTP = await otpModel.findOne ({ otp })
+          if(!adminOTP)
+          {
+            return res.status(400).json({ success : false , message : ' Invalid OTP or expired' })
+          }
+          res.status(200).json({ success : true , message : 'otp verified successfully' , AdminId : adminOTP.AdminId})
+        } catch (error) {
+          return res.status(500).json({
+                      success : false ,
+                      message : 'server error',
+                      error_message : error.message
+          })
+        }
+       }
+
+       // APi for otp verify and reset password for forget password 
+                
+       const adminResetPass = async (req, res) => {
+        try {
+            const { password , confirmPassword } = req.body;
+            const adminId = req.params.adminId
+            if (!password) {
+                return res.status(400).json({ success: false, message: 'Password is required' });
+            }
+            if (!confirmPassword) {
+                return res.status(400).json({ success: false, message: 'confirm password is required' });
+            }
+            if (!adminId) {
+                return res.status(400).json({ success: false, message: 'adminId is required' });
+            }                       
+        
+            const admin = await Admin_and_staffsModel.findById(adminId);
+
+            if (!admin) {
+                return res.status(400).json({ success: false, message: 'Invalid admin' });
+            }
+
+            // checlk if password and confirmpassword matched 
+            if(password !== confirmPassword)
+            {
+                return res.status(400).json({
+                        success : false ,
+                        message : 'confirm password not matched'
+                })
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            admin.password = hashedPassword;
+            await admin.save();
+
+            // Delete the used OTP
+            await otpModel.deleteOne({ AdminId : adminId });
+
+            // send notification to admin
+            try {
+                const adminNotification =  adminNotificationModel.create({
+                    
+                    message: `Your account password reset successfully`,
+                    date: new Date(),
+                    status: 1,
+                });
+                adminNotification.save();
+            } catch (notificationError) {
+                console.error('Error creating notification:', notificationError);
+            }
+
+            res.status(200).json({ success: true, message: 'Password reset successfully' });
+        } catch (error) {
+            console.error('error', error);
+            res.status(500).json({ success: false, message: 'server error', error_message : error.message });
+        }
+    };
 // APi for send notification to client
                  const send_notification_to_client = async ( req , res)=>{
                          try {
@@ -1128,45 +1313,51 @@ const cmsHeadquarte_model = require('../model/cmsHeadquarter')
                `
              
 
-
+            let cStatus ;
             let candidate_status;
             switch (seeker_status) {
                 case 'schedule_Interview':
                     candidate_status = 2;
+                    cStatus = 2;
                     send_candidateEmail (candidate.user_Email, `Your Interview Has been Scheduled ..!`, emailcontent2)
 
                     break;
     
                 case 'assessment':
                     candidate_status = 3;
+                    cStatus = 2;
                     send_candidateEmail (candidate.user_Email, `Assesment Round..!`, emailcontent3)
                     break;
 
                 case 'HR_Discussion':
                         candidate_status = 4;
+                        cStatus = 2;
                         send_candidateEmail (candidate.user_Email, `HR Discussion Round..!`, emailcontent4)
                         break;
     
                 case 'complete':
                     candidate_status = 5;
+                    cStatus = 2;
                     break;
     
                 case 'shortlist':
                     candidate_status = 6;
+                    cStatus = 2;
                      send_candidateEmail (candidate.user_Email, `Congratulation You have been Shortlisted..!`, emailcontent6)
                     break;
     
                 case 'reject':
                     candidate_status = 7;
+                    cStatus = 0;
                     send_candidateEmail (candidate.user_Email, `For Better Luck Next Time..!`, emailcontent7)
                     break;
     
                 default:
-                    return res.status(400).json({ status: false, message: "Invalid seeker_status" });
+                    return res.status(400).json({ status: false, message: "Invalid seeker status" });
             }
     
             // Update jobSeeker_status of the candidate
-            const updatedCandidate = await appliedjobModel.findOneAndUpdate({ _id: candidateId }, { jobSeeker_status: candidate_status }, { new: true });
+            const updatedCandidate = await appliedjobModel.findOneAndUpdate({ _id: candidateId }, { jobSeeker_status: candidate_status , candidateStatus : cStatus } , { new: true });
     
             if (!updatedCandidate) {
                 return res.status(400).json({ status : false , message: "Applied job not found" });
@@ -1175,7 +1366,7 @@ const cmsHeadquarte_model = require('../model/cmsHeadquarter')
               
                 res.status(200).json({
                      success : true ,
-                     message : 'jobseeker_status updated',
+                     message : 'jobseeker status updated',
                      updated_Candidate : updatedCandidate
                 })
             
@@ -1267,7 +1458,10 @@ const cmsHeadquarte_model = require('../model/cmsHeadquarter')
                 candidate_resume: candidate.uploadResume,
                 relevant_experience: candidate.job_experience,
                 Total_experience: candidate.Total_experience,
-                Highest_Education : candidate.Highest_Education
+                Highest_Education : candidate.Highest_Education,
+                candidateStatus : candidate.candidateStatus,
+                HomeAddress : candidate.city + candidate.state,
+                
             }));
     
             // Respond with the list of candidates details
@@ -1492,7 +1686,8 @@ const active_inactive_job = async (req, res) => {
                                         Highest_Education: candidate.Highest_Education,
                                         relevant_Experience: candidate.job_experience, 
                                         Total_experience: candidate.Total_experience,
-                                        jobId : candidate.jobId
+                                        jobId : candidate.jobId,
+                                        candidateStatus : candidate.candidateStatus
                                     }))
                                 });
                                 } catch (error) {
@@ -1535,8 +1730,7 @@ const active_inactive_job = async (req, res) => {
                      // check for privacy policy existance
 
                      const exist_privacy_policy = await privacy_policyModel.findOne({
-                              AdminId : adminId,
-                               
+                              AdminId : adminId,                               
                      })
 
                      if(exist_privacy_policy)
@@ -3012,18 +3206,649 @@ const active_inactive_job = async (req, res) => {
         }
     
 
+                               /* Admin notitification */
+        // Api for get admin notification
+
+        const getAdminNotification = async (req, res) => {
+            try {
+                // Check for admin notifications
+                const adminNotifications = await adminNotificationModel.find ({ status: 1 });
+         
+                if (adminNotifications.length === 0) {
+                    return res.status(200).json({
+                        success: false,
+                        message: 'No notifications received yet.'
+                    });
+                }
+        
+                return res.status(200).json({
+                    success: true,
+                    message: 'Admin notifications',
+                    notifications: adminNotifications.map((notify) => ({
+                        message: notify.message,
+                        notification_status: notify.status,
+                        notitication_id : notify._id
+                    }))
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+        
+
+
+          // Api for get unseen notification
+
+        const unseen_admin_notification_count = async ( req , res) => {
+               try {
+                        // check for unseen notification of the admin
+
+                        const unseenNotification = await adminNotificationModel.find({
+                             status : 1
+                        })
+
+                        if(!unseenNotification)
+                        {
+                            return res.status(400).json({
+                                  success : false ,
+                                  message : 'no notification found'
+                            })
+                        }
+
+                        return res.status(200).json({
+                               success : true,
+                               message : 'unseen notification',
+                               unseenNotificationCount : unseenNotification.length
+                        })
+               } catch (error) {
+                return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+                })
+               }
+        }
+
+
+           // Api for seen notification
+           const seen_notification = async (req, res) => {
+            try {
+                const notification_id = req.params.notification_id;
+        
+                // Check if notification ID is provided
+                if (!notification_id) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Notification ID is required'
+                    });
+                }
+        
+                // Find the notification by ID
+                const notification = await adminNotificationModel.findById(notification_id);
+        
+                // Check if notification exists
+                if (!notification) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Notification not found'
+                    });
+                }
+        
+                // Check if notification has already been seen
+                if (notification.status === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Notification has already been seen'
+                    });
+                }
+        
+                // Update notification status to 'seen'
+                notification.status = 0;
+                await notification.save();
+        
+                return res.status(200).json({
+                    success: true,
+                    message: 'Notification marked as seen successfully'
+                });
+        
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error: error.message
+                });
+            }
+        };
+
+    // Api for cms_hr_consultancy
+            
+           const cms_Hr_consultancy = async (req, res) => {
+            try {          
+        
+        
+                const { Heading, Description } = req.body;
+        
+                // Check for exist hr consultancy
+                const exist_hr_consultancy = await cms_hr_consultancy_Model.findOne({ });
+        
+                if (exist_hr_consultancy) {
+                    // Update existing section
+                    exist_hr_consultancy.Heading = Heading;
+                    exist_hr_consultancy.Description = Description;
+        
+                    if (req.file) {
+                        exist_hr_consultancy.image = req.file.filename;
+                    }
+        
+                    await exist_hr_consultancy.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Details updated successfully'
+                    });
+                } else {
+                    // Check for Heading
+                    if (!Heading) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Heading is required'
+                        });
+                    }
+        
+                    // Check for Description
+                    if (!Description) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Description is required'
+                        });
+                    }
+        
+                    // Add image 
+                    const image = req.file ? req.file.filename : null;
+                         
+        
+                    // Add new Data
+                    const newData = new cms_hr_consultancy_Model({
+                       
+                        image: image ,
+                        Heading: Heading,
+                        Description: Description
+                    });
+        
+                    await newData.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'New Details created successfully'
+                    });
+                }
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+
+
+        // Api for get cms hr consultancy details
+        const getHr_consultancy_Details = async( req , res)=>{
+            try {
+                    const allDetails = await cms_hr_consultancy_Model.find({
+                              
+                    })
+                    if(!allDetails)
+                    {
+                      return res.status(400).json({
+                             success : false ,
+                             message : 'no Details found'
+                      })
+                    }
+
+                      return res.status(200).json({
+                           success : true ,
+                           message : 'allDetails ',
+                           Details : allDetails
+                      })
+            } catch (error) {
+               return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+               })
+            }
+     }
+
+        // Api for training and development
+
+            
+        const cms_training_developement = async (req, res) => {
+            try {                 
+        
+                const { Heading, Description } = req.body;
+        
+                // Check for exist hr consultancy
+                const exist_t_d = await cms_t_d_Model.findOne({ });
+        
+                if (exist_t_d) {
+                    // Update existing section
+                    exist_t_d.Heading = Heading;
+                    exist_t_d.Description = Description;
+        
+                    if (req.file) {
+                        exist_t_d.image = req.file.filename;
+                    }
+        
+                    await exist_t_d.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Details updated successfully'
+                    });
+                } else {
+                    // Check for Heading
+                    if (!Heading) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Heading is required'
+                        });
+                    }
+        
+                    // Check for Description
+                    if (!Description) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Description is required'
+                        });
+                    }
+        
+                    // Add image 
+                    const image = req.file ? req.file.filename : null;
+                         
+        
+                    // Add new Data
+                    const newData = new cms_t_d_Model ({
+                       
+                        image: image ,
+                        Heading: Heading,
+                        Description: Description
+                    });
+        
+                    await newData.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'New Details created successfully'
+                    });
+                }
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+
+   // Api for get training and Development Details
+             
+        const get_training_development_Details = async( req , res)=>{
+            try {
+                    const allDetails = await cms_t_d_Model.find({
+                              
+                    })
+                    if(!allDetails)
+                    {
+                      return res.status(400).json({
+                             success : false ,
+                             message : 'no Details found'
+                      })
+                    }
+
+                      return res.status(200).json({
+                           success : true ,
+                           message : 'allDetails ',
+                           Details : allDetails
+                      })
+            } catch (error) {
+               return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+               })
+            }
+     }
+
+
+     // Api for recruitment and selection
+            
+     const cms_recruitment_selection = async (req, res) => {
+        try {                 
+    
+            const { Heading, Description } = req.body;
+    
+            // Check for exist hr consultancy
+            const exist_r_s = await cms_recruitment_selection_Model.findOne({ });
+    
+            if (exist_r_s) {
+                // Update existing section
+                exist_r_s.Heading = Heading;
+                exist_r_s.Description = Description;
+    
+                if (req.file) {
+                    exist_r_s.image = req.file.filename;
+                }
+    
+                await exist_r_s.save();
+    
+                return res.status(200).json({
+                    success: true,
+                    message: 'Details updated successfully'
+                });
+            } else {
+                // Check for Heading
+                if (!Heading) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Heading is required'
+                    });
+                }
+    
+                // Check for Description
+                if (!Description) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Description is required'
+                    });
+                }
+    
+                // Add image 
+                const image = req.file ? req.file.filename : null;
+                     
+    
+                // Add new Data
+                const newData = new cms_recruitment_selection_Model ({
+                   
+                    image: image ,
+                    Heading: Heading,
+                    Description: Description
+                });
+    
+                await newData.save();
+    
+                return res.status(200).json({
+                    success: true,
+                    message: 'New Details created successfully'
+                });
+            }
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
+        }
+    };
+
+     // Api for get recruitment selection Details
+             
+     const get_recruitment_selection_Details = async( req , res)=>{
+        try {
+                const allDetails = await cms_recruitment_selection_Model.find({
+                          
+                })
+                if(!allDetails)
+                {
+                  return res.status(400).json({
+                         success : false ,
+                         message : 'no Details found'
+                  })
+                }
+
+                  return res.status(200).json({
+                       success : true ,
+                       message : 'allDetails ',
+                       Details : allDetails
+                  })
+        } catch (error) {
+           return res.status(500).json({
+                 success : false ,
+                 message : 'server error',
+                 error_message : error.message
+           })
+        }
+ }
+        
+
+ // Api for cms employee outsourcing
+
+    
+            
+     const cms_employee_outsourcing = async (req, res) => {
+        try {                 
+    
+            const { Heading, Description } = req.body;
+    
+            // Check for exist hr consultancy
+            const exist_eO = await cms_employee_outsourcing_Model.findOne({ });
+    
+            if (exist_eO) {
+                // Update existing section
+                exist_eO.Heading = Heading;
+                exist_eO.Description = Description;
+    
+                if (req.file) {
+                    exist_eO.image = req.file.filename;
+                }
+    
+                await exist_eO.save();
+    
+                return res.status(200).json({
+                    success: true,
+                    message: 'Details updated successfully'
+                });
+            } else {
+                // Check for Heading
+                if (!Heading) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Heading is required'
+                    });
+                }
+    
+                // Check for Description
+                if (!Description) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Description is required'
+                    });
+                }
+    
+                // Add image 
+                const image = req.file ? req.file.filename : null;
+                     
+    
+                // Add new Data
+                const newData = new cms_employee_outsourcing_Model ({
+                   
+                    image: image ,
+                    Heading: Heading,
+                    Description: Description
+                });
+    
+                await newData.save();
+    
+                return res.status(200).json({
+                    success: true,
+                    message: 'New Details created successfully'
+                });
+            }
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
+        }
+    };
+
+
+     // Api for get employee outsourcing Details
+             
+     const get_outsourcing_Details = async( req , res)=>{
+        try {
+                const allDetails = await cms_employee_outsourcing_Model.find({
+                          
+                })
+                if(!allDetails)
+                {
+                  return res.status(400).json({
+                         success : false ,
+                         message : 'no Details found'
+                  })
+                }
+
+                  return res.status(200).json({
+                       success : true ,
+                       message : 'allDetails ',
+                       Details : allDetails
+                  })
+        } catch (error) {
+           return res.status(500).json({
+                 success : false ,
+                 message : 'server error',
+                 error_message : error.message
+           })
+        }
+ }
+     
+ 
+// Api for HR Teleconsultation
+       
+    
+            
+     const cms_Hr_teleconsultation = async (req, res) => {
+        try {                
+    
+            const { Heading, Description } = req.body;
+    
+            // Check for exist cms_Hr_teleconsultation
+            const exist_HT = await cms_Hr_teleconsultation_model.findOne({ });
+    
+            if (exist_HT) {
+                // Update existing section
+                exist_HT.Heading = Heading;
+                exist_HT.Description = Description;
+    
+                if (req.file) {
+                    exist_HT.image = req.file.filename;
+                }
+    
+                await exist_HT.save();
+    
+                return res.status(200).json({
+                    success: true,
+                    message: 'Details updated successfully'
+                });
+            } else {
+                // Check for Heading
+                if (!Heading) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Heading is required'
+                    });
+                }
+    
+                // Check for Description
+                if (!Description) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Description is required'
+                    });
+                }
+    
+                // Add image 
+                const image = req.file ? req.file.filename : null;
+                     
+    
+                // Add new Data
+                const newData = new cms_Hr_teleconsultation_model ({
+                   
+                    image: image ,
+                    Heading: Heading,
+                    Description: Description
+                });
+    
+                await newData.save();
+    
+                return res.status(200).json({
+                    success: true,
+                    message: 'New Details created successfully'
+                });
+            }
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
+        }
+    };
+
+
+
+       // Api for get employee outsourcing Details
+             
+     const get_hr_teleconsultation_Details = async( req , res)=>{
+        try {
+                const allDetails = await cms_Hr_teleconsultation_model.find({
+                          
+                })
+                if(!allDetails)
+                {
+                  return res.status(400).json({
+                         success : false ,
+                         message : 'no Details found'
+                  })
+                }
+
+                  return res.status(200).json({
+                       success : true ,
+                       message : 'allDetails ',
+                       Details : allDetails
+                  })
+        } catch (error) {
+           return res.status(500).json({
+                 success : false ,
+                 message : 'server error',
+                 error_message : error.message
+           })
+        }
+ }
+     
+ 
+
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
     active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate ,
     candidate_recruitment_process , active_inactive_Hr , send_notification_to_client , sendNotification_to_allClient,
     send_notification ,  create_services , getService ,  create_privacy_policy , get_admin_privacy_policy,
-    create_term_condition , get_admin_term_condition , getAll_candidates ,
+    create_term_condition , get_admin_term_condition , getAll_candidates , AdminforgetPassOTP , AdminverifyOTP , adminResetPass ,
+    getAdminNotification , unseen_admin_notification_count ,seen_notification ,
     
               /*  CMS PAGE */
      create_testimonial , getAll_testimonial , get_testimonial , update_testimonial , delete_testimonial,
      cms_job_posting_section1 , getJobs_posted_procedure_section1 , cms_need_any_job_section,
      get_cms_need_any_job_section , cms_post_your_job_section , get_cms_post_your_job , cms_job_market_data_section,
      get_cms_job_market_data , cms_blog_section1 , getcmsBlog_section1 ,cmsBlog_section2 , getBlogDetails ,
-     update_cms_blog , deleteBlog , cmsHeadquarter , getcms_headquarter
+     update_cms_blog , deleteBlog , cmsHeadquarter , getcms_headquarter , cms_Hr_consultancy , getHr_consultancy_Details,
+     cms_training_developement , get_training_development_Details , cms_recruitment_selection , get_recruitment_selection_Details,
+     cms_employee_outsourcing , get_outsourcing_Details , cms_Hr_teleconsultation , get_hr_teleconsultation_Details
+     
      
 }

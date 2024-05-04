@@ -44,6 +44,11 @@ const appliedJobSchema = mongoose.Schema({
         type: Number,
         enum: [0, 1],       
     },
+    candidateStatus : {
+        type : Number,
+        enum : [0,1,2],
+        default : 1 
+    },
     Highest_Education: {
         type: String,
         enum: ['secondary', 'Higher Secondary', 'Diploma', 'Bachelors', 'Masters', 'Doctorate'] // Corrected 'Bechlore' to 'Bachelors'

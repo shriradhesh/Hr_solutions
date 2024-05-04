@@ -30,7 +30,11 @@ const employeeSchema = new mongoose.Schema({
          company_industry : {
             type : String,
             enum : ['Aerospace & Defense', 'Agriculture' , 'Information Technology' ,'Non-profit & NGO' , 'Real Estate' ,'Resturant & Food Services' , 'Marketing' , 'Finance' , 'others']
+         },
+         company_HQ : {
+                type : String
          }
+
 }, {timestamps : true })
 
 const employeeModel = mongoose.model('employee', employeeSchema)

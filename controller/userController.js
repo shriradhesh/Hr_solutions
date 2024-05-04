@@ -18,7 +18,9 @@ const cms_jobMarketData = require('../model/cms_job_market_data')
 const jobTitleModel = require('../model/jobTitle')
 const PsychometricModel = require('../model/Psychometric_testing')
 const ExcelJs = require("exceljs");
-
+const otpModel = require('../model/otpModel')
+const sendEmails = require('../utils/sendEmails')
+const adminNotificationModel = require('../model/adminNotification')
 
 
 
@@ -31,10 +33,10 @@ const ExcelJs = require("exceljs");
      
                    const employeeSignup = async( req , res)=>{
                      try {
-                           const { name , email , password , phone_no , company_name , Number_of_emp ,company_industry } = req.body
+                           const { name , email , password , phone_no , company_name , Number_of_emp ,company_industry , company_HQ } = req.body
                       
                            // check for required fields
-                           const requiredFields = [ "name", "email", "password" , "phone_no" ,"company_name" , "Number_of_emp" , "company_industry"];
+                           const requiredFields = [ "name", "email", "password" , "phone_no" ,"company_name" , "Number_of_emp" , "company_industry" , "company_HQ"];
 
                            for (const field of requiredFields) {
                            if (!req.body[field]) {
@@ -84,7 +86,8 @@ const ExcelJs = require("exceljs");
                                  Number_of_emp ,
                                  company_industry ,
                                  profileImage : profileImage ,
-                                 status : 0
+                                 status : 0,
+                                 company_HQ : company_HQ
                              })
                              const EmployeeContent = `
                              <p> Hello ${name}</p>
@@ -108,6 +111,20 @@ const ExcelJs = require("exceljs");
                          // Send email to the staff
                          await send_EmployeeEmail (email, `Your Account successfully Created`, EmployeeContent);
                                 await newData.save()
+
+                                // send notification to admin
+                                try {
+                                    const newNotification =  adminNotificationModel.create({
+                                        
+                                        message: `New client added successfully! Please activate their account from pending status`,
+                                        date: new Date(),
+                                        status: 1,
+                                    });
+                                     newNotification.save();
+                                } catch (notificationError) {
+                                    console.error('Error creating notification:', notificationError);
+                                }
+                            
                             return res.status(200).json({
                                   success : true ,
                                   message : 'successfully SignUP',
@@ -365,8 +382,156 @@ const ExcelJs = require("exceljs");
         }
    } 
 
+                                                        // Forget password of the client
+             // Api for forget password (Genrate OTP)
+
+                  
+    const forgetPassOTP = async (req, res) => {
+        try {
+            const { email } = req.body;
+    
+            if (!email || !isValidEmail(email)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Valid email is required"
+                });
+            }
+    
+            const client = await employeeModel.findOne({ email });
+    
+            if (!client) {
+                return res.status(400).json({ success: false, message: 'client with given email not found' });
+            }
+    
+            const otp = generateOTP();
+    
+            // Save the OTP in the otpModel
+            const otpData = {
+                clientId: client._id,
+                otp: otp
+            };
+            await otpModel.create(otpData);
+    
+            const emailContent = `<!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Forgot Password - Reset Your Password</title>
+            </head>
+            <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4;">
+                <div class="container" style="width: 80%; margin: 20px auto; padding: 20px; background: #ffffff; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.1);">
+                    <section style="margin-top: 20px;">
+                        <h2 style="color: #333; font-size: 24px; text-align: center; margin-bottom: 20px;">Dear ${client.name} </h2>
+                        <p style="color: #666; font-size: 16px; text-align: center; margin-bottom: 30px;">We received a request to reset your password. To proceed, please use the following One-Time Password (OTP):</p>
+                        <div class="otp-box" style="background-color: #f3fcfd; text-align: center; padding: 20px; border-radius: 10px; margin: 0 auto 30px; max-width: 200px; box-shadow: 0 0 20px rgba(0,0,0,0.1);">
+                            <div class="otp-code" style="font-size: 36px; font-weight: bold; color: #333;">${otp}</div>
+                        </div>
+                        <p class="message" style="color: #666; font-size: 14px; text-align: center; margin-bottom: 20px;">This OTP will expire in 2 minutes.</p>
+                        <p style="color: #666; font-size: 16px; text-align: center; margin-bottom: 20px;">If you didn't request a password reset, you can ignore this email.</p>
+                        <p style="color: #666; font-size: 16px; text-align: center; margin-bottom: 20px;">Thank you!</p>
+                        <div class="footer" style="text-align: center; margin-top: 40px; color: #666; font-size: 14px;">&copy;  Smart Start Ltd. All rights reserved.</div>
+                    </section>
+                </div>
+            </body>
+            </html>
+            `
+            await sendEmails(client.email, "Password reset", emailContent);
+    
+            res.status(200).json({ success: true, 
+                                     message: "An OTP has been sent to your email",
+                                     email: client.email , 
+                                     
+                                     });
+        } catch (error) {
+            console.error('error', error);
+            res.status(500).json({ success: false, message: "server error", error_message: error.message });
+        }
+    
+        function isValidEmail(email) {
+            // email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+    
+        function generateOTP() {
+            const otp = Math.floor(1000 + Math.random() * 9000).toString();
+            return otp.slice(0, 4);
+        }
+    };
+
+
+    // APi for verify OTP
+    const verifyOTP = async(req,res)=>{
+        try {
+          const { otp } = req.body
+          if(!otp)
+          {
+            return res.status(400).json({ success : false , message : ' otp is required' })
+          }
+          const userOTP = await otpModel.findOne ({ otp })
+          if(!userOTP)
+          {
+            return res.status(400).json({ success : false , message : ' Invalid OTP or expired' })
+          }
+          res.status(200).json({ success : true , message : 'otp verified successfully' , clientId : userOTP.clientId})
+        } catch (error) {
+          return res.status(500).json({
+                      success : false ,
+                      message : 'server error',
+                      error_message : error.message
+          })
+        }
+       }
+
+       // APi for otp verify and reset password for forget password 
+                
+       const clientResetPass = async (req, res) => {
+        try {
+            const { password , confirmPassword } = req.body;
+            const clientId = req.params.clientId
+            if (!password) {
+                return res.status(400).json({ success: false, message: 'Password is required' });
+            }
+            if (!confirmPassword) {
+                return res.status(400).json({ success: false, message: 'confirm password is required' });
+            }
+            if (!clientId) {
+                return res.status(400).json({ success: false, message: 'clientId is required' });
+            }                       
+        
+            const client = await employeeModel.findById(clientId);
+
+            if (!client) {
+                return res.status(400).json({ success: false, message: 'Invalid clientId' });
+            }
+
+            // checlk if password and confirmpassword matched 
+            if(password !== confirmPassword)
+            {
+                return res.status(400).json({
+                        success : false ,
+                        message : 'confirm password not matched'
+                })
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            client.password = hashedPassword;
+            await client.save();
+
+            // Delete the used OTP
+            await otpModel.deleteOne({ clientId });
+
+            res.status(200).json({ success: true, message: 'Password reset successfully' });
+        } catch (error) {
+            console.error('error', error);
+            res.status(500).json({ success: false, message: 'server error', error_message : error.message });
+        }
+    };
+
                                         /* job Title section */
-            // API for add stop in Stop Schema
+
+            // API for add job title in job title schema
 
  const addJobTitle = async (req, res) => {
     const { jobTitle } = req.body;
@@ -461,7 +626,7 @@ const deletejobTitle = async (req, res) => {
       // Check for route existence
       const existingjobTitle = await jobTitleModel.findOne({ _id: jobtitle_id });
       if (!existingjobTitle) {
-        return res.status(404).json({ success: false, error: `jobTitle not found` });
+        return res.status(400).json({ success: false, error: `jobTitle not found` });
       }
   
       // Delete the jobTitle from the database
@@ -478,7 +643,7 @@ const deletejobTitle = async (req, res) => {
     }
   };
 
-                                        /* Psychometric Testing Section   */
+                                           /* Psychometric Testing Section   */
 
 
         // Api for add psychometric test questions
@@ -683,8 +848,119 @@ const deletejobTitle = async (req, res) => {
                }
         }
         
+    // Api for get all test
+              const getAllTest = async( req , res)=>{
+                        try {
+                                   // check for all tests
+                                   const chechT = await PsychometricModel.find({
+                                    
+                                   })
 
+                                   if(!chechT)
+                                   {
+                                    return res.status(400).json({
+                                         success : false ,
+                                         message : 'no Test found'
+                                    })
+                                   }
+                                        // sort details
+                        const sortedData = chechT.sort((a,b)=> b.createdAt - a.createdAt)
+                                   return res.status(200).json({
+                                     success : true ,
+                                     message : 'Tests',
+                                     Test : sortedData
+                                   })
+                        } catch (error) {
+                               return res.status(500).json({
+                                      success : false ,
+                                      message : 'server error',
+                                      error_message : error.message
+                               })
+                        }
+              }
+
+               // Api for delete psychometric_test
+
+                            const deletepsychometrcTest = async( req , res)=>{
+                                    try {
+                                          const psychometric_id = req.params.psychometric_id
+                                        // check for psychometric_id
+                                    if(!psychometric_id)
+                                    {
+                                        return res.status(400).json({
+                                             success : false ,
+                                             message : 'psychometric Id required'
+                                        })
+                                    }
+
+                                    // check for psychometric_test
+                                    const pt = await PsychometricModel.findOne({
+                                            _id : psychometric_id
+                                    })
+
+                                    if(!pt)
+                                    {
+                                        return res.status(400).json({
+                                               success : false ,
+                                               message : 'no Test found'
+                                        })
+                                    }
+
+                                        await pt.deleteOne()
+                                        
+                                        return res.status(200).json({
+                                             success : true ,
+                                             message : 'psychometric test Deleted successfully'
+                                        })
+
+                                    } catch (error) {
+                                        return res.status(500).json({
+                                              success : false ,
+                                              message : 'server error',
+                                              error_message : error.message
+                                        })
+                                    }
+                            }
           
+            // Api for delete particular psychometric question
+            const deletequestion_in_Test = async (req, res) => {
+                let testId;
+                try {
+                    const questionId = req.params.questionId;
+                    testId = req.params.testId;
+                    const existTest = await PsychometricModel.findOne({ _id: testId });
+            
+                    if (!existTest) {
+                        return res.status(400).json({ success: false, message: "Test not found" });
+                    }
+            
+                    // Check for Question
+                    const existQuestionIndex = existTest.questions.findIndex(
+                        (que) => que._id.toString() === questionId
+                    );
+                    if (existQuestionIndex === -1) {
+                        return res.status(400).json({ success: false, message: "Question not found" });
+                    }
+            
+                    // Remove the Question from the question array
+                    existTest.questions.splice(existQuestionIndex, 1);
+            
+                    await PsychometricModel.findOneAndUpdate(
+                        { _id: testId },
+                        { questions: existTest.questions }
+                    );
+            
+                    res.status(200).json({ success: true, message: "Question deleted successfully in Test" });
+                } catch (error) {
+                    res.status(500).json({
+                        success: false,
+                        message: `Server error`,
+                        error_message: error.message
+                    });
+                }
+            };
+            
+                  
                                                  /* Job Section */
         // Api for post job
         const postJob = async (req, res) => {
@@ -724,7 +1000,7 @@ const deletejobTitle = async (req, res) => {
                 if (!employee) {
                     return res.status(400).json({
                         success: false,
-                        message: 'Employee details not found or account is suspended'
+                        message: 'Employer details not found or account is suspended'
                     });
                 }
                         
@@ -758,9 +1034,8 @@ const deletejobTitle = async (req, res) => {
                     });
                 }
 
-                     // check for psychometric testing 
-
-                    // Generate a random Hotel_Id
+                    
+                    // Generate a random job
                 function generateRandomNumber(length) {
                     let result = '';
                     const characters = '0123456789';
@@ -808,11 +1083,24 @@ const deletejobTitle = async (req, res) => {
                 date: new Date(),
                 status: 1,
             });
-             newNotification.save();
+             newNotification.save();            
+              
         } catch (notificationError) {
             console.error('Error creating notification:', notificationError);
         }
         
+              // send notification to admin
+              try {
+                const adminNotification =  adminNotificationModel.create({
+                    
+                    message: `${employee.name} from ${employee.company_name} has posted a new job. Please schedule it promptly.`,
+                    date: new Date(),
+                    status: 1,
+                });
+                adminNotification.save();
+            } catch (notificationError) {
+                console.error('Error creating notification:', notificationError);
+            }
         
                 return res.status(200).json({
                     success: true,
@@ -841,14 +1129,13 @@ const deletejobTitle = async (req, res) => {
                 {
                     return res.status(400).json({
                           success : false ,
-                          message : 'employee Id required'
+                          message : 'employer Id required'
                     })
                 }
         
                   // check for employee jobs
             const emp_jobs = await jobModel.find({
-                     emp_Id : empId,
-                    
+                     emp_Id : empId,                    
         
             })
         
@@ -882,7 +1169,11 @@ const deletejobTitle = async (req, res) => {
                     template_type: job.template_type,
                     company_Industry: job.company_Industry,
                     job_photo: job.job_photo,
-                    status: job.status
+                    status: job.status,
+                    isPsychometricTest : job.isPsychometricTest,
+                    psychometric_Test : job.psychometric_Test
+
+
                 };
             });
         
@@ -901,6 +1192,159 @@ const deletejobTitle = async (req, res) => {
                 })
             }
         }
+
+        // Api for get active jobs by client
+
+        const activejobs_by_client = async (req, res) => {
+            try {
+                const client_id = req.params.client_id;
+                // Check for client ID
+                if (!client_id) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Client ID required'
+                    });
+                }
+        
+                // Check for client
+                const client = await employeeModel.findOne({ _id: client_id });
+                if (!client) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Client not found'
+                    });
+                }
+                const company_HQ = client.company_HQ;
+        
+                // Check for active jobs
+                const activeJobs = await jobModel.find({ emp_Id: client_id, status: 1 });
+        
+                if (activeJobs.length === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'No active jobs found'
+                    });
+                }
+        
+                // Iterate over active jobs to get candidate details
+                const activeJobsWithCandidates = await Promise.all(activeJobs.map(async (job) => {
+                    const candidateDetails = await appliedjobModel.find({ jobId: job.jobId });
+                    const maleCandidateCount = candidateDetails.filter(candidate => candidate.gender === 'Male').length;
+                    const femaleCandidateCount = candidateDetails.filter(candidate => candidate.gender === 'Female').length;                   
+                    const AllCandidateCount = candidateDetails.length;
+                    const jobExperienceValue = parseInt(job.Experience.match(/\d+/)[0]);
+
+                    // Count matched and mismatched candidate profiles based on job experience
+                    const matchedProfileCount = candidateDetails.filter(candidate => candidate.job_experience >= jobExperienceValue).length
+                    const mismatchedProfileCount = candidateDetails.filter(candidate => candidate.job_experience < jobExperienceValue).length
+                       
+                    return {
+                        ...job.toObject(),
+                        maleCandidateCount,
+                        femaleCandidateCount,
+                        AllCandidateCount,
+                        matchedProfileCount,
+                        mismatchedProfileCount,
+                        company_HQ
+                    };
+                }));
+        
+                // Sort active jobs by createdAt date
+                const sortedJobs = activeJobsWithCandidates.sort((a, b) => b.createdAt - a.createdAt);
+        
+                return res.status(200).json({
+                    success: true,
+                    message: 'Active jobs',
+                    activeJob: sortedJobs
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+        
+        
+        
+        
+        // APi for get inactive jobs by client
+        const Inactivejobs_by_client = async (req, res) => {
+            try {
+                const client_id = req.params.client_id;
+                // Check for client ID
+                if (!client_id) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Client ID required'
+                    });
+                }
+        
+                // Check for Inactive jobs
+                const InactiveJob = await jobModel.find({
+                    emp_Id: client_id,
+                    status: { $in: [0, 2] }
+                });
+        
+                if (InactiveJob.length === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'No Inactive jobs found'
+                    });
+                }
+                 // Check for client
+                 const client = await employeeModel.findOne({ _id: client_id });
+                 if (!client) {
+                     return res.status(400).json({
+                         success: false,
+                         message: 'Client not found'
+                     });
+                 }
+                 const company_HQ = client.company_HQ;
+         
+        
+                // Iterate over Inactive jobs to get candidate details
+                const InactiveJobsWithCandidates = await Promise.all(InactiveJob.map(async (job) => {
+                    const candidateDetails = await appliedjobModel.find({ jobId: job.jobId });
+                    const maleCandidateCount = candidateDetails.filter(candidate => candidate.gender === 'Male').length;
+                    const femaleCandidateCount = candidateDetails.filter(candidate => candidate.gender === 'Female').length;
+                    const AllCandidateCount = candidateDetails.length;
+                   // Extract numerical value from job.Experience string using regular expression
+                    const jobExperienceValue = parseInt(job.Experience.match(/\d+/)[0]);
+
+                    // Count matched and mismatched candidate profiles based on job experience
+                    const matchedProfileCount = candidateDetails.filter(candidate => candidate.job_experience >= jobExperienceValue).length;
+                    const mismatchedProfileCount = candidateDetails.filter(candidate => candidate.job_experience < jobExperienceValue).length;
+
+        
+                    return {
+                        ...job.toObject(),
+                        maleCandidateCount,
+                        femaleCandidateCount,
+                        AllCandidateCount,
+                        matchedProfileCount,
+                        mismatchedProfileCount,
+                        company_HQ
+                    };
+                }));
+        
+                // Sort Inactive jobs by createdAt date
+                const sortedJobs = InactiveJobsWithCandidates.sort((a, b) => b.createdAt - a.createdAt);
+        
+                return res.status(200).json({
+                    success: true,
+                    message: 'Inactive jobs',
+                    inactiveJob: sortedJobs
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
         
     // Api for get Female jobseeker profile for the job
            
@@ -966,7 +1410,8 @@ const deletejobTitle = async (req, res) => {
                                 Highest_Education: candidate.Highest_Education,
                                 relevant_Experience: candidate.job_experience, 
                                 Total_experience: candidate.Total_experience,
-                                jobSeeker_status : candidate.jobSeeker_status
+                                jobSeeker_status : candidate.jobSeeker_status,
+                                candidateStatus : candidate.candidateStatus
 
 
                             }))
@@ -1047,7 +1492,8 @@ const deletejobTitle = async (req, res) => {
                         Highest_Education: candidate.Highest_Education,
                         relevant_Experience: candidate.job_experience, 
                         Total_experience: candidate.Total_experience,
-                        jobSeeker_status : candidate.jobSeeker_status
+                        jobSeeker_status : candidate.jobSeeker_status,
+                        candidateStatus : candidate.candidateStatus
 
 
                     }))
@@ -1292,36 +1738,52 @@ const deletejobTitle = async (req, res) => {
             try {
                 // Fetch all jobs
                 const allJobs = await jobModel.find({});
+                
+                // If no jobs found, return error response
                 if (allJobs.length === 0) {
                     return res.status(400).json({
                         success: false,
-                        message: 'No job found'
+                        message: 'No jobs found'
                     });
                 }
                 
-                const jobsData = allJobs.map(job => {
+                // Map job data to desired format
+                const jobsData = await Promise.all(allJobs.map(async (job) => {
+                    // Calculate salary range string
                     const salary_pay = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
-                   // Check if job has expired
-                const today = new Date();
-                const endDate = new Date(job.endDate);
-            if (endDate < today) {
-                // Job has expired, send notification
-                try {
-                    const newNotification =  empNotificationModel.create({
-                        empId: job.emp_Id,
-                        message: `your posted Job ${job.job_title} for company ${job.company_name} expired`,
-                        date: today,
-                        status: 1,
+                
+                    // Check if job has expired
+                    const today = new Date();
+                    const endDate = new Date(job.endDate);
+                
+                    if (endDate < today) {
+                        // Job has expired, send notification
+                        try {
+                            await empNotificationModel.create({
+                                empId: job.emp_Id,
+                                message: `Your posted job "${job.job_title}" for company "${job.company_name}" has expired`,
+                                date: today,
+                                status: 1,
+                            });
+                        } catch (notificationError) {
+                            console.error('Error creating notification:', notificationError);
+                        }
+                    }
+                
+                    // Find candidate details for the job
+                    const candidateDetails = await appliedjobModel.find({
+                        jobId: job.jobId
                     });
-                     newNotification.save();
-                } catch (notificationError) {
-                    console.error('Error creating notification:', notificationError);
-                }
-            }                   
+        
+                    // Count male and female candidates
+                    const maleCandidateCount = candidateDetails.filter(candidate => candidate.gender === 'Male').length;
+                    const femaleCandidateCount = candidateDetails.filter(candidate => candidate.gender === 'Female').length;
+                
+                    // Return formatted job data with candidate counts
                     return {
                         jobId: job.jobId,
                         job_title: job.job_title,
-                        company_name: job.company_name,               
+                        company_name: job.company_name,
                         Number_of_emp_needed: job.Number_of_emp_needed,
                         job_type: job.job_type,
                         job_schedule: job.job_schedule,
@@ -1339,16 +1801,15 @@ const deletejobTitle = async (req, res) => {
                         company_Industry: job.company_Industry,
                         job_photo: job.job_photo,
                         status: job.status,
-                        empId : job.emp_Id,
-                        isPsychometricTest : job.isPsychometricTest,
-                        psychometric_Test : job.psychometric_Test
-
-
-
-
+                        empId: job.emp_Id,
+                        isPsychometricTest: job.isPsychometricTest,
+                        psychometric_Test: job.psychometric_Test,
+                        maleCandidateCount: maleCandidateCount,
+                        femaleCandidateCount: femaleCandidateCount
                     };
-                });
-        
+                }));
+                
+                // Return successful response with jobs data
                 return res.status(200).json({
                     success: true,
                     message: 'All Jobs',
@@ -1356,13 +1817,16 @@ const deletejobTitle = async (req, res) => {
                     allJobs: jobsData
                 });
             } catch (error) {
+                // Return error response if any error occurs
                 return res.status(500).json({
                     success: false,
-                    message: 'server error',
+                    message: 'Server error',
                     error_message: error.message
                 });
             }
-        }         
+        };
+        
+                
 
         
 
@@ -1468,6 +1932,77 @@ const deletejobTitle = async (req, res) => {
                 });
             }
         };
+
+
+// Api for filter job
+
+const filterJob = async (req, res) => {
+    try {
+        const { job_title, company_address } = req.body;
+        const { job_type, Experience, company_Industry, job_schedule } = req.query;
+
+        // Check for required fields
+        if (!job_title) {
+            return res.status(400).json({
+                success: false,
+                message: 'Job Title required'
+            });
+        }
+        if (!company_address) {
+            return res.status(400).json({
+                success: false,
+                message: 'Company address Required'
+            });
+        }
+
+        const filter = {};
+
+        if (job_type) {
+            filter.job_type = job_type;
+        }
+        if (job_schedule) {
+            filter.job_schedule = job_schedule;
+        }
+        if (Experience) {
+            // Convert Experience to a regular expression for partial matching
+            filter.Experience = { $regex: Experience, $options: 'i' };
+        }
+        if (company_Industry) {
+            filter.company_Industry = company_Industry;
+        }
+
+        // Use regular expressions to perform partial matches
+        const jobs = await jobModel.find({
+            status: 1,
+            job_title: { $regex: job_title, $options: 'i' }, // Case insensitive
+            company_address: { $regex: company_address, $options: 'i' },
+            ...filter
+        });
+
+        if (jobs.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No jobs found'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Job Details',
+            JobsCount: jobs.length,
+            Details: jobs
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+
+
         
         
 
@@ -1590,7 +2125,8 @@ const deletejobTitle = async (req, res) => {
                                 Salary,
                                 job_expired_Date,
                                 job_status,
-                                jobId : jobId
+                                jobId : jobId,
+                                candidateStatus : 1
                             });
                             
                             try {
@@ -1932,8 +2468,10 @@ const deletejobTitle = async (req, res) => {
                              message : 'Dashboard Details',
                              active_jobs_count : checkActive_jobs.length,
                              all_clients_count : all_clients.length,
-                             all_cv_count : all_candidate.length,
-                             all_femaleCandidates_count : all_femaleCandidates.length
+                             all_cvCount : all_candidate.length,
+                             all_femaleCandidates_count : all_femaleCandidates.length,
+                             allCandidates : all_candidate.length
+
 
                          })
                        
@@ -2047,12 +2585,70 @@ const cms_getjob_market_data = async (req, res) => {
         });
     }
 }
+
+
+// Api for client Dashboard count
+const client_dashboardCount = async (req, res) => {
+    try {
+        const client_id = req.params.client_id;
+        
+        // Check for client id
+        if (!client_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Client Id is required'
+            });
+        }
+
+        // Check for client existence
+        const client = await employeeModel.findById(client_id);
+        if (!client) {
+            return res.status(400).json({
+                success: false,
+                message: 'Client not found'
+            });
+        }
+
+        // Check total job posted by client
+        const totalJobs = await jobModel.find({ emp_Id: client_id });
+        
+
+        // Check for active jobs
+        const active_jobs = await jobModel.find({ emp_Id: client_id, status: 1 });
+       
+
+        // Check for female candidates
+        const femaleCandidates = await appliedjobModel.find({ jobId: { $in: totalJobs.map(job => job.jobId) }, gender: 'Female' });
+       
+
+        // Check for total candidates applied
+        const totalCandidates = await appliedjobModel.find({ jobId: { $in: totalJobs.map(job => job.jobId) } });
+        
+
+        return res.status(200).json({
+            success: true,
+            message: 'Details',
+            totalJobCount: totalJobs.length,
+            active_jobsCount: active_jobs.length,
+            femaleCandidateCount: femaleCandidates.length,
+            totalCandidateCount: totalCandidates.length
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
     getAll_Jobs ,searchJob , apply_on_job , get_Female_jobseeker_profile , get_jobseeker_profile , getNotification_emp,
-    seenNotification, unseenNotificationCount , deleteJob ,
+    seenNotification, unseenNotificationCount , deleteJob , activejobs_by_client , Inactivejobs_by_client ,filterJob,
     getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts , deleteCandidate,
     cms_getJobs_posted_procedure_section1 , cms_get_need_any_job_section ,get_cms_post_your_job , cms_getjob_market_data,
     addJobTitle , alljobTitle , deletejobTitle , psychometric_questions , getAll_psychometric_questions , export_candidate,
-    addQuestion , getquestions
+    addQuestion , getquestions , getAllTest , deletepsychometrcTest , deletequestion_in_Test , client_dashboardCount,
+    forgetPassOTP,  verifyOTP  , clientResetPass
 } 
