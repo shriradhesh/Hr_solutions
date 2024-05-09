@@ -32,6 +32,8 @@ const cms_t_d_Model = require('../model/cms_t_d')
 const cms_recruitment_selection_Model = require('../model/cms_recruitment_selection')
 const cms_employee_outsourcing_Model = require('../model/cms_outsourcing')
 const cms_Hr_teleconsultation_model = require('../model/cms_hr_teleconsultation')
+const faqModel = require('../model/Faq')
+const contactUsModel = require('../model/contact_us')
 
                                                  /* Admin and staff Section */
            
@@ -44,13 +46,13 @@ const cms_Hr_teleconsultation_model = require('../model/cms_hr_teleconsultation'
             if (!email) {
                 return res.status(400).json({
                     success: false,
-                    message: "email is Required",
+                    message: "Email is Required",
                 });
             }
             if (!password) {
                 return res.status(400).json({
                     success: false,
-                    message: "password is Required",
+                    message: "Password is Required",
                 });
             }
             // Find Admin by email
@@ -293,7 +295,7 @@ const cms_Hr_teleconsultation_model = require('../model/cms_hr_teleconsultation'
                         // send notification to admin
               try {
                 const adminNotification =  adminNotificationModel.create({
-                    
+                    title : 'password changed',
                     message: `your account password changed successfully`,
                     date: new Date(),
                     status: 1,
@@ -462,7 +464,7 @@ const cms_Hr_teleconsultation_model = require('../model/cms_hr_teleconsultation'
             // send notification to admin
             try {
                 const adminNotification =  adminNotificationModel.create({
-                    
+                    title : 'password reset',
                     message: `Your account password reset successfully`,
                     date: new Date(),
                     status: 1,
@@ -1463,12 +1465,14 @@ const cms_Hr_teleconsultation_model = require('../model/cms_hr_teleconsultation'
                 HomeAddress : candidate.city + candidate.state,
                 
             }));
-    
+                    // sort the response
+                  const sortResponse = responseData.sort(( a , b ) => b.createdAt - a.createdAt)
+
             // Respond with the list of candidates details
             return res.status(200).json({
                 success: true,
                 message: 'Candidate Details',
-                candidates: responseData
+                candidates: sortResponse
             })             
     
         } catch (error) {
@@ -1497,10 +1501,11 @@ const cms_Hr_teleconsultation_model = require('../model/cms_hr_teleconsultation'
                                   message : 'No employee Found'
                             })
                         }
+                        const sortclient = allEmp.sort(( a , b )=> b.createdAt - a.createdAt)
                         return res.status(200).json({
                                success : true ,
                                message : 'All Employees',
-                               Details : allEmp
+                               Details : sortclient
                         })
                   } catch (error) {
                     return res.status(500).json({
@@ -1669,11 +1674,12 @@ const active_inactive_job = async (req, res) => {
                                             message : 'No Female Candidates profile Found'
                                         })
                                     }
+                                    const sortedallFemale_Candidate = allFemale_Candidate.sort(( a , b) => b.createdAt - a.createdAt )
                                     return res.status(200).json({
                                         success : true ,
                                         message : 'Female candidate Profile',
-                                        allFemale_CandidateCount : allFemale_Candidate.length,
-                                        Details: allFemale_Candidate.map((candidate) => ({
+                                        allFemale_CandidateCount : sortedallFemale_Candidate.length,
+                                        Details: sortedallFemale_Candidate.map((candidate) => ({
                                         _id : candidate._id,
                                         first_Name: candidate.first_Name,
                                         last_Name: candidate.last_Name,
@@ -2190,11 +2196,11 @@ const active_inactive_job = async (req, res) => {
                                   message : 'no testimonial Details found'
                             })
                         }
-
+                        const sortedall_testimonial = all_testimonial.sort(( a , b ) => b.createdAt - a.createdAt )
                         return res.status(200).json({
                                success : true ,
                                message : 'all testimonial',
-                               Details : all_testimonial
+                               Details : sortedall_testimonial
                         })
                     
                    } catch (error) {
@@ -3225,6 +3231,7 @@ const active_inactive_job = async (req, res) => {
                     success: true,
                     message: 'Admin notifications',
                     notifications: adminNotifications.map((notify) => ({
+                        title : notify.title || null,
                         message: notify.message,
                         notification_status: notify.status,
                         notitication_id : notify._id
@@ -3327,9 +3334,8 @@ const active_inactive_job = async (req, res) => {
     // Api for cms_hr_consultancy
             
            const cms_Hr_consultancy = async (req, res) => {
-            try {          
-        
-        
+            try {       
+                
                 const { Heading, Description } = req.body;
         
                 // Check for exist hr consultancy
@@ -3578,7 +3584,7 @@ const active_inactive_job = async (req, res) => {
                     Heading: Heading,
                     Description: Description
                 });
-    
+   
                 await newData.save();
     
                 return res.status(200).json({
@@ -3830,8 +3836,188 @@ const active_inactive_job = async (req, res) => {
            })
         }
  }
+
+                                              /* FAQ Page */
+
+            const createFAQ = async ( req , res )=>{
+                                                try {
+                                                          const { Question , answer } = req.body
+                                                     // check for required fields
+                                                 const requiredfields = ['Question' , 'answer' ]
+                                                 for ( const field of requiredfields)
+                                                    
+                                                         {
+                                                            if (!req.body[field])
+                                                             {
+                                                                return res.status(400).json({
+                                                                    success: false,
+                                                                    message: `Missing ${field.replace('_', ' ')} field`,
+                                                                });
+                                                             }
+                                                        }
+                                                         // create new Data
+                                                     const newData = await new faqModel({
+                                                         Question , answer
+                                                     })
+                                                        await newData.save()
+                     
+                                                        return res.status(200).json({
+                                                             success : true ,
+                                                             message : 'Question created successfully',
+                                                        })
+                                                   
+                                                } catch (error) {
+                                                 return res.status(500).json({
+                                                         success : false ,
+                                                         message : 'server error',
+                                                         error_message : error.message
+                                                 })
+                                                }
+                                      }
+    // Api for get Faq Details
+             const get_FAQdetails = async ( req , res)=>{
+                      try {
+                           // check for FAQ Details
+                        const getDetails = await faqModel.find({
+
+                        })
+                          if(!getDetails)
+                            {
+                                return res.status(400).json({
+                                      success : false ,
+                                      message : 'No FAQ Details found'
+                                })
+                            }
+
+                            return res.status(200).json({
+                                  success : true ,
+                                  message : 'FAQ Details',
+                                  Details : getDetails
+                            })
+                      } catch (error) {
+                          return res.status(400).json({
+                              success : false ,
+                              message : 'server error',
+                              error_message : error.message
+                          })
+                      }
+             }
      
- 
+        // API FOR DELETE particular faq Details
+
+                 const DeleteFAQ = async ( req ,res )=>{
+                           try {
+                                     const faq_id = req.params.faq_id
+                            // check for faq_id
+                            if(!faq_id)
+                                {
+                                    return res.status(400).json({
+                                         success : false ,
+                                         message : 'faq Id required'
+                                    })
+                                }
+
+                            // check for FAQ Details 
+
+                            const FAQ = await faqModel.findOne({
+                                     _id : faq_id
+                            })
+
+                            if(!FAQ)
+                                {
+                                    return res.status(400).json({
+                                         success : false ,
+                                         message : 'FAQ Details not found'
+                                    })
+                                }
+                                await FAQ.deleteOne()
+
+                                return res.status(200).json({
+                                     success : true ,
+                                     message : 'FAQ Details Deleted'
+                                })
+                           } catch (error) {
+                            return res.status(500).json({
+                                     success : false ,
+                                     message : 'server error',
+                                     error_message : error.message
+                            })
+                           }
+                 }
+
+
+                                                 /* Contact us Page */
+      // Api for get Contact us page details
+                const get_contactUS = async( req , res)=>{
+                         try {
+                                 // check for details
+                            const checkDetails = await contactUsModel.find({
+                                 
+                            })
+
+                         if(!checkDetails)
+                            {
+                                  return res.status(400).json({
+                                       success : false ,
+                                       message : 'Details not found'
+                                  })
+                            }
+
+                            return res.status(200).json({
+                                 success : true ,
+                                 message : 'Details',
+                                 Details : checkDetails
+                            })
+                         } catch (error) {
+                             return res.status(500).json({
+                                   success : false ,
+                                   message : 'server error',
+                                   error_message : error.message
+                             })
+                         }
+                }
+
+// API FOR DELETE particular contactUS Details
+
+const DeleteContactUS = async ( req ,res )=>{
+    try {
+              const contact_id = req.params.contact_id
+     // check for faq_id
+     if(!contact_id)
+         {
+             return res.status(400).json({
+                  success : false ,
+                  message : 'contact_id required'
+             })
+         }
+
+     // check for contact Details 
+
+     const contact = await contactUsModel.findOne({
+              _id : contact_id
+     })
+
+     if(!contact)
+         {
+             return res.status(400).json({
+                  success : false ,
+                  message : 'contact Details not found'
+             })
+         }
+         await contact.deleteOne()
+
+         return res.status(200).json({
+              success : true ,
+              message : 'contact Details Deleted'
+         })
+    } catch (error) {
+     return res.status(500).json({
+              success : false ,
+              message : 'server error',
+              error_message : error.message
+     })
+    }
+}
 
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
@@ -3839,7 +4025,7 @@ module.exports = {
     candidate_recruitment_process , active_inactive_Hr , send_notification_to_client , sendNotification_to_allClient,
     send_notification ,  create_services , getService ,  create_privacy_policy , get_admin_privacy_policy,
     create_term_condition , get_admin_term_condition , getAll_candidates , AdminforgetPassOTP , AdminverifyOTP , adminResetPass ,
-    getAdminNotification , unseen_admin_notification_count ,seen_notification ,
+    getAdminNotification , unseen_admin_notification_count ,seen_notification , get_FAQdetails , createFAQ , DeleteFAQ , get_contactUS, DeleteContactUS ,
     
               /*  CMS PAGE */
      create_testimonial , getAll_testimonial , get_testimonial , update_testimonial , delete_testimonial,

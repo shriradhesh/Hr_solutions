@@ -98,6 +98,21 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
                         router.get('/unseen_admin_notification_count', Admin_and_staffController.unseen_admin_notification_count)
         // Api for seen_notification
                         router.post('/seen_notification/:notification_id', Admin_and_staffController.seen_notification )
+
+                                                      /* FAQ Page */
+          // Api for createFAQ
+              router.post('/createFAQ', Admin_and_staffController.createFAQ)
+       // Api for get_FAQdetails
+                        router.get('/get_FAQdetails', Admin_and_staffController.get_FAQdetails)
+       // Api for DeleteFAQ
+                        router.delete('/DeleteFAQ/:faq_id', Admin_and_staffController.DeleteFAQ)
+
+                                                    /* Contact us Page */
+        // Api for get_contactUS
+                       router.get('/get_contactUS', Admin_and_staffController.get_contactUS)
+        // Api for DeleteContactUS
+                        router.delete('/DeleteContactUS/:contact_id' , Admin_and_staffController.DeleteContactUS)
+
                         
                                                    /* CMS Page */
             /* Testimonial Section */

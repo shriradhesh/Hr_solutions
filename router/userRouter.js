@@ -59,6 +59,8 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
                         router.delete('/deletepsychometrcTest/:psychometric_id',userController.deletepsychometrcTest )
         // Api for deletequestion_in_Test
                         router.delete('/deletequestion_in_Test/:testId/:questionId', userController.deletequestion_in_Test)
+        // Api for get particlar Test
+                         router.get('/getTest/:test_id', userController.getTest)  
 
                                        /* POST job section */
         // Api for postJob
@@ -127,6 +129,12 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          //Api for client_dashboardCount
                 router.get('/client_dashboardCount/:client_id', userController.client_dashboardCount)
 
+                              
+                                         
+
+                                          /* Contact US page */
+         // Api for create_contactUS
+                router.post('/create_contactUS', userController.create_contactUS)
         
 
 

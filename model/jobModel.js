@@ -81,8 +81,9 @@ const jobSchema = new mongoose.Schema({
         default : 0
     },
     isPsychometricTest : {
-        type: Boolean,
-        default: false
+        type: Number,
+        enum : [0 ,1],
+        default: 0
     },
     psychometric_Test : {
         type : mongoose.Schema.Types.ObjectId ,

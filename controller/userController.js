@@ -21,6 +21,8 @@ const ExcelJs = require("exceljs");
 const otpModel = require('../model/otpModel')
 const sendEmails = require('../utils/sendEmails')
 const adminNotificationModel = require('../model/adminNotification')
+const faqModel = require('../model/Faq')
+const contactUsModel = require('../model/contact_us')
 
 
 
@@ -115,7 +117,7 @@ const adminNotificationModel = require('../model/adminNotification')
                                 // send notification to admin
                                 try {
                                     const newNotification =  adminNotificationModel.create({
-                                        
+                                        title : `New Client`,
                                         message: `New client added successfully! Please activate their account from pending status`,
                                         date: new Date(),
                                         status: 1,
@@ -833,10 +835,14 @@ const deletejobTitle = async (req, res) => {
                         })
                      }
 
+                     // sort data]
+
+                     const sorteddata = checkpsychometric_Q.sort(( a , b ) => b.createdAt - a.createdAt )
+
                      return res.status(200).json({
                          success : true ,
                          message : `psychometric Test for Job_Title${job_title}`,
-                         options : checkpsychometric_Q
+                         options : sorteddata
                                    
                      })
                } catch (error) {
@@ -864,7 +870,7 @@ const deletejobTitle = async (req, res) => {
                                     })
                                    }
                                         // sort details
-                        const sortedData = chechT.sort((a,b)=> b.createdAt - a.createdAt)
+                        const sortedData = chechT.sort(( a , b ) => b.createdAt - a.createdAt)
                                    return res.status(200).json({
                                      success : true ,
                                      message : 'Tests',
@@ -960,7 +966,46 @@ const deletejobTitle = async (req, res) => {
                 }
             };
             
-                  
+                  // Api for get particular test
+
+                  const getTest = async( req , res)=>{
+                       try {
+                             const test_id = req.params.test_id
+                            // check for test id
+                            if(!test_id)
+                                {
+                                    return res.status(400).json({
+                                         success : false ,
+                                         message : 'Test Id required'
+                                    })
+                                }
+
+                                // check for test
+                                const test = await PsychometricModel.findOne({
+                                         _id : test_id
+                                })
+                                if(!test)
+                                    {
+                                        return res.status(400).json
+                                        ({
+                                              success : false ,
+                                              message : 'No test found'
+                                        })
+                                    }
+
+                                    return res.status(200).json({
+                                           success : true,
+                                           message : 'Test',
+                                           Test : test
+                                    })
+                       } catch (error) {
+                        return res.status(500).json({
+                             success : false ,
+                             message : 'server error',
+                             error_message : error.message
+                        })
+                       }
+                  }
                                                  /* Job Section */
         // Api for post job
         const postJob = async (req, res) => {
@@ -1047,7 +1092,7 @@ const deletejobTitle = async (req, res) => {
                     return result;
                 }
         
-                const randomNumber = generateRandomNumber(3);
+                const randomNumber = generateRandomNumber(5);
                 const finalString = `JOB${randomNumber}`; 
 
                 const newJob = new jobModel({
@@ -1092,7 +1137,7 @@ const deletejobTitle = async (req, res) => {
               // send notification to admin
               try {
                 const adminNotification =  adminNotificationModel.create({
-                    
+                    title : `New Job`,
                     message: `${employee.name} from ${employee.company_name} has posted a new job. Please schedule it promptly.`,
                     date: new Date(),
                     status: 1,
@@ -1579,7 +1624,7 @@ const deletejobTitle = async (req, res) => {
                    {
                     return res.status(400).json({
                           success : false ,
-                          message : 'candidate Details not found'
+                          message : 'candidate Details not found' 
                     })
                    }
 
@@ -1809,12 +1854,13 @@ const deletejobTitle = async (req, res) => {
                     };
                 }));
                 
+                   const sortedjobsData = jobsData.sort(( a , b ) => b.createdAt - a.createdAt )
                 // Return successful response with jobs data
                 return res.status(200).json({
                     success: true,
                     message: 'All Jobs',
                     JobsCount: allJobs.length,
-                    allJobs: jobsData
+                    allJobs: sortedjobsData
                 });
             } catch (error) {
                 // Return error response if any error occurs
@@ -1839,7 +1885,7 @@ const deletejobTitle = async (req, res) => {
                                       endDate: {
                                         $lt: currentDate,
                                       },
-                                      status: { $ne: 0 }, 
+                                      status: { $ne: 3 }, 
                                     });
                                 
                                     if (expiredJob.length > 0) {
@@ -1850,7 +1896,7 @@ const deletejobTitle = async (req, res) => {
                                           },
                                         },
                                         {
-                                          status: 0,
+                                          status: 3,
                                         }
                                       );
                                     }
@@ -2642,6 +2688,56 @@ const client_dashboardCount = async (req, res) => {
     }
 };
 
+
+               
+
+                                                   /* Contact US Page */
+
+            // Api for create Contact us page 
+
+                   const create_contactUS = async ( req , res )=>{
+                           try {
+                                   const { name , email , phone_no , subject , message } = req.body
+                            // check for required fields
+
+                            const requiredFields = ['name', 'email' , 'phone_no' ,'subject', 'message']
+                            for(const field of requiredFields)
+                                {
+                                    if(!req.body[field])
+                                        {
+                                             return res.status(400).json({
+                                                    success : false ,
+                                                    message : `missing ${field.replace('_' , ' ')} filed`
+                                             })
+                                        }
+                                }
+
+                                // create new Data
+
+                                const newData = new contactUsModel({
+                                         name ,
+                                         email , 
+                                         phone_no,
+                                         subject,
+                                         message
+                                })
+
+                                    await newData.save()
+
+                                    return res.status(200).json({
+                                          success : true ,
+                                          message : 'your Query Recieved Successfully'
+                                    })
+                           } catch (error) {
+                              return res.status(500).json({
+                                     success : false ,
+                                     message : ' server error',
+                                     error_message : error.message
+                              })
+                           }
+                   }
+
+        
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
     getAll_Jobs ,searchJob , apply_on_job , get_Female_jobseeker_profile , get_jobseeker_profile , getNotification_emp,
@@ -2649,6 +2745,6 @@ module.exports = {
     getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts , deleteCandidate,
     cms_getJobs_posted_procedure_section1 , cms_get_need_any_job_section ,get_cms_post_your_job , cms_getjob_market_data,
     addJobTitle , alljobTitle , deletejobTitle , psychometric_questions , getAll_psychometric_questions , export_candidate,
-    addQuestion , getquestions , getAllTest , deletepsychometrcTest , deletequestion_in_Test , client_dashboardCount,
-    forgetPassOTP,  verifyOTP  , clientResetPass
+    addQuestion , getquestions , getAllTest , deletepsychometrcTest , deletequestion_in_Test , getTest ,client_dashboardCount,
+    forgetPassOTP,  verifyOTP  , clientResetPass,  create_contactUS 
 } 
