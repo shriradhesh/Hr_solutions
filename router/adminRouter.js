@@ -179,6 +179,26 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
                router.post('/cms_Hr_teleconsultation', upload.single('image'), Admin_and_staffController.cms_Hr_teleconsultation) 
      // Api for get_hr_teleconsultation_Details
                router.get('/get_hr_teleconsultation_Details', Admin_and_staffController.get_hr_teleconsultation_Details)
+     // Api for cms_our_mission
+               router.post('/cms_our_mission', Admin_and_staffController.cms_our_mission)
+     // Api for get_ourMission_details
+               router.get('/get_ourMission_details', Admin_and_staffController.get_ourMission_details)
+     // Api for cms_aboutUs
+                router.post('/cms_aboutUs', Admin_and_staffController.cms_aboutUs)
+     // Api for get_aboutUS_details
+                 router.get('/get_aboutUS_details', Admin_and_staffController.get_aboutUS_details)
+      // Api for cms_our vission 
+                router.post('/cms_our_vission', Admin_and_staffController.cms_our_vission)
+                // Api for get_aboutUS_details
+                            router.get('/get_ourVission_details', Admin_and_staffController.get_ourVission_details)
+      // Api for cms_our commitment
+                router.post('/cms_our_commitment', Admin_and_staffController.cms_our_commitment)
+                // Api for get_ourCommitment_details
+                            router.get('/get_ourCommitment_details', Admin_and_staffController.get_ourCommitment_details)
+      // Api for get started today
+                router.post('/cms_get_started_today', Admin_and_staffController.cms_get_started_today)
+                // Api for get_ourCommitment_details
+                            router.get('/get_started_todayDetails', Admin_and_staffController.get_started_todayDetails)
 
 
 module.exports = router

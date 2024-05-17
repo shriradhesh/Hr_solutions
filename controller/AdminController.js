@@ -34,6 +34,12 @@ const cms_employee_outsourcing_Model = require('../model/cms_outsourcing')
 const cms_Hr_teleconsultation_model = require('../model/cms_hr_teleconsultation')
 const faqModel = require('../model/Faq')
 const contactUsModel = require('../model/contact_us')
+const cms_our_mission_Model = require('../model/cms_our_mission')
+const cms_our_vission_Model = require('../model/cms_our_vission')
+const cms_aboutUs_Model = require('../model/cms_aboutUs')
+const cms_our_commitment_Model = require('../model/cms_our_commitment')
+const cms_get_started_today_Model = require('../model/cms_get_started_today')
+
 
                                                  /* Admin and staff Section */
            
@@ -3837,6 +3843,477 @@ const active_inactive_job = async (req, res) => {
         }
  }
 
+
+ // Api for our mission
+ const cms_our_mission = async (req, res) => {
+    try {
+        const { Heading, Description } = req.body;       
+
+        // Check if our mission data exists
+        let exist_our_mission = await cms_our_mission_Model.findOne();
+
+        if (exist_our_mission) {
+            // Update existing data
+            exist_our_mission.Heading = Heading;
+            exist_our_mission.Description = Description;
+            await exist_our_mission.save();
+
+            return res.status(200).json({
+                success: true,
+                message: 'Details updated successfully'
+            });
+        } else {
+             // Check if Heading is missing
+        if (!Heading) {
+            return res.status(400).json({
+                success: false,
+                message: 'Heading is required'
+            });
+        }
+
+        // Check if Description is missing
+        if (!Description) {
+            return res.status(400).json({
+                success: false,
+                message: 'Description is required'
+            });
+        }
+            // Create new data
+            const newData = new cms_our_mission_Model({
+                Heading,
+                Description
+            });
+
+            await newData.save();
+
+            return res.status(200).json({
+                success: true,
+                message: 'New details saved successfully'
+            });
+        }
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+
+// Api for get cms our mission Details
+
+const get_ourMission_details = async( req , res)=>{
+        try {
+             // check for details
+             const checkDetails = await cms_our_mission_Model.find({
+                 
+             })
+
+             if(!checkDetails)
+                {
+                    return res.status(400).json({
+                         success : false ,
+                         message : 'no Details found'
+                    })
+                }
+
+                return res.status(200).json({
+                     success : true ,
+                     message : 'our mission',
+                     Details : checkDetails
+                })
+        } catch (error) {
+            return res.status(500).json({
+                 success : false ,
+                 message : 'server error',
+                 error_message : error.message
+            })
+        }
+}
+
+
+// Api for our vission
+const cms_our_vission = async (req, res) => {
+    try {
+        const { Heading, Description } = req.body;       
+
+        // Check if our mission data exists
+        let exist_our_vission = await cms_our_vission_Model.findOne();
+
+        if (exist_our_vission) {
+            // Update existing data
+            exist_our_vission.Heading = Heading;
+            exist_our_vission.Description = Description;
+            await exist_our_vission.save();
+
+            return res.status(200).json({
+                success: true,
+                message: 'Details updated successfully'
+            });
+        } else {
+             // Check if Heading is missing
+        if (!Heading) {
+            return res.status(400).json({
+                success: false,
+                message: 'Heading is required'
+            });
+        }
+
+        // Check if Description is missing
+        if (!Description) {
+            return res.status(400).json({
+                success: false,
+                message: 'Description is required'
+            });
+        }
+            // Create new data
+            const newData = new cms_our_vission_Model({
+                Heading,
+                Description
+            });
+
+            await newData.save();
+
+            return res.status(200).json({
+                success: true,
+                message: 'New details saved successfully'
+            });
+        }
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+
+// Api for get cms our vission Details
+
+const get_ourVission_details = async( req , res)=>{
+        try {
+             // check for details
+             const checkDetails = await cms_our_vission_Model.find({
+                 
+             })
+
+             if(!checkDetails)
+                {
+                    return res.status(400).json({
+                         success : false ,
+                         message : 'no Details found'
+                    })
+                }
+
+                return res.status(200).json({
+                     success : true ,
+                     message : 'our vission',
+                     Details : checkDetails
+                })
+        } catch (error) {
+            return res.status(500).json({
+                 success : false ,
+                 message : 'server error',
+                 error_message : error.message
+            })
+        }
+}
+
+
+  // about us
+            const cms_aboutUs = async( req , res ) =>{
+                   try {
+                           const { Heading , Description } = req.body
+                           // check for exist about us
+
+                           const exist_aboutUs = await cms_aboutUs_Model.findOne({
+                                
+                           })
+
+                           if(exist_aboutUs)
+                            {
+                                exist_aboutUs.Heading = Heading
+                                exist_aboutUs.Description = Description
+
+                                await exist_aboutUs.save()
+                                return res.status(200).json({
+                                     success : true ,
+                                     message : 'Details update successfully'
+                                })
+                            }
+
+                            else
+                            {
+                                   // check for required fields
+
+                                   if(!Heading)
+                                    {
+                                        return res.status(400).json({
+                                             success : false ,
+                                             message : 'Heading Required'
+                                        })
+                                    }
+
+                                    if(!Description)
+                                        {
+                                            return res.status(400).json({
+                                                 success : false ,
+                                                 message : 'Description Required'
+                                            })
+                                        }
+
+                                    // create new Data
+
+                                    const newData = new cms_aboutUs_Model({
+                                          Heading ,
+                                          Description 
+                                    })
+
+                                    await newData.save()
+
+                                    return res.status(200).json({
+                                         success : true ,
+                                         message : 'New Details created successfully'
+                                    })
+                            }
+                   } catch (error) {
+                    return res.status(500).json({
+                         success : false ,
+                         message : 'server error',
+                         error_message : error.message
+                    })
+                   }
+            }
+            // Api for get cms about us Details
+
+const get_aboutUS_details = async( req , res)=>{
+    try {
+         // check for details
+         const checkDetails = await cms_aboutUs_Model.find({
+             
+         })
+
+         if(!checkDetails)
+            {
+                return res.status(400).json({
+                     success : false ,
+                     message : 'no Details found'
+                })
+            }
+
+            return res.status(200).json({
+                 success : true ,
+                 message : 'our mission',
+                 Details : checkDetails
+            })
+    } catch (error) {
+        return res.status(500).json({
+             success : false ,
+             message : 'server error',
+             error_message : error.message
+        })
+    }
+}
+
+
+
+
+// our commitment
+const cms_our_commitment = async( req , res ) =>{
+    try {
+            const { Heading , Description } = req.body
+            // check for exist commitment
+
+            const exist_our_commitment = await cms_our_commitment_Model.findOne({
+                 
+            })
+
+            if(exist_our_commitment)
+             {
+                exist_our_commitment.Heading = Heading
+                exist_our_commitment.Description = Description
+
+                 await exist_our_commitment.save()
+                 return res.status(200).json({
+                      success : true ,
+                      message : 'Details update successfully'
+                 })
+             }
+
+             else
+             {
+                    // check for required fields
+
+                    if(!Heading)
+                     {
+                         return res.status(400).json({
+                              success : false ,
+                              message : 'Heading Required'
+                         })
+                     }
+
+                     if(!Description)
+                         {
+                             return res.status(400).json({
+                                  success : false ,
+                                  message : 'Description Required'
+                             })
+                         }
+
+                     // create new Data
+
+                     const newData = new cms_our_commitment_Model({
+                           Heading ,
+                           Description 
+                     })
+
+                     await newData.save()
+
+                     return res.status(200).json({
+                          success : true ,
+                          message : 'New Details created successfully'
+                     })
+             }
+    } catch (error) {
+     return res.status(500).json({
+          success : false ,
+          message : 'server error',
+          error_message : error.message
+     })
+    }
+}
+// Api for get cms our commitment Details
+
+const get_ourCommitment_details = async( req , res)=>{
+try {
+// check for details
+const checkDetails = await cms_our_commitment_Model.find({
+
+})
+
+if(!checkDetails)
+{
+ return res.status(400).json({
+      success : false ,
+      message : 'no Details found'
+ })
+}
+
+return res.status(200).json({
+  success : true ,
+  message : 'our commitment',
+  Details : checkDetails
+})
+} catch (error) {
+return res.status(500).json({
+success : false ,
+message : 'server error',
+error_message : error.message
+})
+}
+}
+
+
+
+
+// our get_started_today
+const cms_get_started_today = async( req , res ) =>{
+    try {
+            const { Heading , Description } = req.body
+            // check for exist commitment
+
+            const exist_gst = await cms_get_started_today_Model.findOne({
+                 
+            })
+
+            if(exist_gst)
+             {
+                exist_gst.Heading = Heading
+                exist_gst.Description = Description
+
+                 await exist_gst.save()
+                 return res.status(200).json({
+                      success : true ,
+                      message : 'Details update successfully'
+                 })
+             }
+
+             else
+             {
+                    // check for required fields
+
+                    if(!Heading)
+                     {
+                         return res.status(400).json({
+                              success : false ,
+                              message : 'Heading Required'
+                         })
+                     }
+
+                     if(!Description)
+                         {
+                             return res.status(400).json({
+                                  success : false ,
+                                  message : 'Description Required'
+                             })
+                         }
+
+                     // create new Data
+
+                     const newData = new cms_get_started_today_Model({
+                           Heading ,
+                           Description 
+                     })
+
+                     await newData.save()
+
+                     return res.status(200).json({
+                          success : true ,
+                          message : 'New Details created successfully'
+                     })
+             }
+    } catch (error) {
+     return res.status(500).json({
+          success : false ,
+          message : 'server error',
+          error_message : error.message
+     })
+    }
+}
+// Api for get cms our commitment Details
+
+const get_started_todayDetails = async( req , res)=>{
+try {
+// check for details
+const checkDetails = await cms_get_started_today_Model.find({
+
+})
+
+if(!checkDetails)
+{
+ return res.status(400).json({
+      success : false ,
+      message : 'no Details found'
+ })
+}
+
+return res.status(200).json({
+  success : true ,
+  message : 'get_started_today',
+  Details : checkDetails
+})
+} catch (error) {
+return res.status(500).json({
+success : false ,
+message : 'server error',
+error_message : error.message
+})
+}
+}
+
+
                                               /* FAQ Page */
 
             const createFAQ = async ( req , res )=>{
@@ -4034,7 +4511,9 @@ module.exports = {
      get_cms_job_market_data , cms_blog_section1 , getcmsBlog_section1 ,cmsBlog_section2 , getBlogDetails ,
      update_cms_blog , deleteBlog , cmsHeadquarter , getcms_headquarter , cms_Hr_consultancy , getHr_consultancy_Details,
      cms_training_developement , get_training_development_Details , cms_recruitment_selection , get_recruitment_selection_Details,
-     cms_employee_outsourcing , get_outsourcing_Details , cms_Hr_teleconsultation , get_hr_teleconsultation_Details
+     cms_employee_outsourcing , get_outsourcing_Details , cms_Hr_teleconsultation , get_hr_teleconsultation_Details , cms_our_mission ,
+     get_ourMission_details , cms_aboutUs , get_aboutUS_details , cms_our_vission , get_ourVission_details , cms_our_commitment , get_ourCommitment_details ,
+     cms_get_started_today , get_started_todayDetails
      
      
 }

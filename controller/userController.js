@@ -23,6 +23,8 @@ const sendEmails = require('../utils/sendEmails')
 const adminNotificationModel = require('../model/adminNotification')
 const faqModel = require('../model/Faq')
 const contactUsModel = require('../model/contact_us')
+const jobDescription_model = require('../model/jobDescription')
+
 
 
 
@@ -644,6 +646,175 @@ const deletejobTitle = async (req, res) => {
         .json({ success: false, message: "server error", error_message : error.message });
     }
   };
+                                    /* job Description Section  */
+ // Api for add job Description
+
+    const addJob_Description = async (req, res) => {
+
+  
+    try {
+        const { jobTitle , job_Description ,  Responsibilities  } = req.body;  
+
+        // check for existing job description
+        const existJd = await jobDescription_model.findOne({
+            jobTitle : jobTitle
+        })
+          if(existJd)
+            {
+                      existJd.jobTitle = jobTitle
+                    existJd.job_Description = job_Description
+                    existJd.Responsibilities = Responsibilities
+
+                    await existJd.save()
+                    return res.status(200).json({
+                         success : true ,
+                         message : 'job Description update successfully'
+                    })
+            } else{
+      const requiredFields = ["jobTitle" , "job_Description" , "Responsibilities"];
+  
+      for (const field of requiredFields) {
+        if (!req.body[field]) {
+          return res
+            .status(400)
+            .json({
+              message: `Missing ${field.replace("_", " ")} field`,
+              success: false,
+            });
+        }
+      }    
+            // create new JD
+      const newJD = new jobDescription_model({
+        jobTitle: jobTitle,
+        job_Description : job_Description,
+        Responsibilities : Responsibilities,
+      });
+      const savedjob_Description = await newJD.save();
+  
+      return res
+        .status(200)
+        .json({
+          success: true,
+          message: `job Description added successfully `,
+          job_Description : savedjob_Description,
+        });
+    }
+    } catch (error) {
+      console.error(error);
+      return res
+        .status(500)
+        .json({
+          success: false,
+          message: `server error`,
+          error_message: error,
+        });
+    }
+  };
+
+
+   // get all jobDescription form the job description Schema
+
+   const alljobDescription = async (req, res) => {
+    try {
+        // Fetch all jDs from the database
+        const jds = await jobDescription_model.find({});
+        
+        // Check if jobTitles array is empty
+        if (jds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "No Job Descriptions found",
+            });
+        } else {
+            // Map formattedjds to required format
+            const formattedjds = jds.map(jobT => ({
+                jobTitle: jobT.jobTitle,
+                job_Description : jobT.job_Description,
+                Responsibilities : jobT.Responsibilities,
+                _id : jobT._id
+            }));
+            
+            // Send formatted jobTitles as response
+            res.status(200).json({
+                success: true,
+                message: "All Description",
+                details: formattedjds
+            });
+        }
+    } catch (error) {
+        // Handle server error
+        res.status(500).json({ success: false, message: "Server error", error_message: error.message });
+    }
+};
+
+// Api for get particular JD using title 
+
+      const getJd = async( req , res )=>{
+            try {
+                  const { jobTitle } = req.body
+                  // check for job Title
+                if(!jobTitle)
+                    {
+                        return res.status(400).json({
+                             success : false ,
+                             message : 'job Title Required'
+                        })
+                    }
+
+             // check for job Descreption for jobTItle
+                      const JD = await jobDescription_model.findOne({
+                              jobTitle : jobTitle
+                      })
+
+                      if(!JD)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message :  `JOb Description not found for the given jobTitle : ${jobTitle}`
+                            })
+                        }
+
+
+                        return res.status(200).json({
+                             success : true ,
+                             message : 'JOB Description',
+                             Details : JD
+                        })
+
+                            } catch (error) {
+                return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+                })
+            }
+      }
+
+// Delete a particular job Description by jD Id
+
+const deleteJob_Description = async (req, res) => {
+    try {
+      const Jd_id = req.params.Jd_id;
+  
+      // Check for JD existence
+      const existingjD = await jobDescription_model.findOne({ _id: Jd_id });
+      if (!existingjD) {
+        return res.status(400).json({ success: false, error: `Job Description not found` });
+      }
+  
+      // Delete the job Description from the database
+      await existingjD.deleteOne();
+  
+      res
+        .status(200)
+        .json({ success: true, message: "job Description deleted successfully" });
+    } catch (error) {
+      console.error(error);
+      res
+        .status(500)
+        .json({ success: false, message: "server error", error_message : error.message });
+    }
+  };
 
                                            /* Psychometric Testing Section   */
 
@@ -1032,7 +1203,7 @@ const deletejobTitle = async (req, res) => {
 
                 } = req.body;
                        
-              
+                        
                                     
                 if (!empId) {
                     return res.status(400).json({
@@ -1872,6 +2043,47 @@ const deletejobTitle = async (req, res) => {
             }
         };
         
+
+        // Api for get particular job by jobId
+
+            const getJob = async ( req , res ) => {
+                            try {
+                                     const jobId = req.params.jobId
+                                // check for jobId
+                                if(!jobId)
+                                    {
+                                        return res.status(400).json({
+                                             success : false ,
+                                             message : 'jobId required'
+                                        })
+                                    }
+                                // check for job
+
+                                const job = await jobModel.findOne({
+                                          jobId : jobId
+                                })
+                                if(!job)
+                                    {
+                                        return res.status(400).json({
+                                             success : false ,
+                                             message : 'job not found'
+                                        })
+                                    }
+
+                            return res.status(200).json({
+                                 success : true ,
+                                 message : 'job Details',
+                                 Details : job
+                            })
+
+                            } catch (error) {
+                                return res.status(500).json({
+                                      success : false ,
+                                      message : 'server error',
+                                      error_message : error.message
+                                })
+                            }
+            }
                 
 
         
@@ -2740,11 +2952,12 @@ const client_dashboardCount = async (req, res) => {
         
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
-    getAll_Jobs ,searchJob , apply_on_job , get_Female_jobseeker_profile , get_jobseeker_profile , getNotification_emp,
+    getAll_Jobs , searchJob , apply_on_job , get_Female_jobseeker_profile , get_jobseeker_profile , getNotification_emp,
     seenNotification, unseenNotificationCount , deleteJob , activejobs_by_client , Inactivejobs_by_client ,filterJob,
     getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts , deleteCandidate,
     cms_getJobs_posted_procedure_section1 , cms_get_need_any_job_section ,get_cms_post_your_job , cms_getjob_market_data,
     addJobTitle , alljobTitle , deletejobTitle , psychometric_questions , getAll_psychometric_questions , export_candidate,
     addQuestion , getquestions , getAllTest , deletepsychometrcTest , deletequestion_in_Test , getTest ,client_dashboardCount,
-    forgetPassOTP,  verifyOTP  , clientResetPass,  create_contactUS 
+    forgetPassOTP,  verifyOTP  ,  clientResetPass,  create_contactUS , getJob , addJob_Description , alljobDescription ,
+    deleteJob_Description , getJd
 } 

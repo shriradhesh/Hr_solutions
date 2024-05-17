@@ -44,7 +44,17 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
         // Api for deletejobTitle
                          router.delete('/deletejobTitle/:jobtitle_id', userController.deletejobTitle)
 
-                                           /* Phyciomatric testing section */
+                                                /* job Description */
+        // Api for add jD
+                         router.post('/addJob_Description', userController.addJob_Description)
+        // Api for alljobDescription
+                        router.get('/alljobDescription', userController.alljobDescription)
+        // Api for getJd
+                        router.post('/getJd' , userController.getJd)
+        // Api for deleteJob_Description
+                        router.delete('/deleteJob_Description/:Jd_id', userController.deleteJob_Description)
+
+                                           /* psychomatric testing section */
         // Api for add psychometric_questions
                         router.post('/psychometric_questions', userController.psychometric_questions)
         // Api for getquestions
@@ -67,6 +77,8 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
                 router.post('/postJob/:empId', userController.postJob)
         // Api for getJobs_posted_by_employee
                 router.get('/getJobs_posted_by_employee/:empId' , userController.getJobs_posted_by_employee)
+        // Api for get particular job'
+                router.get('/getJob/:jobId', userController.getJob)
         // Api for get_Female_jobseeker_profile
                 router.get('/get_Female_jobseeker_profile/:jobId', userController.get_Female_jobseeker_profile)
         // Api for get_jobseeker_profile
