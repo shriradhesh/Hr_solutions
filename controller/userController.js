@@ -1185,6 +1185,7 @@ const deleteJob_Description = async (req, res) => {
                 const {
                     job_title,
                     job_Description,
+                    job_Responsibility,
                     job_type,
                     job_schedule,
                     Minimum_pay,
@@ -1271,6 +1272,7 @@ const deleteJob_Description = async (req, res) => {
                     jobId : finalString,
                     job_title,
                     job_Description,
+                    job_Responsibility : job_Responsibility || null,
                     job_type,
                     job_schedule,
                     salary_pay: [{ Minimum_pay, Maximum_pay, Rate }],
@@ -1374,6 +1376,7 @@ const deleteJob_Description = async (req, res) => {
                     job_schedule: job.job_schedule,
                     salary_pay: salary_pay,
                     job_Description: job.job_Description,
+                    job_Responsibility : job.job_Responsibility || null, 
                     company_address: job.company_address,
                     employee_email: job.employee_email,
                     requirement_timeline: job.requirement_timeline,
@@ -1952,8 +1955,14 @@ const deleteJob_Description = async (req, res) => {
 
         const getAll_Jobs = async (req, res) => {
             try {
+                const job_status = req.query.job_status
+                const filter = {}
+                if(job_status)
+                    {
+                        filter.status = job_status;
+                    }
                 // Fetch all jobs
-                const allJobs = await jobModel.find({});
+                const allJobs = await jobModel.find({ ...filter });
                 
                 // If no jobs found, return error response
                 if (allJobs.length === 0) {
@@ -2005,6 +2014,7 @@ const deleteJob_Description = async (req, res) => {
                         job_schedule: job.job_schedule,
                         salary_pay: salary_pay,
                         job_Description: job.job_Description,
+                        job_Responsibility : job.job_Responsibility || null,
                         company_address: job.company_address,
                         employee_email: job.employee_email,
                         requirement_timeline: job.requirement_timeline,

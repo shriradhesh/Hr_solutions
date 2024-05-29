@@ -201,6 +201,29 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
                             router.get('/get_started_todayDetails', Admin_and_staffController.get_started_todayDetails)
 
 
+                                     /* labour LAW  */
+       // Api for Overtime
+               router.post('/Overtime', Admin_and_staffController.Overtime)
+       // Api for leave_allowence
+               router.post('/leave_allowence', Admin_and_staffController.leave_allowence)
+       // Api for calculate_EOSB
+               router.post('/calculate_EOSB', Admin_and_staffController.calculate_EOSB)
+        // calculate new salary
+               router.post('/net_salary', Admin_and_staffController.net_salary)
+
+                                    /* Report & Analysis */
+        // Api for jobseeker_count
+                router.post('/jobseeker_count',Admin_and_staffController.jobseeker_count)
+        // Api for getclient_count
+                router.post('/getclient_count',Admin_and_staffController.getclient_count)
+        // Api for get_talent_pool_count
+                router.post('/get_talent_pool_count', Admin_and_staffController.get_talent_pool_count)
+        // Api for get_female_screened_count
+                router.post('/get_female_screened_count', Admin_and_staffController.get_female_screened_count)
+        // Api for jobseeker_count_city_wise
+                router.post('/jobseeker_count_city_wise', Admin_and_staffController.jobseeker_count_city_wise)
+
+
 module.exports = router
 
 

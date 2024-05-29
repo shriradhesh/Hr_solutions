@@ -41,6 +41,9 @@ const jobSchema = new mongoose.Schema({
     job_Description: {
         type: String
     },
+     job_Responsibility: {
+        type: String
+    },
     company_address: {
         type: String
     },
@@ -90,7 +93,7 @@ const jobSchema = new mongoose.Schema({
         ref : "PsychometricModel"
   },
     
-});
+} , { timestamps : true});
 
 const jobModel = mongoose.model('Job', jobSchema)
 

@@ -41,6 +41,7 @@ const cms_our_commitment_Model = require('../model/cms_our_commitment')
 const cms_get_started_today_Model = require('../model/cms_get_started_today')
 
 
+
                                                  /* Admin and staff Section */
            
 
@@ -4496,6 +4497,578 @@ const DeleteContactUS = async ( req ,res )=>{
     }
 }
 
+                                               /* Labour law  */
+    // Api for Overtime
+    const Overtime = async (req, res) => {
+        try {
+            let { Basic_pay, OT_Hours_weekday = 0 , OT_Hours_weekend = 0 } = req.body;
+    
+            // Check for required fields
+            if (!Basic_pay) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Basic pay required'
+                });
+            }
+            if (OT_Hours_weekday) {
+                OT_Hours_weekday = OT_Hours_weekday
+            }
+            if (OT_Hours_weekend) {
+                OT_Hours_weekend = OT_Hours_weekend
+            }
+    
+            // Calculate Basic Pay per Day
+            const Basic_pay_per_day = Math.round(Basic_pay / 22);
+    
+            // Calculate Pay per Hour
+            const Basic_pay_per_Hour = Math.round(Basic_pay_per_day / 8);
+    
+            // Calculate overtime computation on weekdays
+            const OT_computation_on_weekday = Basic_pay_per_Hour * OT_Hours_weekday * 1.5;
+    
+            // Calculate overtime computation on weekends
+            const OT_computation_on_weekend = Basic_pay_per_Hour * OT_Hours_weekend * 2;
+    
+            // Calculate total overtime
+            const total_overTime = Math.round(OT_computation_on_weekday + OT_computation_on_weekend);
+    
+            // Return the calculated values
+            return res.status(200).json({
+                success: true,
+                message: 'Calculation successful',
+                data: {
+                    Basic_pay : `SLE ${Basic_pay}`, 
+                    OT_Hours_weekday : OT_Hours_weekday, 
+                    OT_Hours_weekend  : OT_Hours_weekend ,
+                    Basic_pay_per_day: `SLE ${Basic_pay_per_day}`,  
+                    Basic_pay_per_Hour: `SLE ${Basic_pay_per_Hour}`,
+                    OT_computation_on_weekday: `SLE ${OT_computation_on_weekday}`,
+                    OT_computation_on_weekend: `SLE ${OT_computation_on_weekend}`,
+                    total_overTime: `SLE ${total_overTime}`
+                }
+            });
+    
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
+        }
+    };
+    
+
+    // Api for Leave allowence
+      
+    const leave_allowence = async (req, res) => {
+        try {
+            let { Basic_pay, leave_allowence_percentage } = req.body;
+    
+            // Check for required fields
+            if (!Basic_pay) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Basic pay required'
+                });
+            }
+            if (!leave_allowence_percentage) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'leave_allowence_percentage required'
+                });
+            }
+           
+    
+            // Calculate Annual Basic
+            let annual_Basic = Math.round(Basic_pay * 12);
+    
+            // Calculate leave allowence
+          let  leave_allowence_percentage1 = leave_allowence_percentage / 100
+            let leave_allowence = Math.round(annual_Basic * leave_allowence_percentage1)
+                let income_tax = 0
+               // calculate Income Tax 
+               if(leave_allowence > Basic_pay )
+                {
+                  income_tax =   Math.round (leave_allowence - Basic_pay) * 0.3
+                }
+                else
+                {
+                    income_tax = 0
+                }
+                
+                // calculate net leave allow
+                  let net_leave_allow = leave_allowence - income_tax
+                      
+            // Return the calculated values
+            return res.status(200).json({
+                success: true,
+                message: 'Calculation successful',
+                data: {
+                    Basic_pay : `SLE ${Basic_pay}`, 
+                    leave_allowence_percentage : leave_allowence_percentage ,
+                    annual_Basic : `SLE ${annual_Basic}` ,
+                    leave_allowence : `SLE ${leave_allowence}` ,
+                    income_tax : `SLE ${income_tax}`  ,
+                    net_leave_allow :  `SLE ${net_leave_allow}`
+                }
+            });
+    
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
+        }
+    };
+
+       // Api for EOSB
+
+       const calculate_EOSB = async (req, res) => {
+        try {
+            let { contract_start_Date, Employment_end_Date, EOSB_days_per_year = 0, untilized_leave_days = 0, Basic_pay } = req.body;
+    
+            // Check for required fields
+            if (!contract_start_Date) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'contract_start_Date required'
+                });
+            }
+            if (!Employment_end_Date) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Employment_end_Date required'
+                });
+            }
+            if (EOSB_days_per_year) {
+                EOSB_days_per_year = EOSB_days_per_year
+            }
+            if (untilized_leave_days) {
+                untilized_leave_days = untilized_leave_days
+            }
+            if (!Basic_pay) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Basic_pay required'
+                });
+            }
+    
+            // Convert contract_start_Date and Employment_end_Date to Date objects
+            const startDate = new Date(contract_start_Date);
+            const endDate = new Date(Employment_end_Date);
+    
+            // Calculate years served
+            const year_served = (endDate - startDate) / (365.25 * 24 * 60 * 60 * 1000);
+    
+            // Round up years served to the nearest two decimal places
+            const rounded_year_served = Math.round(year_served * 100) / 100;
+    
+            // Calculate EOSB
+            const EOSB = Math.round((Basic_pay * EOSB_days_per_year * rounded_year_served) / 22); 
+    
+            // Calculate payment for unutilized leave days
+            const payment_for_unutilized_leave_days = Math.round((Basic_pay / 22) * untilized_leave_days);
+    
+            // Calculate gross salary
+            const gross_salary = EOSB + payment_for_unutilized_leave_days;
+    
+            // Calculate tax on EOSB
+            let tax_on_EOSB = 0;
+            if (gross_salary > 50000) {
+                tax_on_EOSB = Math.round((gross_salary - 50000) * 0.05);
+            }
+    
+            // Calculate net EOSB
+            const net_EOSB = gross_salary - tax_on_EOSB;
+    
+            // Return the calculated values
+            return res.status(200).json({
+                success: true,
+                message: 'Calculation successful',
+                data: {
+                    Basic_pay: `SLE ${Basic_pay}`,
+                    year_served: rounded_year_served,
+                    EOSB: `SLE ${EOSB}`,
+                    payment_for_unutilized_leave_days: `SLE ${payment_for_unutilized_leave_days}`,
+                    gross_salary: `SLE ${gross_salary}`,
+                    tax_on_EOSB: `SLE ${tax_on_EOSB}`,
+                    net_EOSB: `SLE ${net_EOSB}`,
+                    contract_start_Date : contract_start_Date,
+                     Employment_end_Date : Employment_end_Date, 
+                     EOSB_days_per_year :`SLE ${EOSB_days_per_year}` , 
+                     untilized_leave_days : untilized_leave_days
+                }
+            });
+    
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
+        }
+    };
+    
+    
+// Api for calculate Net salary
+const net_salary = async (req, res) => {
+    try {
+      let { Basic_pay, transport_allowance = 0, rent_allowance = 0, Hazard_and_other_allowance = 0 } = req.body;
+  
+        if(!Basic_pay)
+            {
+                return res.status(400).json({
+                     success : false ,
+                     message : ' basic salary Requried'
+                })
+            }
+        if(transport_allowance)
+            {
+                transport_allowance = transport_allowance
+            }
+        
+        if(rent_allowance)
+            {
+                rent_allowance = rent_allowance
+            }
+        
+        if(Hazard_and_other_allowance)
+            {
+                Hazard_and_other_allowance = Hazard_and_other_allowance
+            }
+        
+  
+      // Calculate Total Allowance
+      const total_Allowance = Math.round(transport_allowance + rent_allowance + Hazard_and_other_allowance);
+  
+      // Calculate Gross Salary
+      const gross_salary = Math.round(Basic_pay + total_Allowance);
+  
+      // Calculate Non-taxable Pay
+      const non_taxable_pay = total_Allowance < 500 ? total_Allowance : 500;
+  
+      // Calculate NASSIT Percentage
+      const nassit_5_percent = Math.round(Basic_pay * 0.05);
+  
+      // Calculate Taxable Pay
+      const taxable_pay = Math.round((Basic_pay - nassit_5_percent + total_Allowance) - non_taxable_pay);
+  
+      // Calculate Deduction PAYE
+      let Deducation_pay = 0;
+      if (taxable_pay >= 2400) {
+        Deducation_pay = Math.round((taxable_pay - 2400) * 0.3 + 360);
+      } else if (taxable_pay >= 1800) {
+        Deducation_pay = Math.round((taxable_pay - 1800) * 0.25 + 210);
+      } else if (taxable_pay >= 1200) {
+        Deducation_pay = Math.round((taxable_pay - 1200) * 0.2 + 90);
+      } else if (taxable_pay >= 600) {
+        Deducation_pay = Math.round((taxable_pay - 600) * 0.15);
+      }
+  
+      // Calculate Total Deductions
+      const total_deduction = Math.round(Deducation_pay + nassit_5_percent);
+  
+      // Calculate Net Salary
+      const net_Salary = gross_salary - total_deduction;
+  
+      // Return the calculated values
+      return res.status(200).json({
+        success: true,
+        message: 'Calculation successful',
+        data: {
+            Basic_pay :   `SLE ${Basic_pay}` ,
+            transport_allowance:  `SLE ${transport_allowance}` ,
+            rent_allowance :  `SLE ${rent_allowance}` ,
+            Hazard_and_other_allowance :  `SLE ${Hazard_and_other_allowance}` ,
+            total_Allowance : `SLE ${total_Allowance}` ,
+            gross_salary :  `SLE ${gross_salary}`  ,
+            non_taxable_pay :  `SLE ${non_taxable_pay}`   ,
+            taxable_pay : `SLE ${taxable_pay}`  ,
+            nassit_5_percent,
+          PAYE : `SLE ${Deducation_pay}`,
+          total_deduction :  `SLE ${total_deduction}`,
+          net_Salary : `SLE ${net_Salary}`,
+        },
+      });
+  
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: 'Server error',
+        error_message: error.message,
+      });
+    }
+  };
+  
+
+                                       /* Reports and Analytics */
+                
+    // Api for get count of candidate with there current status
+    const jobseeker_count = async (req, res) => {
+        try {
+          const check_all_jobseeker = await appliedjobModel.find({});
+          
+          if (check_all_jobseeker.length === 0) {
+            return res.status(400).json({
+              success: false,
+              message: 'No profile found'
+            });
+          }
+      
+          // Count job seekers by status
+          const pending_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 1).length;
+          const schedule_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 2).length;
+          const assessment_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 3).length;
+          const HR_Discussion_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 4).length;
+          const complete_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 5).length;
+          const shortlisted_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 6).length;
+          const rejected_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 7).length;
+      
+          return res.status(200).json({
+            success: true,
+            message: 'Details',
+            pending_count,
+            schedule_count,
+            assessment_count,
+            HR_Discussion_count,
+            complete_count,
+            shortlisted_count,
+            rejected_count
+          });
+      
+        } catch (error) {
+          return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+          });
+        }
+      }
+      
+                  
+      const { parse, format, eachDayOfInterval } = require('date-fns');
+      const e = require('cors')
+      
+      // Api for get all clients counts
+
+      const getclient_count = async (req, res) => {
+        try {
+          const currentYear = new Date().getFullYear();
+          const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+          if (currentYear) {
+            const allClientsByMonth = [];
+      
+            for (let i = 0; i < 12; i++) {
+              // Construct start and end dates for each month
+              const startDate = new Date(currentYear, i, 1);
+              const endDate = new Date(currentYear, i + 1, 0);
+      
+              // Query the database for clients created within the current month
+              const all_clients = await employeeModel.find({
+                createdAt: { $gte: startDate, $lte: endDate }
+              });
+      
+              // Count clients for the current month
+              const clientsCount = all_clients.length;
+      
+              // Add month count to the array
+              allClientsByMonth.push({
+                month: month[i],
+                client_count: clientsCount
+              });
+            }
+      
+            return res.status(200).json({
+              success: true,
+              message: 'Client Details',
+              details: allClientsByMonth
+            });
+          } else {
+            return res.status(200).json({
+              success: false,
+              date_required: 'Date or month and year are required'
+            });
+          }
+        } catch (error) {
+          console.error(error);
+          return res.status(500).json({
+            success: false,
+            message: 'Server error'
+          });
+        }
+      };
+
+
+       // Api for get all talent pool counts
+      
+       const get_talent_pool_count = async (req, res) => {
+        try {
+          const currentYear = new Date().getFullYear();
+          const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+          if (currentYear) {
+            const all_talent_poolByMonth = [];
+      
+            for (let i = 0; i < 12; i++) {
+              // Construct start and end dates for each month
+              const startDate = new Date(currentYear, i, 1);
+              const endDate = new Date(currentYear, i + 1, 0);
+      
+              // Query the database for applied talent pool created within the current month
+              const all_talent_pool = await appliedjobModel.find({
+                createdAt: { $gte: startDate, $lte: endDate }
+              });
+      
+              // Count talent pool for the current month
+              const talentPoolCount = all_talent_pool.length;
+      
+              // Add month count to the array
+              all_talent_poolByMonth.push({
+                month: month[i],
+                talentPool_count: talentPoolCount
+              });
+            }
+      
+            return res.status(200).json({
+              success: true,
+              message: 'talentPool Details',
+              details: all_talent_poolByMonth
+            });
+          } else {
+            return res.status(200).json({
+              success: false,
+              date_required: 'Date or month and year are required'
+            });
+          }
+        } catch (error) {
+          console.error(error);
+          return res.status(500).json({
+            success: false,
+            message: 'Server error'
+          });
+        }
+      };
+
+
+      // Api for get all Female Screen candidate counts
+      
+      const get_female_screened_count = async (req, res) => {
+        try {
+          const currentYear = new Date().getFullYear();
+          const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+          if (currentYear) {
+            const all_female_screened = [];
+      
+            for (let i = 0; i < 12; i++) {
+              // Construct start and end dates for each month
+              const startDate = new Date(currentYear, i, 1);
+              const endDate = new Date(currentYear, i + 1, 0);
+      
+              // Query the database for applied female_screened created within the current month
+              const female_screened = await appliedjobModel.find({
+                gender : 'Female',
+                createdAt: { $gte: startDate, $lte: endDate }
+              });
+      
+              // Count talent pool for the current month
+              const Female_screened_count = female_screened.length;
+      
+              // Add month count to the array
+              all_female_screened.push({
+                month: month[i],
+                Female_screened_count : Female_screened_count
+              });
+            }
+      
+            return res.status(200).json({
+              success: true,
+              message: 'female_screened_ Details',
+              details: all_female_screened
+            });
+          } else {
+            return res.status(200).json({
+              success: false,
+              date_required: 'Date or month and year are required'
+            });
+          }
+        } catch (error) {
+          console.error(error);
+          return res.status(500).json({
+            success: false,
+            message: 'Server error'
+          });
+        }
+      };
+      
+      
+      // Api for get count of candidate city wise
+      const jobseeker_count_city_wise = async (req, res) => {
+        try {
+            const check_all_jobseeker = await appliedjobModel.find({});
+            
+            if (check_all_jobseeker.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No profiles found'
+                });
+            }
+            
+            // Initialize jobseekersByCity object with all cities and count 0
+            const cities = [
+                "Western_Area_Urban",
+                "Western_Area_Rural",
+                "Bombali",
+                "Bonthe",
+                "Kailahun",
+                "Kambia",
+                "Kenema",
+                "Koinadugu",
+                "Kono",
+                "Moyamba",
+                "Port_Loko",
+                "Pujehun",
+                "Tonkolili",
+                "Bo",
+                "Karene",
+                "Falaba"
+            ];
+    
+            const jobseekersByCity = {};
+            cities.forEach(city => {
+                jobseekersByCity[city] = 0;
+            });
+    
+            // Count job seekers by city
+            check_all_jobseeker.forEach(job => {
+                const city = job.city;
+                if (jobseekersByCity.hasOwnProperty(city)) {
+                    jobseekersByCity[city]++;
+                }
+            });
+    
+            return res.status(200).json({
+                success: true,
+                message: 'Details',
+                details : jobseekersByCity
+            });
+    
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
+        }
+    }
+    
+      
+      
+                  
+                                    
+                
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
     active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate ,
@@ -4503,6 +5076,10 @@ module.exports = {
     send_notification ,  create_services , getService ,  create_privacy_policy , get_admin_privacy_policy,
     create_term_condition , get_admin_term_condition , getAll_candidates , AdminforgetPassOTP , AdminverifyOTP , adminResetPass ,
     getAdminNotification , unseen_admin_notification_count ,seen_notification , get_FAQdetails , createFAQ , DeleteFAQ , get_contactUS, DeleteContactUS ,
+    Overtime , leave_allowence , calculate_EOSB , net_salary , 
+            
+                /* Report ad Aalysis */
+    jobseeker_count , getclient_count , get_talent_pool_count , get_female_screened_count , jobseeker_count_city_wise ,
     
               /*  CMS PAGE */
      create_testimonial , getAll_testimonial , get_testimonial , update_testimonial , delete_testimonial,
