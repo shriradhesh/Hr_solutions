@@ -136,6 +136,8 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
                  router.get('/get_cms_post_your_job', userController.get_cms_post_your_job)
         // Api for cms_getjob_market_data
                 router.get('/cms_getjob_market_data', userController.cms_getjob_market_data)
+        // Api for fixit_finder
+                router.post('/fixit_finder', userController.fixit_finder)
 
                                             /* Dashboard */
          //Api for client_dashboardCount
@@ -147,7 +149,17 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
                                           /* Contact US page */
          // Api for create_contactUS
                 router.post('/create_contactUS', userController.create_contactUS)
-        
+
+                                        /* upload Resume */
+
+         // Api for uploadResume
+                 router.post('/uploadResume', upload.single('uploadResume') , userController.uploadResume)
+        // Api for get_upload_section_candidates
+                 router.get('/get_upload_section_candidates', userController.get_upload_section_candidates)
+        // Api for candidate_recruitment_process_for_uploaded_candidate
+                 router.post('/candidate_recruitment_process_for_uploaded_candidate/:candidateId' , userController.candidate_recruitment_process_for_uploaded_candidate)
+        // Api for get_successfull_candidate
+                 router.get('/get_successfull_candidate', userController.get_successfull_candidate)
 
 
 

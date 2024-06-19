@@ -7,9 +7,10 @@ const service_Schema = new mongoose.Schema({
                 Heading : {
                         type : String
                 },
-                Description : {
+                Description: {
                      type : String
-                },
+                },               
+               
                  image : {
                        type : String
                  }

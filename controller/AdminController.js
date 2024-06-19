@@ -39,6 +39,12 @@ const cms_our_vission_Model = require('../model/cms_our_vission')
 const cms_aboutUs_Model = require('../model/cms_aboutUs')
 const cms_our_commitment_Model = require('../model/cms_our_commitment')
 const cms_get_started_today_Model = require('../model/cms_get_started_today')
+const cms_why_choose_us_Model = require('../model/cms_why_choose_us')
+const cms_elite_talent_pool_Model = require('../model/cms_elite_female_tooll')
+const cms_footer_contentModel = require('../model/cms_footer_content')
+const cms_acadmic_credentials_verifier_Model = require('../model/cms_acadmic_credentials_verifiers')
+const cms_newsletter_Model = require('../model/newsletter')
+const ResumeModel = require('../model/uploadResume')
 
 
 
@@ -184,10 +190,27 @@ const cms_get_started_today_Model = require('../model/cms_get_started_today')
 
                           // update profile Image of the admin
                         let profileImage 
-                        if(req.file)
-                        {
-                            profileImage = req.file.filename
-                        }
+                        if(req.file)                       
+                         // Update profileImage if a new file is provided
+                         if (req.file && req.file.filename) {
+                            // Get the file extension
+                            const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                            // List of allowed extensions
+                            const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                            // Check if the file extension is in the allowed list
+                            if (allowedExtensions.includes(fileExtension)) {
+                                // If valid, update the profile image
+                                profileImage = req.file.filename;
+                            } else {
+                                // If not valid, throw an error
+                                return res.status(400).json({
+                                    success : false ,
+                                    message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                            });
+                            }
+                          }
 
                         exist_Admin.name = name
                         exist_Admin.email = email
@@ -678,7 +701,7 @@ const cms_get_started_today_Model = require('../model/cms_get_started_today')
                  // check for superAdmin
                  const superAdmin = await Admin_and_staffsModel.findOne({
                        _id : superAdmin_Id,
-                       role : 'super Admin'
+                       role : 'Super Admin'
                  })
 
                  if(!superAdmin)
@@ -746,7 +769,7 @@ const cms_get_started_today_Model = require('../model/cms_get_started_today')
                     }
 
                      // check for required fields
-                     const requiredFields = [ "name", "email", "password" ,"phone_no", "role" ];
+                     const requiredFields = [ "name", "email", "password" ,"phone_no", "role" ]; 
 
                      for (const field of requiredFields) {
                      if (!req.body[field]) {
@@ -774,7 +797,27 @@ const cms_get_started_today_Model = require('../model/cms_get_started_today')
 
                       const hashedPassword = await bcrypt.hash(password , 10)
 
-                     const profileImage = req.file.filename
+                     let profileImage = ''
+                      // Update profileImage if a new file is provided
+                      if (req.file && req.file.filename) {
+                        // Get the file extension
+                        const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                        // List of allowed extensions
+                        const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                        // Check if the file extension is in the allowed list
+                        if (allowedExtensions.includes(fileExtension)) {
+                            // If valid, update the profile image
+                            profileImage = req.file.filename;
+                        } else {
+                            // If not valid, throw an error
+                            return res.status(400).json({
+                                success : false ,
+                                message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                        });
+                        }
+                      }
                      const newstaff = new Admin_and_staffsModel({
                          
                           name,
@@ -837,7 +880,7 @@ const cms_get_started_today_Model = require('../model/cms_get_started_today')
                 try {
                        // check for all Staffs 
                        const allStaffs = await Admin_and_staffsModel.find({
-                           role : { $ne : "super Admin"}
+                           role : { $ne : "Super Admin"}
                        })
                        if(!allStaffs)
                        {
@@ -909,6 +952,7 @@ const cms_get_started_today_Model = require('../model/cms_get_started_today')
                }
          }
                                             /* staff section & portel  */
+
     // Get particular staff Details
                   const getStaff_Details = async ( req ,res)=>{
                          try {
@@ -975,10 +1019,26 @@ const cms_get_started_today_Model = require('../model/cms_get_started_today')
 
                          // update profile Image of the staff
                        let profileImage 
-                       if(req.file)
-                       {
-                           profileImage = req.file.filename
-                       }
+                        // Update profileImage if a new file is provided
+                        if (req.file && req.file.filename) {
+                            // Get the file extension
+                            const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                            // List of allowed extensions
+                            const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                            // Check if the file extension is in the allowed list
+                            if (allowedExtensions.includes(fileExtension)) {
+                                // If valid, update the profile image
+                                profileImage = req.file.filename;
+                            } else {
+                                // If not valid, throw an error
+                                return res.status(400).json({
+                                    success : false ,
+                                    message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                            });
+                            }
+                          }
 
                        exist_staff.name = name
                        exist_staff.email = email
@@ -1124,8 +1184,9 @@ const cms_get_started_today_Model = require('../model/cms_get_started_today')
             // Check for candidate
             const candidate = await appliedjobModel.findOne({
                 _id: candidateId
-            });
-    
+            });          
+            
+                 
             if (!candidate) {
                 return res.status(400).json({
                     success: false,
@@ -1346,7 +1407,7 @@ const cms_get_started_today_Model = require('../model/cms_get_started_today')
     
                 case 'complete':
                     candidate_status = 5;
-                    cStatus = 2;
+                    cStatus = 3;
                     break;
     
                 case 'shortlist':
@@ -1371,6 +1432,7 @@ const cms_get_started_today_Model = require('../model/cms_get_started_today')
             if (!updatedCandidate) {
                 return res.status(400).json({ status : false , message: "Applied job not found" });
             }
+        
                
               
                 res.status(200).json({
@@ -1998,7 +2060,7 @@ const active_inactive_job = async (req, res) => {
            const create_services = async (req, res) => {
             try {
                 const adminId = req.params.adminId;
-                const { Heading, Description } = req.body;
+                const { Heading, Description  } = req.body;
         
                 // Check if adminId is provided
                 if (!adminId) {
@@ -2027,6 +2089,8 @@ const active_inactive_job = async (req, res) => {
                 if (existingService) {
                     existingService.Heading = Heading;
                     existingService.Description = Description;
+                    
+              
                     if (req.file) {
                         existingService.image = req.file.filename;
                     }
@@ -2053,15 +2117,35 @@ const active_inactive_job = async (req, res) => {
                                    message : 'Description Required'
                             })
                           }        
+                         
                     let image = null;
-                    if (req.file) {
-                        image = req.file.filename;
-                    }
+                    // Update profileImage if a new file is provided
+                    if (req.file && req.file.filename) {
+                        // Get the file extension
+                        const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                        // List of allowed extensions
+                        const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                        // Check if the file extension is in the allowed list
+                        if (allowedExtensions.includes(fileExtension)) {
+                            // If valid, update the profile image
+                            image = req.file.filename;
+                        } else {
+                            // If not valid, throw an error
+                            return res.status(400).json({
+                                success : false ,
+                                message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                        });
+                        }
+                      }
         
                     // Create new service
                     const newService = new services({
                         Heading : Heading,
                         Description : Description,
+                       
+                    
                         AdminId : adminId ,
                         image
                     });
@@ -2116,7 +2200,7 @@ const active_inactive_job = async (req, res) => {
                                    _id : checkService._id,
                                    AdminId : checkService.AdminId,
                                    Heading :  checkService.Heading,
-                                   Description : checkService.Description,
+                                   Description : checkService.Description,                                 
                                    image : checkService.image
                              }
                            })
@@ -2160,10 +2244,26 @@ const active_inactive_job = async (req, res) => {
                 }
         
                 let user_image = null;
-                // check for user_image
-                if (req.file) {
-                    user_image = req.file.filename;
-                }
+                  // Update profileImage if a new file is provided
+                  if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                        user_image = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
+                  }
         
                 // Create new Data
                 const newData = new cms_testimonialModel({
@@ -2288,10 +2388,26 @@ const active_inactive_job = async (req, res) => {
                 exist_testimonial.title = title;
                 exist_testimonial.Description = Description;
         
-                // Check if there's an uploaded file
-                if (req.file) {
-                    exist_testimonial.user_image = req.file.filename;
-                }
+                 // Update profileImage if a new file is provided
+                 if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                        exist_testimonial.user_image = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
+                  }
         
                 // Save the updated testimonial
                 await exist_testimonial.save();
@@ -2510,9 +2626,27 @@ const active_inactive_job = async (req, res) => {
         
                     // Check for logo
                     let logo = null;
-                    if (req.file) {
+                    // Update profileImage if a new file is provided
+                 if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
                         logo = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
                     }
+                  }
+        
         
                     // Create new Data
                     const newData = new cms_need_any_job_section_Model({
@@ -2630,7 +2764,27 @@ const active_inactive_job = async (req, res) => {
                         }
             
                         // Add logo 
-                        const logo = req.file ? req.file.filename : null;
+                    let logo = ''
+                     // Update profileImage if a new file is provided
+                 if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                        logo = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
+                  }
             
                         // Add new Data
                         const newData = new cms_postjobModel({
@@ -2723,9 +2877,25 @@ const active_inactive_job = async (req, res) => {
                     // Update existing section
                     exist_post_job.Heading = Heading;
                     exist_post_job.Description = Description;
-        
-                    if (req.file) {
-                        exist_post_job.logo = req.file.filename;
+                    // Update profileImage if a new file is provided
+                    if (req.file && req.file.filename) {
+                        // Get the file extension
+                        const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                        // List of allowed extensions
+                        const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                        // Check if the file extension is in the allowed list
+                        if (allowedExtensions.includes(fileExtension)) {
+                            // If valid, update the profile image
+                            exist_post_job.logo = req.file.filename;
+                        } else {
+                            // If not valid, throw an error
+                            return res.status(400).json({
+                                success : false ,
+                                message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                        });
+                        }
                     }
         
                     await exist_post_job.save();
@@ -2752,7 +2922,28 @@ const active_inactive_job = async (req, res) => {
                     }
         
                     // Add logo 
-                    const logo = req.file ? req.file.filename : null;
+                    let logo = ''
+
+                 // Update profileImage if a new file is provided
+                 if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                      logo = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
+                }
                          
         
                     // Add new Data
@@ -2961,12 +3152,26 @@ const active_inactive_job = async (req, res) => {
                   // check for photo
 
                      let photo = null;
-                     if(req.body)
-                     {
-                        photo = req.file.filename
-                     }
-                    
+                     // Update profileImage if a new file is provided
+                     if (req.file && req.file.filename) {
+                        // Get the file extension
+                        const fileExtension = path.extname(req.file.filename).toLowerCase();
 
+                        // List of allowed extensions
+                        const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                        // Check if the file extension is in the allowed list
+                        if (allowedExtensions.includes(fileExtension)) {
+                            // If valid, update the profile image
+                            photo = req.file.filename;
+                        } else {
+                            // If not valid, throw an error
+                            return res.status(400).json({
+                                success : false ,
+                                message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                        });
+                        }
+                    }
                      // check for new record
                     const newData = new cmsBlogsection2Model({
                           name  : name ,
@@ -3049,10 +3254,26 @@ const active_inactive_job = async (req, res) => {
                 existB.Heading = Heading;
                 existB.Description = Description;
                 existB.comment = parseInt(comment);
-        
-                if (req.file) {
-                    existB.photo = req.file.filename;
-                }
+                    // Update profileImage if a new file is provided
+                    if (req.file && req.file.filename) {
+                        // Get the file extension
+                        const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                        // List of allowed extensions
+                        const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                        // Check if the file extension is in the allowed list
+                        if (allowedExtensions.includes(fileExtension)) {
+                            // If valid, update the profile image
+                            existB.photo = req.file.filename;
+                        } else {
+                            // If not valid, throw an error
+                            return res.status(400).json({
+                                success : false ,
+                                message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                        });
+                        }
+                    }
         
                 await existB.save();
         
@@ -3110,7 +3331,9 @@ const active_inactive_job = async (req, res) => {
     };
     
 
-                                               /* cms Headquarter section */
+                                                                    /* cms Headquarter section */
+
+                                                                    
          // Api for cms Headquarter
          const cmsHeadquarter = async (req, res) => {
             try {
@@ -3343,7 +3566,7 @@ const active_inactive_job = async (req, res) => {
            const cms_Hr_consultancy = async (req, res) => {
             try {       
                 
-                const { Heading, Description } = req.body;
+                const { Heading, Description} = req.body;
         
                 // Check for exist hr consultancy
                 const exist_hr_consultancy = await cms_hr_consultancy_Model.findOne({ });
@@ -3351,11 +3574,32 @@ const active_inactive_job = async (req, res) => {
                 if (exist_hr_consultancy) {
                     // Update existing section
                     exist_hr_consultancy.Heading = Heading;
-                    exist_hr_consultancy.Description = Description;
+                    exist_hr_consultancy.Description = Description;               
         
-                    if (req.file) {
-                        exist_hr_consultancy.image = req.file.filename;
+                   
+
+
+                    if (req.file && req.file.filename) {
+                        // Get the file extension
+                        const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                        // List of allowed extensions
+                        const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                        // Check if the file extension is in the allowed list
+                        if (allowedExtensions.includes(fileExtension)) {
+                            // If valid, update the profile image
+                            exist_hr_consultancy.image = req.file.filename;
+                        } else {
+                            // If not valid, throw an error
+                            return res.status(400).json({
+                                success : false ,
+                                message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                        });
+                        }
                     }
+
+                   
         
                     await exist_hr_consultancy.save();
         
@@ -3379,9 +3623,29 @@ const active_inactive_job = async (req, res) => {
                             message: 'Description is required'
                         });
                     }
-        
+                   
+                   
                     // Add image 
-                    const image = req.file ? req.file.filename : null;
+                    let  image = null
+                    if (req.file && req.file.filename) {
+                        // Get the file extension
+                        const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                        // List of allowed extensions
+                        const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                        // Check if the file extension is in the allowed list
+                        if (allowedExtensions.includes(fileExtension)) {
+                            // If valid, update the profile image
+                          image = req.file.filename;
+                        } else {
+                            // If not valid, throw an error
+                            return res.status(400).json({
+                                success : false ,
+                                message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                        });
+                        }
+                    }
                          
         
                     // Add new Data
@@ -3390,6 +3654,7 @@ const active_inactive_job = async (req, res) => {
                         image: image ,
                         Heading: Heading,
                         Description: Description
+                       
                     });
         
                     await newData.save();
@@ -3451,7 +3716,7 @@ const active_inactive_job = async (req, res) => {
                 if (exist_t_d) {
                     // Update existing section
                     exist_t_d.Heading = Heading;
-                    exist_t_d.Description = Description;
+                    exist_t_d.Description = Description;                    
         
                     if (req.file) {
                         exist_t_d.image = req.file.filename;
@@ -3479,17 +3744,36 @@ const active_inactive_job = async (req, res) => {
                             message: 'Description is required'
                         });
                     }
-        
+                 
                     // Add image 
-                    const image = req.file ? req.file.filename : null;
-                         
+                    const image =  null;
+                    if (req.file && req.file.filename) {
+                        // Get the file extension
+                        const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                        // List of allowed extensions
+                        const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                        // Check if the file extension is in the allowed list
+                        if (allowedExtensions.includes(fileExtension)) {
+                            // If valid, update the profile image
+                            image = req.file.filename;
+                        } else {
+                            // If not valid, throw an error
+                            return res.status(400).json({
+                                success : false ,
+                                message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                        });
+                        }
+                    }
         
                     // Add new Data
                     const newData = new cms_t_d_Model ({
                        
                         image: image ,
                         Heading: Heading,
-                        Description: Description
+                        Description: Description,
+                       
                     });
         
                     await newData.save();
@@ -3552,9 +3836,24 @@ const active_inactive_job = async (req, res) => {
                 // Update existing section
                 exist_r_s.Heading = Heading;
                 exist_r_s.Description = Description;
-    
-                if (req.file) {
-                    exist_r_s.image = req.file.filename;
+                if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                        exist_r_s.image = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
                 }
     
                 await exist_r_s.save();
@@ -3581,8 +3880,26 @@ const active_inactive_job = async (req, res) => {
                 }
     
                 // Add image 
-                const image = req.file ? req.file.filename : null;
-                     
+                const image =  null;
+                if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                        image = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
+                }
     
                 // Add new Data
                 const newData = new cms_recruitment_selection_Model ({
@@ -3655,8 +3972,24 @@ const active_inactive_job = async (req, res) => {
                 exist_eO.Heading = Heading;
                 exist_eO.Description = Description;
     
-                if (req.file) {
-                    exist_eO.image = req.file.filename;
+                if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                        exist_eO.image = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
                 }
     
                 await exist_eO.save();
@@ -3683,8 +4016,27 @@ const active_inactive_job = async (req, res) => {
                 }
     
                 // Add image 
-                const image = req.file ? req.file.filename : null;
+                const image = null;
                      
+                if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                        image = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
+                }
     
                 // Add new Data
                 const newData = new cms_employee_outsourcing_Model ({
@@ -3756,10 +4108,27 @@ const active_inactive_job = async (req, res) => {
             if (exist_HT) {
                 // Update existing section
                 exist_HT.Heading = Heading;
-                exist_HT.Description = Description;
+                exist_HT.Description = Description;             
     
-                if (req.file) {
-                    exist_HT.image = req.file.filename;
+              
+                if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                        exist_HT.image = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
                 }
     
                 await exist_HT.save();
@@ -3784,17 +4153,38 @@ const active_inactive_job = async (req, res) => {
                         message: 'Description is required'
                     });
                 }
+                
     
                 // Add image 
-                const image = req.file ? req.file.filename : null;
+                const image = null;
                      
-    
+                         
+                if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                        image = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
+                }
                 // Add new Data
                 const newData = new cms_Hr_teleconsultation_model ({
                    
                     image: image ,
                     Heading: Heading,
-                    Description: Description
+                    Description: Description,                  
+                   
                 });
     
                 await newData.save();
@@ -3819,7 +4209,7 @@ const active_inactive_job = async (req, res) => {
              
      const get_hr_teleconsultation_Details = async( req , res)=>{
         try {
-                const allDetails = await cms_Hr_teleconsultation_model.find({
+                const allDetails = await cms_Hr_teleconsultation_model.findOne({
                           
                 })
                 if(!allDetails)
@@ -3934,6 +4324,8 @@ const get_ourMission_details = async( req , res)=>{
 }
 
 
+                
+
 // Api for our vission
 const cms_our_vission = async (req, res) => {
     try {
@@ -4021,6 +4413,89 @@ const get_ourVission_details = async( req , res)=>{
             })
         }
 }
+
+ // Why choose us ??
+ const cms_why_choose_us = async (req, res) => {
+    try {
+        const { Heading, Description } = req.body;       
+
+        // Check for data exists
+        let exist_data = await cms_why_choose_us_Model.findOne();
+
+        if (exist_data) {
+            // Update existing data
+            exist_data.Heading = Heading;
+            exist_data.Description = Description;
+            await exist_data.save();
+
+            return res.status(200).json({
+                success: true,
+                message: 'Details updated successfully'
+            });
+        } else {
+             // Check if Heading is missing
+        if (!Heading) {
+            return res.status(400).json({
+                success: false,
+                message: 'Heading is required'
+            });
+        }
+
+        // Check if Description is missing
+        if (!Description) {
+            return res.status(400).json({
+                success: false,
+                message: 'Description is required'
+            });
+        }
+            // Create new data
+            const newData = new cms_why_choose_us_Model({
+                Heading,
+                Description
+            });
+
+            await newData.save();
+
+            return res.status(200).json({
+                success: true,
+                message: 'New details saved successfully'
+            });
+        }
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+   // Api for get why choose us ??
+
+           const getDetails_why_choose_us = async ( req , res)=>{
+               try {
+                      const getDetails = await cms_why_choose_us_Model.findOne({})
+                      if(!getDetails)
+                        {
+                             return res.status(400).json({
+                                 success : false ,
+                                 message : 'no details found'
+                             })
+                        }
+
+                        return res.status(200).json({
+                             success : true ,
+                             message : 'Details found',
+                             Details : getDetails
+                        })
+               } catch (error) {
+                  return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+                  })
+               }
+           }
 
 
   // about us
@@ -5065,9 +5540,554 @@ const net_salary = async (req, res) => {
     }
     
       
+
+
+                                                  /* Elite talent pool --- cms page */
       
+                 const cms_elite_talent_pool = async (req, res) => {
+            try {       
+                
+                const { Heading, Description} = req.body;
+        
+                // Check for exist cms_elite_talent_pool
+                const exist_cms_elite_talent_pool = await cms_elite_talent_pool_Model.findOne({ });
+        
+                if (exist_cms_elite_talent_pool) {
+                    // Update existing section
+                    exist_cms_elite_talent_pool.Heading = Heading;
+                    exist_cms_elite_talent_pool.Description = Description;
+                   
+        
+                    
+                if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                        exist_cms_elite_talent_pool.image = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
+                }
+        
+                    await exist_cms_elite_talent_pool.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Details updated successfully'
+                    });
+                } else {
+                    // Check for Heading
+                    if (!Heading) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Heading is required'
+                        });
+                    }
+        
+                    // Check for Description
+                    if (!Description) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Description is required'
+                        });
+                    }
+                   
+                   
+                    // Add image 
+                    let image =  null;
+                    if (req.file && req.file.filename) {
+                        // Get the file extension
+                        const fileExtension = path.extname(req.file.filename).toLowerCase();
+    
+                        // List of allowed extensions
+                        const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+    
+                        // Check if the file extension is in the allowed list
+                        if (allowedExtensions.includes(fileExtension)) {
+                            // If valid, update the profile image
+                            image = req.file.filename;
+                        } else {
+                            // If not valid, throw an error
+                            return res.status(400).json({
+                                success : false ,
+                                message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                        });
+                        }
+                    }
+        
+                    // Add new Data
+                    const newData = new cms_elite_talent_pool_Model({
+                       
+                        image: image ,
+                        Heading: Heading,
+                        Description: Description
+                       
+                    });
+        
+                    await newData.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'New Details created successfully'
+                    });
+                }
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+     
+
+        // Api for get elite talent pool for female cms
+
+         const get_cms_elite_talent_pool = async( req , res)=>{
+            try {
+                    const allDetails = await cms_elite_talent_pool_Model.find({
+                              
+                    })
+                    if(!allDetails)
+                    {
+                      return res.status(400).json({
+                             success : false ,
+                             message : 'no Details found'
+                      })
+                    }
+
+                      return res.status(200).json({
+                           success : true ,
+                           message : 'allDetails ',
+                           Details : allDetails
+                      })
+            } catch (error) {
+               return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+               })
+            }
+     }
+
+
+
+            // Api for make job favourate
+
+                 const fav_job = async ( req , res )=> {
+                     try {
+                            const jobId = req.params.jobId
+                    // check for jobID
+
+                      if(!jobId)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'jobId required'
+                            })
+                        }
+
+                        // check for job
+
+                        const job = await jobModel.findOne({ jobId : jobId })
+                        if(!job)
+                            {
+                                return res.status(400).json({
+                                     success : false,
+                                     message : 'job not found' 
+                                })
+                            }
+
+                              // check for job fav status
+
+                              if(job.fav_status === 0)
+                                {
+                                    job.fav_status = 1
+                                    job.save()
+                                }
+                                else
+                                {
+                                    return res.status(400).json({
+                                         success : false ,
+                                         message : 'job already Saved as Favourite'
+                                    })
+                                }
+
+                                return res.status(200).json({
+                                     success : true ,
+                                     message : 'job saved as Favourite'
+                                })
+                     } catch (error) {
+                          return res.status(500).json({
+                               success : false ,
+                               message : 'server error',
+                               error_message : error.message
+                          })
+                     }
+                 }
+                       
+    // Api for get all the favourite jobs
+
+         const get_All_favourite_jobs = async( req , res )=> {
+              try {
+                
+                    // check for all fav jobs
+
+                    const all_fav = await jobModel.find({
+                         fav_status : 1
+                    })
+
+                    if(!all_fav)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'no favourite jobs found'
+                            })
+                        }
+
+                        const sortedfavJOb = await all_fav.sort(( a , b ) => b.updatedAt - a.updatedAt )
+
+                        return res.status(200).json({
+                             success : true ,
+                             message : 'all Favourite jobs',
+                             all_fav : sortedfavJOb
+                        })
+              } catch (error) {
+                  return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+                  })
+              }
+         }
+
+
+         // Api for footer cms
+
+         const cms_footer_content = async (req, res) => {
+            try {       
+                
+                const {  Description } = req.body;
+        
+                // Check for exist cms_footer_content
+                const exist_cms_footer_content = await cms_footer_contentModel.findOne({ });
+        
+                if (exist_cms_footer_content) {
+                    // Update existing section
+                   
+                    exist_cms_footer_content.Description = Description;
+                   
+        
                   
-                                    
+                    await exist_cms_footer_content.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Details updated successfully'
+                    });
+                } else {
+                    
+                    // Check for Description
+                    if (!Description) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Description is required'
+                        });
+                    }                 
+                   
+                   
+                    // Add new Data
+                    const newData = new cms_footer_contentModel({
+                       
+                       
+                        Description: Description
+                       
+                    });
+        
+                    await newData.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'New Details created successfully'
+                    });
+                }
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+     
+
+        // Api for get cms footer content
+
+        const get_cms_footer_content = async( req , res)=>{
+            try {
+                    const allDetails = await cms_footer_contentModel.find({
+                              
+                    })
+                    if(!allDetails)
+                    {
+                      return res.status(400).json({
+                             success : false ,
+                             message : 'no Details found'
+                      })
+                    }
+
+                      return res.status(200).json({
+                           success : true ,
+                           message : 'allDetails ',
+                           Details : allDetails
+                      })
+            } catch (error) {
+               return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+               })
+            }
+     }
+
+
+
+     // Api for cms Acadmic credentials verifiers
+      
+               
+     const cms_acadmic_credentials_verifier = async (req, res) => {
+        try {       
+            
+            const { Heading, Description} = req.body;
+    
+            // Check for exist cms_elite_talent_pool
+            const exist_cms_acadmic_credentials_verifier = await cms_acadmic_credentials_verifier_Model.findOne({ });
+    
+            if (exist_cms_acadmic_credentials_verifier) {
+                // Update existing section
+                exist_cms_acadmic_credentials_verifier.Heading = Heading;
+                exist_cms_acadmic_credentials_verifier.Description = Description;
+               
+    
+                 if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                        exist_cms_acadmic_credentials_verifier.image = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
+                }
+    
+                await exist_cms_acadmic_credentials_verifier.save();
+    
+                return res.status(200).json({
+                    success: true,
+                    message: 'Details updated successfully'
+                });
+            } else {
+                // Check for Heading
+                if (!Heading) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Heading is required'
+                    });
+                }
+    
+                // Check for Description
+                if (!Description) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Description is required'
+                    });
+                }
+               
+               
+                // Add image 
+                let image = null;
+
+             
+                if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                       image = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
+                }
+    
+                     
+    
+                // Add new Data
+                const newData = new cms_acadmic_credentials_verifier_Model({
+                   
+                    image: image ,
+                    Heading: Heading,
+                    Description: Description
+                   
+                });
+    
+                await newData.save();
+    
+                return res.status(200).json({
+                    success: true,
+                    message: 'New Details created successfully'
+                });
+            }
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
+        }
+    };
+ 
+
+
+       // Api for get Acadmic credentials verifier details
+         
+       const get_acadmic_credentials_verifier = async( req , res)=>{
+        try {
+                const allDetails = await cms_acadmic_credentials_verifier_Model.findOne({
+                          
+                })
+                if(!allDetails)
+                {
+                  return res.status(400).json({
+                         success : false ,
+                         message : 'no Details found'
+                  })
+                }
+
+                  return res.status(200).json({
+                       success : true ,
+                       message : 'allDetails ',
+                       Details : allDetails
+                  })
+        } catch (error) {
+           return res.status(500).json({
+                 success : false ,
+                 message : 'server error',
+                 error_message : error.message
+           })
+        }
+ }
+
+
+                                               /* news letter */
+            // Api for newsletter 
+
+            const newsLetter = async ( req , res )=> {
+                try {
+                     const { email } = req.body
+
+                     // check for email 
+
+                     if(!email)
+                         {
+                             return res.status(400).json({
+                                  success : false ,
+                                  message : 'email required'
+                             })
+                         }
+                     
+                         // check for email exist
+
+                         const existEmail = await cms_newsletter_Model.findOne({
+                               email : email
+                         })
+
+                         if(existEmail)
+                             {
+                                 return res.status(400).json({
+                                      success : false ,
+                                      message : 'you subscribed already with these email'
+                                 })
+                             }
+
+                                 // save the record
+
+                         const save_data = new cms_newsletter_Model({
+                              email
+                         })
+
+                         await save_data.save()
+
+                         return res.status(200).json({
+                              success : true ,
+                              message : 'subscribed successfully'
+                         })
+                } catch (error) {
+                    return res.status(500).json({
+                             success : false ,
+                             message : 'server error',
+                             error_message  : error.message
+                    })
+                }
+         }
+
+ // Api for get all news letter details 
+
+               const getAll_newsLetter = async ( req , res )=>{
+                  try {
+                            const all_details = await cms_newsletter_Model.find({})
+
+                            if(!all_details)
+                             {
+                                 return res.status(400).json({
+                                     success : false ,
+                                     message : 'no details found'
+                                 })
+                             }
+                                const sortedData = await all_details.sort(( a , b ) => b.createdAt - a.createdAt )
+                             return res.status(200).json({
+                                  success : true ,
+                                  message : 'all newsLetter Details',
+                                  all_details : sortedData
+                             })
+                  } catch (error) {
+                       return res.status(500).json({
+                          success : false ,
+                          message : 'server error',
+                          error_message : error.message
+                       })
+                  }
+               }
+
+
+
                 
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
@@ -5076,7 +6096,7 @@ module.exports = {
     send_notification ,  create_services , getService ,  create_privacy_policy , get_admin_privacy_policy,
     create_term_condition , get_admin_term_condition , getAll_candidates , AdminforgetPassOTP , AdminverifyOTP , adminResetPass ,
     getAdminNotification , unseen_admin_notification_count ,seen_notification , get_FAQdetails , createFAQ , DeleteFAQ , get_contactUS, DeleteContactUS ,
-    Overtime , leave_allowence , calculate_EOSB , net_salary , 
+    Overtime , leave_allowence , calculate_EOSB , net_salary , fav_job, get_All_favourite_jobs ,
             
                 /* Report ad Aalysis */
     jobseeker_count , getclient_count , get_talent_pool_count , get_female_screened_count , jobseeker_count_city_wise ,
@@ -5090,7 +6110,7 @@ module.exports = {
      cms_training_developement , get_training_development_Details , cms_recruitment_selection , get_recruitment_selection_Details,
      cms_employee_outsourcing , get_outsourcing_Details , cms_Hr_teleconsultation , get_hr_teleconsultation_Details , cms_our_mission ,
      get_ourMission_details , cms_aboutUs , get_aboutUS_details , cms_our_vission , get_ourVission_details , cms_our_commitment , get_ourCommitment_details ,
-     cms_get_started_today , get_started_todayDetails
-     
+     cms_get_started_today , get_started_todayDetails , cms_why_choose_us , getDetails_why_choose_us , cms_elite_talent_pool , get_cms_elite_talent_pool,
+     cms_footer_content , get_cms_footer_content , cms_acadmic_credentials_verifier , get_acadmic_credentials_verifier , newsLetter , getAll_newsLetter
      
 }

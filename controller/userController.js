@@ -24,6 +24,8 @@ const adminNotificationModel = require('../model/adminNotification')
 const faqModel = require('../model/Faq')
 const contactUsModel = require('../model/contact_us')
 const jobDescription_model = require('../model/jobDescription')
+const ResumeModel = require('../model/uploadResume')
+const { countDocuments } = require('../model/Admin_and_staffs')
 
 
 
@@ -76,10 +78,27 @@ const jobDescription_model = require('../model/jobDescription')
                                 //hashed the password
                             const hashedPassword = await bcrypt.hash(password , 10)
                             let profileImage = null 
-                            if(req.file)
-                            {
-                                profileImage = req.file.filename
-                            }
+                           
+                 if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                        profileImage = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
+                }
+    
 
                              const newData = new employeeModel({
                                  name ,  
@@ -274,10 +293,25 @@ const jobDescription_model = require('../model/jobDescription')
 
                      // update profile Image of the exist_emp
                    let profileImage 
-                   if(req.file)
-                   {
-                       profileImage = req.file.filename
-                   }
+                   if (req.file && req.file.filename) {
+                    // Get the file extension
+                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+
+                    // List of allowed extensions
+                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+
+                    // Check if the file extension is in the allowed list
+                    if (allowedExtensions.includes(fileExtension)) {
+                        // If valid, update the profile image
+                        profileImage = req.file.filename;
+                    } else {
+                        // If not valid, throw an error
+                        return res.status(400).json({
+                            success : false ,
+                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                    });
+                    }
+                }
 
                    exist_emp.name = name
                    exist_emp.email = email
@@ -1971,7 +2005,8 @@ const deleteJob_Description = async (req, res) => {
                         message: 'No jobs found'
                     });
                 }
-                
+                            // Map job data to desired fromat and count
+                            const jobTitle_Count = new Map()
                 // Map job data to desired format
                 const jobsData = await Promise.all(allJobs.map(async (job) => {
                     // Calculate salary range string
@@ -1994,7 +2029,9 @@ const deleteJob_Description = async (req, res) => {
                             console.error('Error creating notification:', notificationError);
                         }
                     }
-                
+                            // Normalize job title for counting
+                            const normalized_title = job.job_title.trim().toLowerCase()
+                            jobTitle_Count.set(normalized_title , (jobTitle_Count.get(normalized_title) || 0) + 1)
                     // Find candidate details for the job
                     const candidateDetails = await appliedjobModel.find({
                         jobId: job.jobId
@@ -2031,17 +2068,26 @@ const deleteJob_Description = async (req, res) => {
                         isPsychometricTest: job.isPsychometricTest,
                         psychometric_Test: job.psychometric_Test,
                         maleCandidateCount: maleCandidateCount,
-                        femaleCandidateCount: femaleCandidateCount
+                        femaleCandidateCount: femaleCandidateCount,
+                        fav_status : job.fav_status
                     };
                 }));
                 
                    const sortedjobsData = jobsData.sort(( a , b ) => b.createdAt - a.createdAt )
+
+                   // convert job title count to an Array of objects
+
+                   const job_title_array = Array.from(jobTitle_Count.entries()).map(([title , count]) => ({
+                        title : title,
+                        count : count
+                   }))
                 // Return successful response with jobs data
                 return res.status(200).json({
                     success: true,
                     message: 'All Jobs',
                     JobsCount: allJobs.length,
-                    allJobs: sortedjobsData
+                    allJobs: sortedjobsData,
+                    jobTitleCounts: job_title_array
                 });
             } catch (error) {
                 // Return error response if any error occurs
@@ -2136,19 +2182,19 @@ const deleteJob_Description = async (req, res) => {
                 const { job_title, company_address } = req.body;
                 const { latest_Update, job_type, Experience, company_Industry , job_schedule } = req.query;
         
-                // check for required fields
-                if (!job_title) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Job Title required'
-                    });
-                }
-                if (!company_address) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Company address Required'
-                    });
-                }
+                // // check for required fields
+                // if (!job_title) {
+                //     return res.status(400).json({
+                //         success: false,
+                //         message: 'Job Title required'
+                //     });
+                // }
+                // // if (!company_address) {
+                //     return res.status(400).json({
+                //         success: false,
+                //         message: 'Company address Required'
+                //     });
+                // }
         
                 const filter = {};
         
@@ -2209,19 +2255,19 @@ const filterJob = async (req, res) => {
         const { job_title, company_address } = req.body;
         const { job_type, Experience, company_Industry, job_schedule } = req.query;
 
-        // Check for required fields
-        if (!job_title) {
-            return res.status(400).json({
-                success: false,
-                message: 'Job Title required'
-            });
-        }
-        if (!company_address) {
-            return res.status(400).json({
-                success: false,
-                message: 'Company address Required'
-            });
-        }
+        // // Check for required fields
+        // if (!job_title) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'Job Title required'
+        //     });
+        // }
+        // if (!company_address) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'Company address Required'
+        //     });
+        // }
 
         const filter = {};
 
@@ -2394,7 +2440,9 @@ const filterJob = async (req, res) => {
                                 job_expired_Date,
                                 job_status,
                                 jobId : jobId,
-                                candidateStatus : 1
+                                candidateStatus : 1,
+                                job_title : job.job_title,
+                                company_location : job.company_address
                             });
                             
                             try {
@@ -2959,6 +3007,319 @@ const client_dashboardCount = async (req, res) => {
                            }
                    }
 
+
+        // Api for fixit finder
+
+        const fixit_finder = async (req, res) => {
+            try {
+                const { job_title, company_location } = req.body;
+        
+                // // Check for required fields
+                if (!job_title) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Job Title is required'
+                    });
+                }
+                
+                // if (!company_location) {
+                //     return res.status(400).json({
+                //         success: false,
+                //         message: 'Company Location is required'
+                //     });
+                // }
+        
+                // Ensure job_title and company_location are strings
+                if (typeof job_title !== 'string' || typeof company_location !== 'string') {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Job Title and Company Location must be strings'
+                    });
+                }
+        
+                // Use regular expressions to perform partial matches
+                const candidates = await appliedjobModel.find({
+                    job_title: { $regex: job_title, $options: 'i' }, // Case insensitive
+                    company_location: { $regex: company_location, $options: 'i' },
+                });
+
+                    // check for uploaded resume sections profile
+                const d_candidate = await ResumeModel.find({
+                    job_title : { $regex: job_title, $options: 'i' },
+                    city : {$regex: company_location, $options: 'i'}
+                })
+
+                const all_candidates = [ ... candidates , ... d_candidate]
+        
+                if (all_candidates.length === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'No candidates found'
+                    });
+                }
+        
+                return res.status(200).json({
+                    success: true,
+                    message: 'Candidate Details',
+                    candidateCount: all_candidates.length,
+                    details: all_candidates
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+        
+       
+                                                        /*  upload Resume */
+                                                        const uploadResume = async (req, res) => {
+                                                            try {
+                                                                const {
+                                                                    first_name,
+                                                                    last_Name,
+                                                                    email,
+                                                                    city,
+                                                                    phone_no,
+                                                                    gender,
+                                                                    job_title,
+                                                                    Highest_Education,
+                                                                    candidate_status,
+                                                                    jobSeeker_status
+                                                                } = req.body;
+                                                        
+                                                                // Required fields
+                                                                const requiredFields = [
+                                                                    'first_name',
+                                                                    'last_Name',
+                                                                    'email',
+                                                                    'city',
+                                                                    'phone_no',
+                                                                    'gender',
+                                                                    'job_title',
+                                                                    'Highest_Education'
+                                                                ];
+                                                        
+                                                                // Check for missing fields
+                                                                const missingField = requiredFields.reduce((missing, field) => {
+                                                                    if (!req.body[field]) {
+                                                                        return field;
+                                                                    }
+                                                                    return missing;
+                                                                }, null);
+                                                        
+                                                                if (missingField) {
+                                                                    return res.status(400).json({
+                                                                        success: false,
+                                                                        message: `${missingField} required`
+                                                                    });
+                                                                }
+                                                                     // check for exist user
+
+                                                                     const existUser = await ResumeModel.findOne({ user_Email : email })
+
+                                                                     if(existUser)
+                                                                        {
+                                                                            return res.status(400).json({
+                                                                                 success : false ,
+                                                                                 message : 'already applied with these email'
+                                                                            })
+                                                                        }
+                                                                const uploadResume = req.file || null;
+                                                                if (!uploadResume) {
+                                                                    return res.status(400).json({
+                                                                        success: false,
+                                                                        message: 'Resume required'
+                                                                    });
+                                                                }
+                                                        
+                                                                // Check if the uploaded file is a PDF
+                                                                const allowedExtensions = ['.pdf'];
+                                                                const fileExtension = uploadResume.originalname
+                                                                    ? `.${uploadResume.originalname.split('.').pop().toLowerCase().trim()}`
+                                                                    : null;
+                                                        
+                                                                if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+                                                                    return res.status(400).json({
+                                                                        success: false,
+                                                                        message: 'Only PDF files are allowed for resume upload'
+                                                                    });
+                                                                }
+                                                        
+                                                                // Add new data, saving the filename as a string
+                                                                const newData = new ResumeModel({
+                                                                    first_name,
+                                                                    last_Name,
+                                                                    user_Email :  email,
+                                                                    city,
+                                                                    phone_no,
+                                                                    gender,
+                                                                    job_Heading :  job_title,
+                                                                    Highest_Education,
+                                                                    upload_Resume: uploadResume.filename, // Save the filename
+                                                                    candidate_status,
+                                                                    jobSeeker_status
+                                                                });
+                                                        
+                                                                await newData.save();
+                                                        
+                                                                return res.status(200).json({
+                                                                    success: true,
+                                                                    message: 'Resume uploaded successfully'
+                                                                });
+                                                            } catch (error) {
+                                                                return res.status(500).json({
+                                                                    success: false,
+                                                                    message: 'Server error',
+                                                                    error_message: error.message
+                                                                });
+                                                            }
+                                                        };
+                                                        
+            // Api for get All uploaded resume 's section candidate profile
+            
+    const get_upload_section_candidates = async ( req , res ) => {
+          try {
+                    const get_details = await ResumeModel.find({ })
+
+                         if(!get_details)
+                            {
+                                return res.status(400).json({
+                                     success : false ,
+                                     message : 'No Candidate found'
+                                })
+                            }
+
+                    return res.status(200).json({
+                         success : true ,
+                         message : 'all Candidates',
+                         candidates : get_details
+                    })
+          } catch (error) {
+                return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+                })
+          }
+    }
+                          
+    
+    const candidate_recruitment_process_for_uploaded_candidate = async (req, res) => {
+        try {
+            const candidateId = req.params.candidateId;
+            const { seeker_status } = req.body;
+                          
+            // Check for candidateId
+            if (!candidateId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Candidate ID is required'
+                });
+            }
+    
+            // Check for candidate
+            const candidate = await ResumeModel.findOne({ _id: candidateId });
+            if (!candidate) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Candidate not found'
+                });
+            }
+
+                  if(seeker_status === 4)
+                    {
+                        candidate.jobSeeker_status = seeker_status
+                        candidate.candidate_status = 3
+                    }
+                 else if (seeker_status === 6)
+                    {
+                        candidate.jobSeeker_status = seeker_status
+                        candidate.candidate_status = 0
+                    }
+                    else
+                    {
+                        candidate.jobSeeker_status = seeker_status
+                        candidate.candidate_status = 2
+                    }
+
+                    await candidate.save()                 
+    
+            // Return success response
+            res.status(200).json({
+                success: true,
+                message: 'Jobseeker status updated'
+               
+            });
+        } catch (error) {
+            // Handle server errors
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
+        }
+    };
+    
+        
+    // Api for get All successfull candidate 
+
+    const get_successfull_candidate = async (req, res) => {
+        try {
+          // Find candidates with jobSeeker_status 4
+          const c1 = await appliedjobModel.find({
+            jobSeeker_status: 4
+          });
+      
+          const c2 = await ResumeModel.find({
+            jobSeeker_status: 4
+          });
+      
+          // Combine both results
+          const all_successfull_candidate = [...c1, ...c2];
+      
+          // Check if no candidates found
+          if (all_successfull_candidate.length === 0) {
+            return res.status(400).json({
+              success: false,
+              message: 'No candidate found'
+            });
+          }
+      
+          // Sort candidates by createdAt date in descending order
+          const sorted_c = all_successfull_candidate.sort((a, b) => b.createdAt - a.createdAt);
+      
+          // Prepare the response data
+          const responseDetails = sorted_c.map((c) => ({
+            first_Name: c.first_Name || c.first_name,
+            last_Name: c.last_Name,
+            user_Email: c.user_Email,
+            city: c.city,
+            gender: c.gender,
+            job_Heading: c.job_Heading,
+            phone_no: c.phone_no,
+            Highest_Education: c.Highest_Education,
+            jobSeeker_status: c.jobSeeker_status
+          }));
+      
+          // Send the response
+          return res.status(200).json({
+            success: true,
+            message: 'All Successful Candidates',
+            Details: responseDetails
+          });
+        } catch (error) {
+          return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+          });
+        }
+      };
+      
+        
         
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
@@ -2969,5 +3330,6 @@ module.exports = {
     addJobTitle , alljobTitle , deletejobTitle , psychometric_questions , getAll_psychometric_questions , export_candidate,
     addQuestion , getquestions , getAllTest , deletepsychometrcTest , deletequestion_in_Test , getTest ,client_dashboardCount,
     forgetPassOTP,  verifyOTP  ,  clientResetPass,  create_contactUS , getJob , addJob_Description , alljobDescription ,
-    deleteJob_Description , getJd
+    deleteJob_Description , getJd , fixit_finder , uploadResume , get_upload_section_candidates , 
+    candidate_recruitment_process_for_uploaded_candidate , get_successfull_candidate
 } 

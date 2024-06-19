@@ -7,7 +7,7 @@ const cms_hr_consultancy_Schema = new mongoose.Schema({
                },
                Description : {
                     type : String
-               },
+               },             
                image : {
                    type : String
                },

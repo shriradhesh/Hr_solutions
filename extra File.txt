@@ -1,5 +1,4 @@
 
-
 User Authentication and Authorization:
 
 								User Schema
@@ -499,5 +498,147 @@ ________________________________________________________
                                              
                                        
 
+==========================================================
+
+const getAll_Jobs = async (req, res) => {
+    try {
+        const job_status = req.query.job_status;
+        const filter = {};
+        if (job_status) {
+            filter.status = job_status;
+        }
+
+        // Fetch all jobs
+        const allJobs = await jobModel.find({ ...filter });
+
+        // If no jobs found, return error response
+        if (allJobs.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No jobs found'
+            });
+        }
+
+        // Map job data to desired format and count job titles
+        const jobTitleCounts = new Map();
+
+        const jobsData = await Promise.all(allJobs.map(async (job) => {
+            // Calculate salary range string
+            const salary_pay = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
+
+            // Check if job has expired
+            const today = new Date();
+            const endDate = new Date(job.endDate);
+
+            if (endDate < today) {
+                // Job has expired, send notification
+                try {
+                    await empNotificationModel.create({
+                        empId: job.emp_Id,
+                        message: `Your posted job "${job.job_title}" for company "${job.company_name}" has expired`,
+                        date: today,
+                        status: 1,
+                    });
+                } catch (notificationError) {
+                    console.error('Error creating notification:', notificationError);
+                }
+            }
+
+            // Normalize job title for counting
+            const normalizedTitle = job.job_title.trim().toLowerCase();
+            jobTitleCounts.set(normalizedTitle, (jobTitleCounts.get(normalizedTitle) || 0) + 1);
+
+            // Find candidate details for the job
+            const candidateDetails = await appliedjobModel.find({
+                jobId: job.jobId
+            });
+
+            // Count male and female candidates
+            const maleCandidateCount = candidateDetails.filter(candidate => candidate.gender === 'Male').length;
+            const femaleCandidateCount = candidateDetails.filter(candidate => candidate.gender === 'Female').length;
+
+            // Return formatted job data with candidate counts
+            return {
+                jobId: job.jobId,
+                job_title: job.job_title,
+                company_name: job.company_name,
+                Number_of_emp_needed: job.Number_of_emp_needed,
+                job_type: job.job_type,
+                job_schedule: job.job_schedule,
+                salary_pay: salary_pay,
+                job_Description: job.job_Description,
+                job_Responsibility: job.job_Responsibility || null,
+                company_address: job.company_address,
+                employee_email: job.employee_email,
+                requirement_timeline: job.requirement_timeline,
+                startDate: job.startDate,
+                endDate: job.endDate,
+                phone_no: job.phone_no,
+                key_qualification: job.key_qualification,
+                Experience: job.Experience,
+                template_type: job.template_type,
+                company_Industry: job.company_Industry,
+                job_photo: job.job_photo,
+                status: job.status,
+                empId: job.emp_Id,
+                isPsychometricTest: job.isPsychometricTest,
+                psychometric_Test: job.psychometric_Test,
+                maleCandidateCount: maleCandidateCount,
+                femaleCandidateCount: femaleCandidateCount,
+                fav_status: job.fav_status
+            };
+        }));
+
+        const sortedjobsData = jobsData.sort((a, b) => b.createdAt - a.createdAt);
+
+        // Convert job title counts to an array of objects
+        const jobTitleCountsArray = Array.from(jobTitleCounts.entries()).map(([title, count]) => ({
+            title: title,
+            count: count
+        }));
+
+        // Return successful response with jobs data and job title counts
+        return res.status(200).json({
+            success: true,
+            message: 'All Jobs',
+            JobsCount: allJobs.length,
+            allJobs: sortedjobsData,
+            jobTitleCounts: jobTitleCountsArray
+        });
+    } catch (error) {
+        // Return error response if any error occurs
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
 
 
+
+and for afrimoney can we use mtn momo ??
+if yes , then please provide below credentials 
+
+for mtn momo -
+       username ,
+       password ,
+    subscriberMsisdn  --> for testing purpose
+      customersecret,
+	customerkey
+        notifUrl ----> by register in webhook.site
+
+for orange payment -
+         username ,
+	 password ,
+	 X-Auth_Token,
+        notifUrl ----> by register in webhook.site,
+        channelUserMsisdn,
+           pin,
+
+for stripe -
+
+          secret key , ( both testing  & live )
+           Public key ( both testing  & live )
+
+          

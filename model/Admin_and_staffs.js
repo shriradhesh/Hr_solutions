@@ -22,7 +22,7 @@ const Admin_Schema = new mongoose.Schema({
        },
        role : {
         type : String,
-        enum : ['HR Coordinator' , 'super Admin']
+        enum : ['HR Coordinator' , 'Super Admin']
     },
 }, { timestamps : true })
 

@@ -65,6 +65,10 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
                      router.get('/getAllFemale_Candidate', Admin_and_staffController.getAllFemale_Candidate)
         // APi for candidate_recruitment_process
                      router.post('/candidate_recruitment_process/:candidateId', Admin_and_staffController.candidate_recruitment_process)
+        // Api for fav_job
+                     router.post('/fav_job/:jobId', Admin_and_staffController.fav_job)
+        // Api for get_All_favourite_jobs
+                     router.get('/get_All_favourite_jobs', Admin_and_staffController.get_All_favourite_jobs)
         // 
                                              /* ATS Section */
         // Api for get All_candidates
@@ -199,8 +203,22 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
                 router.post('/cms_get_started_today', Admin_and_staffController.cms_get_started_today)
                 // Api for get_ourCommitment_details
                             router.get('/get_started_todayDetails', Admin_and_staffController.get_started_todayDetails)
-
-
+                // Api for cms_why_choose_us
+           router.post('/cms_why_choose_us', Admin_and_staffController.cms_why_choose_us)
+           // Api for getDetails_why_choose_us
+               router.get('/getDetails_why_choose_us', Admin_and_staffController.getDetails_why_choose_us)
+        // APi for cms_elite_talent_pool
+                router.post('/cms_elite_talent_pool', upload.single('image') , Admin_and_staffController.cms_elite_talent_pool)
+        // Api for get_cms_elite_talent_pool
+                 router.get('/get_cms_elite_talent_pool', Admin_and_staffController.get_cms_elite_talent_pool)
+         // Api for cms_footer_content
+                  router.post('/cms_footer_content', Admin_and_staffController.cms_footer_content)
+        // Api for get_cms_footer_content
+                  router.get('/get_cms_footer_content', Admin_and_staffController.get_cms_footer_content)
+        // Api for cms_acadmic_credentials_verifier
+                   router.post('/cms_acadmic_credentials_verifier', upload.single('image') , Admin_and_staffController.cms_acadmic_credentials_verifier)
+        // Api for get_acadmic_credentials_verifier
+                   router.get('/get_acadmic_credentials_verifier', Admin_and_staffController.get_acadmic_credentials_verifier)
                                      /* labour LAW  */
        // Api for Overtime
                router.post('/Overtime', Admin_and_staffController.Overtime)
@@ -223,6 +241,12 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
         // Api for jobseeker_count_city_wise
                 router.post('/jobseeker_count_city_wise', Admin_and_staffController.jobseeker_count_city_wise)
 
+
+      // Api for news letter
+
+               router.post('/newsLetter', Admin_and_staffController.newsLetter)
+      // Api for getAll_newsLetter
+               router.get('/getAll_newsLetter', Admin_and_staffController.getAll_newsLetter)
 
 module.exports = router
 

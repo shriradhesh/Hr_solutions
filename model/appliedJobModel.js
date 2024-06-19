@@ -46,7 +46,7 @@ const appliedJobSchema = mongoose.Schema({
     },
     candidateStatus : {
         type : Number,
-        enum : [0,1,2],
+        enum : [0,1,2 , 3],  // 0 for rejected , 2 for screened , 1 for pending , 3 for complete  
         default : 1 
     },
     Highest_Education: {
@@ -75,6 +75,12 @@ const appliedJobSchema = mongoose.Schema({
                                        // 2 for Interview Scheduled , 3 for assesment , 
                                        // 4 for Completed , 5 for Shortlisted
                                        // 6 for rejected , 7 for third round or HR discussion
+    },
+    job_title : {
+        type : String
+    } ,
+    company_location : {
+           type : String
     }
 
 }, { timestamps: true });

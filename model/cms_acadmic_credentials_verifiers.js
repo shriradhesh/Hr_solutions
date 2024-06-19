@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const cms_t_c_schema = new mongoose.Schema({
+const cms_acadmic_credentials_verifier_Schema = new mongoose.Schema({
           
 
                Heading : {
@@ -16,6 +16,6 @@ const cms_t_c_schema = new mongoose.Schema({
 
 }, {timestamps : true })
 
-const cms_Hr_teleconsultation_model = mongoose.model('cms_Hr_teleconsultation', cms_t_c_schema)
+const cms_acadmic_credentials_verifier_Model = mongoose.model('acadmic_credentials_verifier', cms_acadmic_credentials_verifier_Schema)
 
-module.exports = cms_Hr_teleconsultation_model
+module.exports =  cms_acadmic_credentials_verifier_Model 

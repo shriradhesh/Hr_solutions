@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const cms_t_d_schema = new mongoose.Schema({
+const cms_why_choose_us_Schema = new mongoose.Schema({
           
 
                Heading : {
@@ -7,15 +7,11 @@ const cms_t_d_schema = new mongoose.Schema({
                },
                Description : {
                     type : String
-               },
-             
-               image : {
-                   type : String
                }
               
 
 }, {timestamps : true })
 
-const cms_t_d_Model = mongoose.model('cms_training_developement', cms_t_d_schema)
+const cms_why_choose_us_Model = mongoose.model('why_choose_us', cms_why_choose_us_Schema)
 
-module.exports = cms_t_d_Model
+module.exports = cms_why_choose_us_Model
