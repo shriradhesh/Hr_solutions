@@ -16,6 +16,12 @@ const uploadResume_Schema = new mongoose.Schema({
         phone_no : {
             type : Number
         },
+        home_address : {
+          type : String
+        },
+        location : {
+          type : String
+        },
         gender : {
              type : String,
              enum : ['Male' , 'Female' , 'Others']

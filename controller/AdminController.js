@@ -45,6 +45,15 @@ const cms_footer_contentModel = require('../model/cms_footer_content')
 const cms_acadmic_credentials_verifier_Model = require('../model/cms_acadmic_credentials_verifiers')
 const cms_newsletter_Model = require('../model/newsletter')
 const ResumeModel = require('../model/uploadResume')
+const carrer_advice_model = require('../model/carrer_advice')
+const fixit_finder_model = require('../model/fixit_finder_model')
+const ExcelJs = require("exceljs");
+const jobSkills_Model = require('../model/jobSkills')
+const cms_labour_tool_Model = require('../model/cms_basic_labout_tool')
+const cms_online_courses_Model = require('../model/cms_online_cources')
+const cms_home_Model = require("../model/cms_Home")
+
+
 
 
 
@@ -2060,7 +2069,7 @@ const active_inactive_job = async (req, res) => {
            const create_services = async (req, res) => {
             try {
                 const adminId = req.params.adminId;
-                const { Heading, Description  } = req.body;
+                const { Heading, Description , Description1  } = req.body;
         
                 // Check if adminId is provided
                 if (!adminId) {
@@ -2073,7 +2082,7 @@ const active_inactive_job = async (req, res) => {
                 // Check if admin exists and is a super admin
                 const checkAdmin = await Admin_and_staffsModel.findOne({
                     _id: adminId,
-                    role: 'super Admin'
+                    role: 'Super Admin'
                 });
                 if (!checkAdmin) {
                     return res.status(400).json({
@@ -2089,6 +2098,7 @@ const active_inactive_job = async (req, res) => {
                 if (existingService) {
                     existingService.Heading = Heading;
                     existingService.Description = Description;
+                    existingService.Description1 = Description1;
                     
               
                     if (req.file) {
@@ -2143,8 +2153,8 @@ const active_inactive_job = async (req, res) => {
                     // Create new service
                     const newService = new services({
                         Heading : Heading,
-                        Description : Description,
-                       
+                        Description : Description,                     
+                        Description1 : Description1,                     
                     
                         AdminId : adminId ,
                         image
@@ -2201,6 +2211,7 @@ const active_inactive_job = async (req, res) => {
                                    AdminId : checkService.AdminId,
                                    Heading :  checkService.Heading,
                                    Description : checkService.Description,                                 
+                                   Description1 : checkService.Description1,                                 
                                    image : checkService.image
                              }
                            })
@@ -3566,7 +3577,7 @@ const active_inactive_job = async (req, res) => {
            const cms_Hr_consultancy = async (req, res) => {
             try {       
                 
-                const { Heading, Description} = req.body;
+                const { Heading, Description ,Description1} = req.body;
         
                 // Check for exist hr consultancy
                 const exist_hr_consultancy = await cms_hr_consultancy_Model.findOne({ });
@@ -3575,7 +3586,8 @@ const active_inactive_job = async (req, res) => {
                     // Update existing section
                     exist_hr_consultancy.Heading = Heading;
                     exist_hr_consultancy.Description = Description;               
-        
+                    exist_hr_consultancy.Description1 = Description1;               
+
                    
 
 
@@ -3623,6 +3635,14 @@ const active_inactive_job = async (req, res) => {
                             message: 'Description is required'
                         });
                     }
+
+                    // Check for Description1
+                    if (!Description1) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Description1 is required'
+                        });
+                    }
                    
                    
                     // Add image 
@@ -3653,7 +3673,8 @@ const active_inactive_job = async (req, res) => {
                        
                         image: image ,
                         Heading: Heading,
-                        Description: Description
+                        Description: Description,
+                        Description1 : Description1
                        
                     });
         
@@ -3708,7 +3729,7 @@ const active_inactive_job = async (req, res) => {
         const cms_training_developement = async (req, res) => {
             try {                 
         
-                const { Heading, Description } = req.body;
+                const { Heading, Description , Description1 } = req.body;
         
                 // Check for exist hr consultancy
                 const exist_t_d = await cms_t_d_Model.findOne({ });
@@ -3717,7 +3738,8 @@ const active_inactive_job = async (req, res) => {
                     // Update existing section
                     exist_t_d.Heading = Heading;
                     exist_t_d.Description = Description;                    
-        
+                    exist_t_d.Description1 = Description1;                    
+
                     if (req.file) {
                         exist_t_d.image = req.file.filename;
                     }
@@ -3742,6 +3764,14 @@ const active_inactive_job = async (req, res) => {
                         return res.status(400).json({
                             success: false,
                             message: 'Description is required'
+                        });
+                    }
+
+                    // Check for Description1
+                    if (!Description1) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Description1 is required'
                         });
                     }
                  
@@ -3773,6 +3803,7 @@ const active_inactive_job = async (req, res) => {
                         image: image ,
                         Heading: Heading,
                         Description: Description,
+                        Description1 : Description1
                        
                     });
         
@@ -4100,7 +4131,7 @@ const active_inactive_job = async (req, res) => {
      const cms_Hr_teleconsultation = async (req, res) => {
         try {                
     
-            const { Heading, Description } = req.body;
+            const { Heading, Description , Description1 } = req.body;
     
             // Check for exist cms_Hr_teleconsultation
             const exist_HT = await cms_Hr_teleconsultation_model.findOne({ });
@@ -4108,7 +4139,9 @@ const active_inactive_job = async (req, res) => {
             if (exist_HT) {
                 // Update existing section
                 exist_HT.Heading = Heading;
-                exist_HT.Description = Description;             
+                exist_HT.Description = Description;
+                exist_HT.Description1 = Description1;
+               
     
               
                 if (req.file && req.file.filename) {
@@ -4153,6 +4186,14 @@ const active_inactive_job = async (req, res) => {
                         message: 'Description is required'
                     });
                 }
+
+                // Check for Description1
+                if (!Description1) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Description1 is required'
+                    });
+                }
                 
     
                 // Add image 
@@ -4178,12 +4219,15 @@ const active_inactive_job = async (req, res) => {
                     });
                     }
                 }
+
                 // Add new Data
                 const newData = new cms_Hr_teleconsultation_model ({
                    
                     image: image ,
                     Heading: Heading,
-                    Description: Description,                  
+                    Description: Description,        
+                    Description1 : Description1,                  
+          
                    
                 });
     
@@ -5006,20 +5050,22 @@ const DeleteContactUS = async ( req ,res )=>{
     
             // Calculate total overtime
             const total_overTime = Math.round(OT_computation_on_weekday + OT_computation_on_weekend);
-    
+                // Function to add thousand separators
+        const formatNumber = num => new Intl.NumberFormat('en-US').format(num);
+
             // Return the calculated values
             return res.status(200).json({
                 success: true,
                 message: 'Calculation successful',
                 data: {
-                    Basic_pay : `SLE ${Basic_pay}`, 
+                    Basic_pay : `SLE ${formatNumber(Basic_pay)}`, 
                     OT_Hours_weekday : OT_Hours_weekday, 
                     OT_Hours_weekend  : OT_Hours_weekend ,
-                    Basic_pay_per_day: `SLE ${Basic_pay_per_day}`,  
-                    Basic_pay_per_Hour: `SLE ${Basic_pay_per_Hour}`,
-                    OT_computation_on_weekday: `SLE ${OT_computation_on_weekday}`,
-                    OT_computation_on_weekend: `SLE ${OT_computation_on_weekend}`,
-                    total_overTime: `SLE ${total_overTime}`
+                    Basic_pay_per_day: `SLE ${formatNumber(Basic_pay_per_day)}`,  
+                    Basic_pay_per_Hour: `SLE ${formatNumber(Basic_pay_per_Hour)}`,
+                    OT_computation_on_weekday: `SLE ${formatNumber(OT_computation_on_weekday)}`,
+                    OT_computation_on_weekend: `SLE ${formatNumber(OT_computation_on_weekend)}`,
+                    total_overTime: `SLE ${formatNumber(total_overTime)}`
                 }
             });
     
@@ -5073,18 +5119,22 @@ const DeleteContactUS = async ( req ,res )=>{
                 
                 // calculate net leave allow
                   let net_leave_allow = leave_allowence - income_tax
+
+                  // Function to add thousand separators
+        const formatNumber = num => new Intl.NumberFormat('en-US').format(num);
+
                       
             // Return the calculated values
             return res.status(200).json({
                 success: true,
                 message: 'Calculation successful',
                 data: {
-                    Basic_pay : `SLE ${Basic_pay}`, 
+                    Basic_pay : `SLE ${formatNumber(Basic_pay)}`, 
                     leave_allowence_percentage : leave_allowence_percentage ,
-                    annual_Basic : `SLE ${annual_Basic}` ,
-                    leave_allowence : `SLE ${leave_allowence}` ,
-                    income_tax : `SLE ${income_tax}`  ,
-                    net_leave_allow :  `SLE ${net_leave_allow}`
+                    annual_Basic : `SLE ${formatNumber(annual_Basic)}` ,
+                    leave_allowence : `SLE ${formatNumber(leave_allowence)}` ,
+                    income_tax : `SLE ${formatNumber(income_tax)}`  ,
+                    net_leave_allow :  `SLE ${formatNumber(net_leave_allow)}`
                 }
             });
     
@@ -5139,7 +5189,7 @@ const DeleteContactUS = async ( req ,res )=>{
             // Round up years served to the nearest two decimal places
             const rounded_year_served = Math.round(year_served * 100) / 100;
     
-            // Calculate EOSB
+            // Calculate gross EOSB
             const EOSB = Math.round((Basic_pay * EOSB_days_per_year * rounded_year_served) / 22); 
     
             // Calculate payment for unutilized leave days
@@ -5156,23 +5206,27 @@ const DeleteContactUS = async ( req ,res )=>{
     
             // Calculate net EOSB
             const net_EOSB = gross_salary - tax_on_EOSB;
+
+             // Function to add thousand separators
+        const formatNumber = num => new Intl.NumberFormat('en-US').format(num);
+
     
             // Return the calculated values
             return res.status(200).json({
                 success: true,
                 message: 'Calculation successful',
                 data: {
-                    Basic_pay: `SLE ${Basic_pay}`,
-                    year_served: rounded_year_served,
-                    EOSB: `SLE ${EOSB}`,
-                    payment_for_unutilized_leave_days: `SLE ${payment_for_unutilized_leave_days}`,
-                    gross_salary: `SLE ${gross_salary}`,
-                    tax_on_EOSB: `SLE ${tax_on_EOSB}`,
-                    net_EOSB: `SLE ${net_EOSB}`,
                     contract_start_Date : contract_start_Date,
-                     Employment_end_Date : Employment_end_Date, 
-                     EOSB_days_per_year :`SLE ${EOSB_days_per_year}` , 
-                     untilized_leave_days : untilized_leave_days
+                    Employment_end_Date : Employment_end_Date, 
+                    year_served: rounded_year_served,
+                    EOSB_days_per_year : EOSB_days_per_year , 
+                    Basic_salary: `SLE ${formatNumber(Basic_pay)}`,                   
+                    Gross_EOSB: `SLE ${formatNumber(EOSB)}`,             
+                    tax_on_EOSB: `SLE ${formatNumber(tax_on_EOSB)}`,
+                    net_EOSB: `SLE ${formatNumber(net_EOSB)}`,
+                  
+                    
+                    
                 }
             });
     
@@ -5189,7 +5243,7 @@ const DeleteContactUS = async ( req ,res )=>{
 // Api for calculate Net salary
 const net_salary = async (req, res) => {
     try {
-      let { Basic_pay, transport_allowance = 0, rent_allowance = 0, Hazard_and_other_allowance = 0 } = req.body;
+      let { Basic_pay, total_Allowance , nassit_percent } = req.body;
   
         if(!Basic_pay)
             {
@@ -5198,24 +5252,24 @@ const net_salary = async (req, res) => {
                      message : ' basic salary Requried'
                 })
             }
-        if(transport_allowance)
-            {
-                transport_allowance = transport_allowance
-            }
+        // if(transport_allowance)
+        //     {
+        //         transport_allowance = transport_allowance
+        //     }
         
-        if(rent_allowance)
-            {
-                rent_allowance = rent_allowance
-            }
+        // if(rent_allowance)
+        //     {
+        //         rent_allowance = rent_allowance
+        //     }
         
-        if(Hazard_and_other_allowance)
-            {
-                Hazard_and_other_allowance = Hazard_and_other_allowance
-            }
+        // if(Hazard_and_other_allowance)
+        //     {
+        //         Hazard_and_other_allowance = Hazard_and_other_allowance
+        //     }
         
   
-      // Calculate Total Allowance
-      const total_Allowance = Math.round(transport_allowance + rent_allowance + Hazard_and_other_allowance);
+    //   // Calculate Total Allowance
+    //     total_Allowance = Math.round(transport_allowance + rent_allowance + Hazard_and_other_allowance);
   
       // Calculate Gross Salary
       const gross_salary = Math.round(Basic_pay + total_Allowance);
@@ -5224,10 +5278,10 @@ const net_salary = async (req, res) => {
       const non_taxable_pay = total_Allowance < 500 ? total_Allowance : 500;
   
       // Calculate NASSIT Percentage
-      const nassit_5_percent = Math.round(Basic_pay * 0.05);
+      const nassit_percentage = Math.round(Basic_pay * nassit_percent)/100 ;
   
       // Calculate Taxable Pay
-      const taxable_pay = Math.round((Basic_pay - nassit_5_percent + total_Allowance) - non_taxable_pay);
+      const taxable_pay = Math.round((Basic_pay - nassit_percentage + total_Allowance) - non_taxable_pay);
   
       // Calculate Deduction PAYE
       let Deducation_pay = 0;
@@ -5242,28 +5296,31 @@ const net_salary = async (req, res) => {
       }
   
       // Calculate Total Deductions
-      const total_deduction = Math.round(Deducation_pay + nassit_5_percent);
+      const total_deduction = Math.round(Deducation_pay + nassit_percentage);
   
       // Calculate Net Salary
       const net_Salary = gross_salary - total_deduction;
+       // Function to add thousand separators
+       const formatNumber = num => new Intl.NumberFormat('en-US').format(num);
+
   
       // Return the calculated values
       return res.status(200).json({
         success: true,
         message: 'Calculation successful',
         data: {
-            Basic_pay :   `SLE ${Basic_pay}` ,
-            transport_allowance:  `SLE ${transport_allowance}` ,
-            rent_allowance :  `SLE ${rent_allowance}` ,
-            Hazard_and_other_allowance :  `SLE ${Hazard_and_other_allowance}` ,
-            total_Allowance : `SLE ${total_Allowance}` ,
-            gross_salary :  `SLE ${gross_salary}`  ,
-            non_taxable_pay :  `SLE ${non_taxable_pay}`   ,
-            taxable_pay : `SLE ${taxable_pay}`  ,
-            nassit_5_percent,
-          PAYE : `SLE ${Deducation_pay}`,
-          total_deduction :  `SLE ${total_deduction}`,
-          net_Salary : `SLE ${net_Salary}`,
+            Basic_pay :   `SLE ${formatNumber(Basic_pay)}` ,
+            // transport_allowance:  `SLE ${formatNumber(transport_allowance)}` ,
+            // rent_allowance :  `SLE ${formatNumber(rent_allowance)}` ,
+            // Hazard_and_other_allowance :  `SLE ${formatNumber(Hazard_and_other_allowance)}` ,
+            total_Allowance : `SLE ${formatNumber(total_Allowance)}` ,
+            gross_salary :  `SLE ${formatNumber(gross_salary)}`  ,
+            non_taxable_pay :  `SLE${formatNumber(non_taxable_pay)}`   ,
+            taxable_pay : `SLE ${formatNumber(taxable_pay)}`  ,
+            nassit: nassit_percentage,
+          PAYE : `SLE ${formatNumber(Deducation_pay)}`,
+          total_deduction :  `SLE ${formatNumber(total_deduction)}`,
+          net_Salary : `SLE ${formatNumber(net_Salary)}`,
         },
       });
   
@@ -5547,7 +5604,7 @@ const net_salary = async (req, res) => {
                  const cms_elite_talent_pool = async (req, res) => {
             try {       
                 
-                const { Heading, Description} = req.body;
+                const { Heading, Description , Description1 } = req.body;
         
                 // Check for exist cms_elite_talent_pool
                 const exist_cms_elite_talent_pool = await cms_elite_talent_pool_Model.findOne({ });
@@ -5556,7 +5613,8 @@ const net_salary = async (req, res) => {
                     // Update existing section
                     exist_cms_elite_talent_pool.Heading = Heading;
                     exist_cms_elite_talent_pool.Description = Description;
-                   
+                    exist_cms_elite_talent_pool.Description1 = Description1;
+
         
                     
                 if (req.file && req.file.filename) {
@@ -5601,6 +5659,14 @@ const net_salary = async (req, res) => {
                             message: 'Description is required'
                         });
                     }
+
+                    // Check for Description1
+                    if (!Description1) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Description1 is required'
+                        });
+                    }
                    
                    
                     // Add image 
@@ -5630,7 +5696,8 @@ const net_salary = async (req, res) => {
                        
                         image: image ,
                         Heading: Heading,
-                        Description: Description
+                        Description: Description,
+                        Description1 : Description1
                        
                     });
         
@@ -5714,19 +5781,22 @@ const net_salary = async (req, res) => {
                                 {
                                     job.fav_status = 1
                                     job.save()
+                                    return res.status(200).json({
+                                        success : true ,
+                                        message : 'job saved as Favourite'
+                                   })
                                 }
                                 else
                                 {
-                                    return res.status(400).json({
-                                         success : false ,
-                                         message : 'job already Saved as Favourite'
-                                    })
+                                    job.fav_status = 0
+                                    job.save()
+                                    return res.status(200).json({
+                                        success : true ,
+                                        message : 'job saved as unfavourite'
+                                   })
                                 }
 
-                                return res.status(200).json({
-                                     success : true ,
-                                     message : 'job saved as Favourite'
-                                })
+                                
                      } catch (error) {
                           return res.status(500).json({
                                success : false ,
@@ -5744,7 +5814,8 @@ const net_salary = async (req, res) => {
                     // check for all fav jobs
 
                     const all_fav = await jobModel.find({
-                         fav_status : 1
+                         fav_status : 1,
+                         status : 1
                     })
 
                     if(!all_fav)
@@ -5868,7 +5939,7 @@ const net_salary = async (req, res) => {
      const cms_acadmic_credentials_verifier = async (req, res) => {
         try {       
             
-            const { Heading, Description} = req.body;
+            const { Heading, Description , Description1 } = req.body;
     
             // Check for exist cms_elite_talent_pool
             const exist_cms_acadmic_credentials_verifier = await cms_acadmic_credentials_verifier_Model.findOne({ });
@@ -5877,7 +5948,8 @@ const net_salary = async (req, res) => {
                 // Update existing section
                 exist_cms_acadmic_credentials_verifier.Heading = Heading;
                 exist_cms_acadmic_credentials_verifier.Description = Description;
-               
+                exist_cms_acadmic_credentials_verifier.Description1 = Description1;
+
     
                  if (req.file && req.file.filename) {
                     // Get the file extension
@@ -5921,6 +5993,14 @@ const net_salary = async (req, res) => {
                         message: 'Description is required'
                     });
                 }
+
+                // Check for Description1
+                if (!Description1) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Description1 is required'
+                    });
+                }
                
                
                 // Add image 
@@ -5954,7 +6034,8 @@ const net_salary = async (req, res) => {
                    
                     image: image ,
                     Heading: Heading,
-                    Description: Description
+                    Description: Description,
+                    Description1: Description1
                    
                 });
     
@@ -6087,7 +6168,759 @@ const net_salary = async (req, res) => {
                }
 
 
+// APi for carrer advice 
+              const new_carrer_advice = async ( req , res)=> {
+                 try {
+                        const { Heading , Description } = req.body
+                    // check for required fields
 
+                    if(!Heading)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'Heading Required'
+                            })
+                        }
+                    if(!Description)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'Description Required'
+                            })
+                        }
+                    
+                        let image = null
+
+                        if (req.file && req.file.filename) {
+                            // Get the file extension
+                            const fileExtension = path.extname(req.file.filename).toLowerCase();
+        
+                            // List of allowed extensions
+                            const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+        
+                            // Check if the file extension is in the allowed list
+                            if (allowedExtensions.includes(fileExtension)) {
+                                // If valid, update the profile image
+                               image = req.file.filename;
+                            } else {
+                                // If not valid, throw an error
+                                return res.status(400).json({
+                                    success : false ,
+                                    message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                            });
+                            }
+                        }
+
+                        // create new Data 
+
+                         const newData = new carrer_advice_model({
+                             Heading ,
+                             Description,
+                             image
+                         })
+
+                         await newData.save()
+
+                         return res.status(200).json({
+                             success : true ,
+                             message : 'new Data added successfully',
+                             Data : newData
+                         })
+            
+                 } catch (error) {
+                     return res.status(500).json({
+                         success : false ,
+                         message : 'server error',
+                         error_message : error.message
+                     })
+                 }
+              }
+        
+        // Api for get all carrer advice Details
+
+         const all_carrer_details = async ( req , res)=> {
+              try {
+                     const all_details = await carrer_advice_model.find()
+                     if(!all_details)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'No Career Details found'
+
+                            })
+                        }
+
+                    return res.status(200).json({
+                         success : true ,
+                         message  : 'carrer Details',
+                         Details : all_details
+                    })
+              } catch (error) {
+                  return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+                  })
+              }
+         }
+
+    // Api for delete particular carrer Advice Detail
+
+              const delete_carrer_advice = async ( req , res )=> {
+                 try { 
+                       const carrer_advice_Id = req.params.carrer_advice_Id
+
+                    // check for carrer advicve ID
+                       if(!carrer_advice_Id)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'carrer advive Id required'
+                            })
+                        }
+                    // check for carrer_advice
+
+                     const carrer_advice = await carrer_advice_model.findOne({ _id : carrer_advice_Id })
+
+                     if(!carrer_advice)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'no details found'
+                            })
+                        }
+                         await carrer_advice.deleteOne()
+
+                         return res.status(200).json({
+                             success : true ,
+                             message : 'Details Deleted successfully'
+                         })
+                 } catch (error) {
+                      return res.status(500).json({
+                         success : false ,
+                         message : 'server error',
+                         error_message : error.message
+                      })
+                 }
+              }
+
+
+              // Api for  generate sample file
+
+              const generate_sampleFile = async (req, res) => {
+                try {
+                  const workbook = new ExcelJs.Workbook();
+                  const worksheet = workbook.addWorksheet("fixit_finder");
+              
+                  worksheet.addRow([
+                    "Timestamp",
+                    "FullName",
+                    "phone_no",
+                    "Gender",
+                    "nationality_or_voter_id",
+                    "attach_your_certificate",
+                    "workscope_address",
+                    "Business_name",
+                    "Home_address",
+                    "location",
+                    "skills",
+                    "year_of_experience",
+                  ]);
+              
+                  // Add sample data
+                  worksheet.addRow([
+                    "5-10-2024 12:38:25",
+                    "SAMUEL SESAY",
+                     "088314766" ,
+                     "Male",
+                    "Voter's ID",
+                    "https://drive.google.com/open?id=13ma9b3ibCjoKd3IdewtY8iivxt-A9AZl",
+                    "Rokel Village, Check Point",
+                    "No",
+                    "Waterloo banga farm sesay street",
+                    "Freetown- West",
+                    "Plumbing",
+                    "0",
+                  ]);
+              
+                  // Set response headers for Excel download with the filename
+                  res.setHeader(
+                    "Content-Type",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                  );
+                  res.setHeader(
+                    "Content-Disposition",
+                    "attachment; filename=sample_sheet.xlsx"
+                  );
+              
+                  // Send the Excel file as a response
+                  await workbook.xlsx.write(res);
+                  res.end();
+                  console.log("Excel file sent");
+                } catch (error) {
+                  console.error("Error sending Excel file:", error);
+                  res.status(500).send("Internal Server Error");
+                }
+              };
+
+              
+              // Api for import fixit_finder data
+
+              const import_file = async (req, res) => {
+                try {
+                  const workbook = new ExcelJs.Workbook();
+                  await workbook.xlsx.readFile(req.file.path);
+              
+                  const worksheet = workbook.getWorksheet(1);
+                  const requiredHeaders = [
+                    "Timestamp",
+                    "FullName",
+                    "phone_no",
+                    "Gender",
+                    "nationality_or_voter_id",
+                    "attach_your_certificate",
+                    "workscope_address",
+                    "Business_name",
+                    "Home_address",
+                    "location",
+                    "skills",
+                    "year_of_experience",
+                  ];
+              
+                  // Validate headers
+                  const actualHeaders = [];
+                  worksheet.getRow(1).eachCell((cell, colNumber) => {
+                    actualHeaders.push(cell.value);
+                  });
+              
+                  const isValidHeaders = requiredHeaders.every(
+                    (header, index) => header === actualHeaders[index]
+                  );
+              
+                  if (!isValidHeaders) {
+                    return res.status(400).json({
+                      success: false,
+                      error: "use sample file format to import the data",
+                    });
+                  }
+              
+                  const fileData = [];
+                  const phoneNumbers = new Set();
+              
+                  worksheet.eachRow((row, rowNumber) => {
+                    if (rowNumber !== 1) {
+                      // Skip the header row
+                      const rowData = {
+                        timeStamp: row.getCell(1).value,
+                        FullName: row.getCell(2).value,
+                        phone_no: row.getCell(3).value,
+                        Gender: row.getCell(4).value,
+                        nationality_or_voter_id: row.getCell(5).value,
+                        attach_your_certificate: row.getCell(6).value?.text || row.getCell(6).value?.hyperlink || '', 
+                        workscope_address: row.getCell(7).value,
+                        Business_name: row.getCell(8).value,
+                        Home_address: row.getCell(9).value,
+                        location: row.getCell(10).value,
+                        skills: row.getCell(11).value,
+                        year_of_experience: row.getCell(12).value,
+                      };
+              
+                      if (!phoneNumbers.has(rowData.phone_no)) {
+                        phoneNumbers.add(rowData.phone_no);
+                        fileData.push(rowData);
+                      }
+                    }
+                  });
+              
+                  const uniqueData = [];
+                  for (const data of fileData) {
+                    const existingRecord = await fixit_finder_model.findOne({ phone_no: data.phone_no });
+                    if (!existingRecord) {
+                      uniqueData.push(data);
+                    }
+                  }
+              
+                  if (uniqueData.length > 0) {
+                    // Insert the unique data into the database
+                    const insertedData = await fixit_finder_model.insertMany(uniqueData);
+              
+                    res.status(200).json({
+                      success: true,
+                      message: "Data imported successfully",
+                      insertedData: insertedData,
+                    });
+                  } else {
+                    res.status(200).json({
+                      success: true,
+                      message: "No new data to import",
+                    });
+                  }
+                } catch (error) {
+                  console.error(error);
+                  res.status(500).json({
+                    success: false,
+                    error: "There was an error while importing data",
+                  });
+                }
+              };
+              
+
+                                        /* job Title  skills section */
+              
+           // Api for add job Description
+
+    const addJob_skills = async (req, res) => { 
+    
+            const { jobTitle , skill_Name } = req.body;
+          
+            try {
+              const requiredFields = ["jobTitle" , "skill_Name"];
+          
+              for (const field of requiredFields) {
+                if (!req.body[field]) {
+                  return res
+                    .status(400)
+                    .json({
+                      message: `Missing ${field.replace("_", " ")} field`,
+                      success: false,
+                    });
+                }
+              }
+          
+              // Check for skill_Name
+              const existskill_Name = await jobSkills_Model.findOne({ jobTitle : jobTitle , skill_Name : skill_Name });
+          
+              if (existskill_Name) {
+                return res
+                  .status(400)
+                  .json({ message: "skill_Name already exist ", success: false });
+              }
+          
+              const newskill_Name = new jobSkills_Model({
+                jobTitle: jobTitle,
+                skill_Name : skill_Name
+
+              });
+              const savedskill_Name = await newskill_Name.save();
+          
+              return res
+                .status(200)
+                .json({
+                  success: true,
+                  message: `skill_Name : ${skill_Name} , added successfully for jobTitle : ${jobTitle}`,
+                  
+                });
+            } catch (error) {
+              console.error(error);
+              return res
+                .status(500)
+                .json({
+                  success: false,
+                  message: `server error`,
+                  error_message: error,
+                });
+            }
+          };
+         
+
+
+    // Api for get all job skills
+
+         
+
+  const alljobSkills = async (req, res) => {
+    try {
+        // Fetch all jobSkills from the database
+        const jobSkilss = await jobSkills_Model.find({});
+        
+        // Check if jobSkilss array is empty
+        if (jobSkilss.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "No jobSkilss found",
+            });
+        } else {
+            // Map jobSkilss to required format
+            const formattedjobSkilss = jobSkilss.map(jobT => ({
+                jobTitle: jobT.jobTitle,
+                jobSkilss: jobT.skill_Name,
+                _id: jobT._id
+            }));
+            
+            // Send formatted jobTitles as response
+            res.status(200).json({
+                success: true,
+                message: "All jobSkilss",
+                details: formattedjobSkilss
+            });
+        }
+    } catch (error) {
+        // Handle server error
+        res.status(500).json({ success: false, message: "Server error", error_message: error.message });
+    }
+};
+
+
+// Api for delete particular job skills
+    
+
+const deletejobskill = async (req, res) => {
+    try {
+      const jobskill_id = req.params.jobskill_id;
+  
+      // Check for jobskill existence
+      const existingjobskill = await jobSkills_Model.findOne({ _id: jobskill_id });
+      if (!existingjobskill) {
+        return res.status(400).json({ success: false, error: `job skill not found` });
+      }
+  
+      // Delete the job skill from the database
+      await existingjobskill.deleteOne();
+  
+      res
+        .status(200)
+        .json({ success: true, message: "job skill deleted successfully" });
+    } catch (error) {
+      console.error(error);
+      res
+        .status(500)
+        .json({ success: false, message: "server error", error_message : error.message });
+    }
+  };
+           
+ 
+
+  // Api for get skills
+  
+
+   const getJs = async( req , res )=>{
+    try {
+          const { jobTitle } = req.body
+          // check for job Title
+        if(!jobTitle)
+            {
+                return res.status(400).json({
+                     success : false ,
+                     message : 'job Title Required'
+                })
+            }
+
+     // check for job Descreption for jobTItle
+              const JS = await jobSkills_Model.find({
+                      jobTitle : jobTitle
+              })
+
+              if(!JS)
+                {
+                    return res.status(400).json({
+                         success : false ,
+                         message :  `JOb Skills not found for the given jobTitle : ${jobTitle}`
+                    })
+                }
+
+
+                return res.status(200).json({
+                     success : true ,
+                     message : 'JOB Skills',
+                     Details : JS
+                })
+
+                    } catch (error) {
+        return res.status(500).json({
+             success : false ,
+             message : 'server error',
+             error_message : error.message
+        })
+    }
+}
+
+
+
+// Api for create and update basic labour tool for cms
+
+const cms_labour_tool = async ( req , res )=> {
+
+    try {
+            
+        const { Heading, Description } = req.body;
+        
+        // Check for exist cms labour tool
+        const exist_cms_labour_tool = await cms_labour_tool_Model.findOne({ });
+
+        if (exist_cms_labour_tool) {
+            // Update existing section
+            exist_cms_labour_tool.Heading = Heading;
+            exist_cms_labour_tool.Description = Description;            
+      
+            await exist_cms_labour_tool.save();
+
+            return res.status(200).json({
+                success: true,
+                message: 'Details updated successfully'
+            });
+        } else {
+            // Check for Heading
+            if (!Heading) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Heading is required'
+                });
+            }
+
+            // Check for Description
+            if (!Description) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Description is required'
+                });
+            }       
+           
+
+            // Add new Data
+            const newData = new cms_labour_tool_Model({
+               
+               
+                Heading: Heading,
+                Description: Description,
+              
+               
+            });
+
+            await newData.save();
+
+            return res.status(200).json({
+                success: true,
+                message: 'New Details created successfully'
+            });
+        }
+
+    } catch (error) {
+           return res.status(500).json({
+             success : false ,
+             message : 'server error',
+             error_message :  error.message
+           })
+    }
+        
+}
+
+
+// Api for get cms labour tool details
+
+     const get_cms_labour_tool_details = async ( req , res) => {
+           try {
+                  const getDetails = await cms_labour_tool_Model.findOne({})
+
+                  if(!getDetails)
+                  {
+                    return res.status(400).json({
+                         success : false ,
+                         message : 'Details not found'
+                    })
+                  }
+
+                  return res.status(200).json({
+                     success : true ,
+                     message : 'cms Labour tool Details',
+                     Details : getDetails
+                  })
+           } catch (error) {
+              return res.status(500).json({
+                 success : false ,
+                 message : 'server error',
+                 error_message : error.message
+              })
+           }
+     }
+
+
+     // Api for create and update cms online courses
+
+           const cms_online_cources = async( req , res )=> {
+            try {
+            
+                const { Heading, Description } = req.body;
+                
+                // Check for exist cms online courses
+                const exist_cms_online_courses = await cms_online_courses_Model.findOne({ });
+        
+                if (exist_cms_online_courses) {
+                    // Update existing section
+                    exist_cms_online_courses.Heading = Heading;
+                    exist_cms_online_courses.Description = Description;            
+              
+                    await exist_cms_online_courses.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Details updated successfully'
+                    });
+                } else {
+                    // Check for Heading
+                    if (!Heading) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Heading is required'
+                        });
+                    }
+        
+                    // Check for Description
+                    if (!Description) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Description is required'
+                        });
+                    }       
+                   
+        
+                    // Add new Data
+                    const newData = new cms_online_courses_Model({
+                       
+                       
+                        Heading: Heading,
+                        Description: Description,
+                      
+                       
+                    });
+        
+                    await newData.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'New Details created successfully'
+                    });
+                }
+        
+            } catch (error) {
+                   return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message :  error.message
+                   })
+            }
+           }
+              
+
+    // Api for get cms online courses details
+    const get_cms_online_courses_details = async ( req , res) => {
+        try {
+               const getDetails = await cms_online_courses_Model.findOne({})
+
+               if(!getDetails)
+               {
+                 return res.status(400).json({
+                      success : false ,
+                      message : 'Details not found'
+                 })
+               }
+
+               return res.status(200).json({
+                  success : true ,
+                  message : 'cms online courses details',
+                  Details : getDetails
+               })
+        } catch (error) {
+           return res.status(500).json({
+              success : false ,
+              message : 'server error',
+              error_message : error.message
+           })
+        }
+  }
+
+
+  // Api for create and update Cms Home section
+
+         const cms_Home = async( req , res )=> {
+            try {
+            
+                const { Heading, Description } = req.body;
+                
+                // Check for exist cms Home
+                const exist_cms_Home = await cms_home_Model.findOne({ });
+        
+                if (exist_cms_Home) {
+                    // Update existing section
+                   
+                    exist_cms_Home.Description = Description;            
+              
+                    await exist_cms_Home.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Details updated successfully'
+                    });
+                } else {
+                   
+        
+                    // Check for Description
+                    if (!Description) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Description is required'
+                        });
+                    }       
+                   
+        
+                    // Add new Data
+                    const newData = new cms_home_Model({
+                       
+                       
+                        Heading: Heading,
+                        Description: Description,
+                      
+                       
+                    });
+        
+                    await newData.save();
+        
+                    return res.status(200).json({
+                        success: true,
+                        message: 'New Details created successfully'
+                    });
+                }
+        
+            } catch (error) {
+                   return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message :  error.message
+                   })
+            }
+         }
+              
+
+          // Api for get cms home
+            
+          const get_cms_Home = async ( req , res) => {
+            try {
+                   const getDetails = await cms_home_Model.findOne({})
+    
+                   if(!getDetails)
+                   {
+                     return res.status(400).json({
+                          success : false ,
+                          message : 'Details not found'
+                     })
+                   }
+    
+                   return res.status(200).json({
+                      success : true ,
+                      message : 'cms Home details',
+                      Details : getDetails
+                   })
+            } catch (error) {
+               return res.status(500).json({
+                  success : false ,
+                  message : 'server error',
+                  error_message : error.message
+               })
+            }
+      }
+    
+
+      
+            
                 
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
@@ -6096,7 +6929,8 @@ module.exports = {
     send_notification ,  create_services , getService ,  create_privacy_policy , get_admin_privacy_policy,
     create_term_condition , get_admin_term_condition , getAll_candidates , AdminforgetPassOTP , AdminverifyOTP , adminResetPass ,
     getAdminNotification , unseen_admin_notification_count ,seen_notification , get_FAQdetails , createFAQ , DeleteFAQ , get_contactUS, DeleteContactUS ,
-    Overtime , leave_allowence , calculate_EOSB , net_salary , fav_job, get_All_favourite_jobs ,
+    Overtime , leave_allowence , calculate_EOSB , net_salary , fav_job, get_All_favourite_jobs , addJob_skills , alljobSkills , deletejobskill ,
+    getJs ,
             
                 /* Report ad Aalysis */
     jobseeker_count , getclient_count , get_talent_pool_count , get_female_screened_count , jobseeker_count_city_wise ,
@@ -6111,6 +6945,8 @@ module.exports = {
      cms_employee_outsourcing , get_outsourcing_Details , cms_Hr_teleconsultation , get_hr_teleconsultation_Details , cms_our_mission ,
      get_ourMission_details , cms_aboutUs , get_aboutUS_details , cms_our_vission , get_ourVission_details , cms_our_commitment , get_ourCommitment_details ,
      cms_get_started_today , get_started_todayDetails , cms_why_choose_us , getDetails_why_choose_us , cms_elite_talent_pool , get_cms_elite_talent_pool,
-     cms_footer_content , get_cms_footer_content , cms_acadmic_credentials_verifier , get_acadmic_credentials_verifier , newsLetter , getAll_newsLetter
+     cms_footer_content , get_cms_footer_content , cms_acadmic_credentials_verifier , get_acadmic_credentials_verifier , newsLetter , getAll_newsLetter,
+     new_carrer_advice , all_carrer_details , delete_carrer_advice , generate_sampleFile , import_file , cms_labour_tool , get_cms_labour_tool_details,
+     cms_online_cources , get_cms_online_courses_details , cms_Home , get_cms_Home 
      
 }

@@ -8,6 +8,9 @@ const cms_t_d_schema = new mongoose.Schema({
                Description : {
                     type : String
                },
+               Description1 : {
+                    type : String
+               },
              
                image : {
                    type : String

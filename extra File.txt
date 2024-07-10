@@ -617,6 +617,9 @@ const getAll_Jobs = async (req, res) => {
 
 
 
+
+
+
 and for afrimoney can we use mtn momo ??
 if yes , then please provide below credentials 
 
@@ -639,6 +642,11 @@ for orange payment -
 for stripe -
 
           secret key , ( both testing  & live )
-           Public key ( both testing  & live )
+           Public key ( both testing  & live 
 
-          
+
+
+
+
+
+

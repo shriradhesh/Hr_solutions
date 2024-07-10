@@ -219,6 +219,23 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
                    router.post('/cms_acadmic_credentials_verifier', upload.single('image') , Admin_and_staffController.cms_acadmic_credentials_verifier)
         // Api for get_acadmic_credentials_verifier
                    router.get('/get_acadmic_credentials_verifier', Admin_and_staffController.get_acadmic_credentials_verifier)
+
+        // Api for create and update cms labour tool
+
+                    router.post("/cms_labour_tool", Admin_and_staffController.cms_labour_tool)
+        // Api for get_cms_labour_tool_details
+                    router.get("/get_cms_labour_tool_details", Admin_and_staffController.get_cms_labour_tool_details)
+
+        // Api for create and update cms_online_cources
+                router.post("/cms_online_cources", Admin_and_staffController.cms_online_cources)
+        // Api for get_cms_online_courses_details
+                 router.get("/get_cms_online_courses_details", Admin_and_staffController.get_cms_online_courses_details)
+        // Api for create and update cms_Home
+                 router.post("/cms_Home", Admin_and_staffController.cms_Home)
+        // Api for get_cms_Home
+                 router.get("/get_cms_Home", Admin_and_staffController.get_cms_Home)
+   
+
                                      /* labour LAW  */
        // Api for Overtime
                router.post('/Overtime', Admin_and_staffController.Overtime)
@@ -247,6 +264,30 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
                router.post('/newsLetter', Admin_and_staffController.newsLetter)
       // Api for getAll_newsLetter
                router.get('/getAll_newsLetter', Admin_and_staffController.getAll_newsLetter)
+
+        // Api for carrer advice
+
+                router.post('/new_carrer_advice', upload.single('image') , Admin_and_staffController.new_carrer_advice)
+        // Api for all_carrer_details
+                router.get('/all_carrer_details', Admin_and_staffController.all_carrer_details)
+        // APi for delete_carrer_advice
+                router.delete('/delete_carrer_advice/:carrer_advice_Id', Admin_and_staffController.delete_carrer_advice)
+        // Api for generate sample file
+                router.get("/generate_sampleFile", Admin_and_staffController.generate_sampleFile)
+        // Api for import data for fixit finder
+                router.post("/import_file", upload.single('file'), Admin_and_staffController.import_file)
+
+                       /*job Skills */
+
+         // Api for  addJob_skills
+                router.post("/addJob_skills", Admin_and_staffController.addJob_skills)
+        // Api for get alljobSkills
+                router.get("/alljobSkills", Admin_and_staffController.alljobSkills)
+        // Api for  deletejobskill
+                router.delete("/deletejobskill/:jobskill_id", Admin_and_staffController.deletejobskill)  
+        // Api for getJs
+                router.get("/getJs", Admin_and_staffController.getJs)
+
 
 module.exports = router
 

@@ -26,6 +26,9 @@ const contactUsModel = require('../model/contact_us')
 const jobDescription_model = require('../model/jobDescription')
 const ResumeModel = require('../model/uploadResume')
 const { countDocuments } = require('../model/Admin_and_staffs')
+const blog_section_comment_Model = require('../model/blog_detail_comment')
+const path = require('path')
+const fixit_finder_model = require('../model/fixit_finder_model')
 
 
 
@@ -292,25 +295,25 @@ const { countDocuments } = require('../model/Admin_and_staffs')
                   }
 
                      // update profile Image of the exist_emp
-                   let profileImage 
+                   let profileImage = exist_emp.profileImage
                    if (req.file && req.file.filename) {
-                    // Get the file extension
-                    const fileExtension = path.extname(req.file.filename).toLowerCase();
+                //     // Get the file extension
+                //     const fileExtension = path.extname(req.file.filename).toLowerCase();
 
-                    // List of allowed extensions
-                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+                //     // List of allowed extensions
+                //     const allowedExtensions = ['.jpg', '.jpeg', '.png'];
 
-                    // Check if the file extension is in the allowed list
-                    if (allowedExtensions.includes(fileExtension)) {
-                        // If valid, update the profile image
+                //     // Check if the file extension is in the allowed list
+                //     if (allowedExtensions.includes(fileExtension)) {
+                //         // If valid, update the profile image
                         profileImage = req.file.filename;
-                    } else {
-                        // If not valid, throw an error
-                        return res.status(400).json({
-                            success : false ,
-                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
-                    });
-                    }
+                //     } else {
+                //         // If not valid, throw an error
+                //         return res.status(400).json({
+                //             success : false ,
+                //             message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                //     });
+                //     }
                 }
 
                    exist_emp.name = name
@@ -1300,7 +1303,11 @@ const deleteJob_Description = async (req, res) => {
         
                 const randomNumber = generateRandomNumber(5);
                 const finalString = `JOB${randomNumber}`; 
-
+                    let job_image = ''
+                    if(req.file)
+                        {
+                            job_image = req.file.filename
+                        }
                 const newJob = new jobModel({
                     emp_Id: empId,
                     jobId : finalString,
@@ -1323,7 +1330,8 @@ const deleteJob_Description = async (req, res) => {
                     company_Industry: employee.company_industry,
                     status: 0,
                     isPsychometricTest  ,
-                    psychometric_Test : psychometric_Test
+                    psychometric_Test : psychometric_Test,
+                    job_image : job_image || ''
                 });
         
                 await newJob.save();
@@ -1424,7 +1432,8 @@ const deleteJob_Description = async (req, res) => {
                     job_photo: job.job_photo,
                     status: job.status,
                     isPsychometricTest : job.isPsychometricTest,
-                    psychometric_Test : job.psychometric_Test
+                    psychometric_Test : job.psychometric_Test,
+                    job_image : job.job_image
 
 
                 };
@@ -2069,7 +2078,8 @@ const deleteJob_Description = async (req, res) => {
                         psychometric_Test: job.psychometric_Test,
                         maleCandidateCount: maleCandidateCount,
                         femaleCandidateCount: femaleCandidateCount,
-                        fav_status : job.fav_status
+                        fav_status : job.fav_status,
+                        job_image : job.job_image || ''
                     };
                 }));
                 
@@ -2087,7 +2097,7 @@ const deleteJob_Description = async (req, res) => {
                     message: 'All Jobs',
                     JobsCount: allJobs.length,
                     allJobs: sortedjobsData,
-                    jobTitleCounts: job_title_array
+                
                 });
             } catch (error) {
                 // Return error response if any error occurs
@@ -2098,6 +2108,103 @@ const deleteJob_Description = async (req, res) => {
                 });
             }
         };
+
+
+        // All active job count with there title
+
+         const all_active_jobs_Count_with_title = async ( req , res ) => {
+            try {
+               
+                // Fetch all jobs
+                const allJobs = await jobModel.find({ status : 1 });
+                
+                // If no jobs found, return error response
+                if (allJobs.length === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'No jobs found'
+                    });
+                }
+                            // Map job data to desired fromat and count
+                            const jobTitle_Count = new Map()
+                // Map job data to desired format
+                const jobsData = await Promise.all(allJobs.map(async (job) => {
+                    // Calculate salary range string
+                    const salary_pay = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
+                
+                    // Check if job has expired
+                    const today = new Date();
+                    const endDate = new Date(job.endDate);
+                
+                        // Normalize job title for counting
+                            const normalized_title = job.job_title.trim().toLowerCase()
+                            jobTitle_Count.set(normalized_title , (jobTitle_Count.get(normalized_title) || 0) + 1)
+                    // Find candidate details for the job
+                    const candidateDetails = await appliedjobModel.find({
+                        jobId: job.jobId
+                    });
+        
+                    // Count male and female candidates
+                    const maleCandidateCount = candidateDetails.filter(candidate => candidate.gender === 'Male').length;
+                    const femaleCandidateCount = candidateDetails.filter(candidate => candidate.gender === 'Female').length;
+                
+                    // Return formatted job data with candidate counts
+                    return {
+                        jobId: job.jobId,
+                        job_title: job.job_title,
+                        company_name: job.company_name,
+                        Number_of_emp_needed: job.Number_of_emp_needed,
+                        job_type: job.job_type,
+                        job_schedule: job.job_schedule,
+                        salary_pay: salary_pay,
+                        job_Description: job.job_Description,
+                        job_Responsibility : job.job_Responsibility || null,
+                        company_address: job.company_address,
+                        employee_email: job.employee_email,
+                        requirement_timeline: job.requirement_timeline,
+                        startDate: job.startDate,
+                        endDate: job.endDate,
+                        phone_no: job.phone_no,
+                        key_qualification: job.key_qualification,
+                        Experience: job.Experience,
+                        template_type: job.template_type,
+                        company_Industry: job.company_Industry,
+                        job_photo: job.job_photo,
+                        status: job.status,
+                        empId: job.emp_Id,
+                        isPsychometricTest: job.isPsychometricTest,
+                        psychometric_Test: job.psychometric_Test,
+                        maleCandidateCount: maleCandidateCount,
+                        femaleCandidateCount: femaleCandidateCount,
+                        fav_status : job.fav_status,
+                        job_image : job.job_image || ''
+                    };
+                }));
+                
+                   const sortedjobsData = jobsData.sort(( a , b ) => b.createdAt - a.createdAt )
+
+                   // convert job title count to an Array of objects
+
+                   const job_title_array = Array.from(jobTitle_Count.entries()).map(([title , count]) => ({
+                        title : title,
+                        count : count
+                   }))
+                // Return successful response with jobs data
+                return res.status(200).json({
+                    success: true,
+                    message: 'All Jobs Count ',
+                    JobsCount: allJobs.length,                   
+                    jobTitleCounts: job_title_array
+                });
+            } catch (error) {
+                // Return error response if any error occurs
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            } 
+         }
         
 
         // Api for get particular job by jobId
@@ -3037,19 +3144,25 @@ const client_dashboardCount = async (req, res) => {
                     });
                 }
         
-                // Use regular expressions to perform partial matches
-                const candidates = await appliedjobModel.find({
-                    job_title: { $regex: job_title, $options: 'i' }, // Case insensitive
-                    company_location: { $regex: company_location, $options: 'i' },
+                // // Use regular expressions to perform partial matches
+                // const candidates = await appliedjobModel.find({
+                //     job_title: { $regex: job_title, $options: 'i' }, // Case insensitive
+                //     company_location: { $regex: company_location, $options: 'i' },
+                // });
+
+                //     // check for uploaded resume sections profile
+                // const d_candidate = await ResumeModel.find({
+                //     job_title : { $regex: job_title, $options: 'i' },
+                //     city : {$regex: company_location, $options: 'i'}
+                // })
+
+                // Check fixit_finder_model for matching skills and location
+                const fixit_candidates = await fixit_finder_model.find({
+                    skills: { $regex: job_title, $options: 'i' },
+                    location: { $regex: company_location, $options: 'i' },
                 });
 
-                    // check for uploaded resume sections profile
-                const d_candidate = await ResumeModel.find({
-                    job_title : { $regex: job_title, $options: 'i' },
-                    city : {$regex: company_location, $options: 'i'}
-                })
-
-                const all_candidates = [ ... candidates , ... d_candidate]
+                const all_candidates = [ ...fixit_candidates ] 
         
                 if (all_candidates.length === 0) {
                     return res.status(404).json({
@@ -3078,7 +3191,7 @@ const client_dashboardCount = async (req, res) => {
                                                         const uploadResume = async (req, res) => {
                                                             try {
                                                                 const {
-                                                                    first_name,
+                                                                    first_Name,
                                                                     last_Name,
                                                                     email,
                                                                     city,
@@ -3087,12 +3200,14 @@ const client_dashboardCount = async (req, res) => {
                                                                     job_title,
                                                                     Highest_Education,
                                                                     candidate_status,
-                                                                    jobSeeker_status
+                                                                    jobSeeker_status,
+                                                                    home_address,
+                                                                    location
                                                                 } = req.body;
                                                         
                                                                 // Required fields
                                                                 const requiredFields = [
-                                                                    'first_name',
+                                                                    'first_Name',
                                                                     'last_Name',
                                                                     'email',
                                                                     'city',
@@ -3150,7 +3265,7 @@ const client_dashboardCount = async (req, res) => {
                                                         
                                                                 // Add new data, saving the filename as a string
                                                                 const newData = new ResumeModel({
-                                                                    first_name,
+                                                                    first_Name,
                                                                     last_Name,
                                                                     user_Email :  email,
                                                                     city,
@@ -3160,7 +3275,9 @@ const client_dashboardCount = async (req, res) => {
                                                                     Highest_Education,
                                                                     upload_Resume: uploadResume.filename, // Save the filename
                                                                     candidate_status,
-                                                                    jobSeeker_status
+                                                                    jobSeeker_status,
+                                                                    home_address,
+                                                                    location
                                                                 });
                                                         
                                                                 await newData.save();
@@ -3319,6 +3436,91 @@ const client_dashboardCount = async (req, res) => {
         }
       };
       
+
+                                                               /* Blog Details Comment */
+        // Api for blog Details comment
+
+           const blog_section_comment = async ( req , res)=> {
+             try {
+                       const { Name , email , comment } = req.body
+                    // check for required fields
+
+                    if(!Name)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'Name Required'
+                            })
+                        }
+                    if(!email)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'email Required'
+                            })
+                        }
+                    if(!comment)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'comment Required'
+                            })
+                        }
+                    
+                    // create New Data
+                     const newData = new blog_section_comment_Model({
+                             Name ,
+                             email,
+                             comment
+                     })
+                     await newData.save()
+
+                      return res.status(200).json({
+                         success : true ,
+                         message : 'New Comment Posted successfully'
+                      })
+
+             } catch (error) {
+                  return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+                  })
+             }
+           }
+                
+
+      // Api for get all blog comment section Details
+         const get_all__blog_section_comments = async ( req , res)=> {
+             try {
+                     const all_details = await blog_section_comment_Model.find()
+                     if(!all_details)
+                        {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message : 'no comment found'
+                            })
+                        }
+
+                        return res.status(200).json({
+                             success : true ,
+                             message : 'all Blog comment',
+                             Details : all_details
+                        })
+                         
+
+             } catch (error) {
+                  return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+                  })
+             }
+         }
+        
+
+    
+
         
         
 module.exports = {
@@ -3331,5 +3533,6 @@ module.exports = {
     addQuestion , getquestions , getAllTest , deletepsychometrcTest , deletequestion_in_Test , getTest ,client_dashboardCount,
     forgetPassOTP,  verifyOTP  ,  clientResetPass,  create_contactUS , getJob , addJob_Description , alljobDescription ,
     deleteJob_Description , getJd , fixit_finder , uploadResume , get_upload_section_candidates , 
-    candidate_recruitment_process_for_uploaded_candidate , get_successfull_candidate
+    candidate_recruitment_process_for_uploaded_candidate , get_successfull_candidate , all_active_jobs_Count_with_title ,
+    blog_section_comment , get_all__blog_section_comments
 } 

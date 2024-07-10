@@ -8,7 +8,9 @@ const cms_acadmic_credentials_verifier_Schema = new mongoose.Schema({
                Description : {
                     type : String
                },              
-               
+               Description1 : {
+                    type : String
+               },              
                image : {
                    type : String
                }

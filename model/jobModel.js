@@ -97,6 +97,9 @@ const jobSchema = new mongoose.Schema({
        type : Number,
        enum : [0 , 1],
        default : 0
+  },
+  job_image : {
+      type : String
   }
     
 } , { timestamps : true});

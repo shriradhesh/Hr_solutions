@@ -74,7 +74,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
 
                                        /* POST job section */
         // Api for postJob
-                router.post('/postJob/:empId', userController.postJob)
+                router.post('/postJob/:empId', upload.single('job_image') , userController.postJob)
         // Api for getJobs_posted_by_employee
                 router.get('/getJobs_posted_by_employee/:empId' , userController.getJobs_posted_by_employee)
         // Api for get particular job'
@@ -160,6 +160,16 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
                  router.post('/candidate_recruitment_process_for_uploaded_candidate/:candidateId' , userController.candidate_recruitment_process_for_uploaded_candidate)
         // Api for get_successfull_candidate
                  router.get('/get_successfull_candidate', userController.get_successfull_candidate)
+
+        // Api for all_active_jobs_Count_with_title
+                  router.get('/all_active_jobs_Count_with_title', userController.all_active_jobs_Count_with_title)
+
+                                       /* Blog section comment */
+
+        // Api for blog_section_comment
+                 router.post('/blog_section_comment', userController.blog_section_comment)
+        // Api for get_all__blog_section_comments
+                 router.get('/get_all__blog_section_comments', userController.get_all__blog_section_comments)
 
 
 
