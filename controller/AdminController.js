@@ -120,7 +120,7 @@ const cms_home_Model = require("../model/cms_Home")
     
             return res.status(200).json({
                 success: true,
-                message:   `${admin_and_staffs.role} login Successfully`,
+                message: `${admin_and_staffs.role} login Successfully`,
                 data: admin_and_staffs,
             });
         } catch (error) {
@@ -1656,7 +1656,7 @@ const cms_home_Model = require("../model/cms_Home")
                     }
                  }
                                                 
-                                                     /*Job Section */
+                                                         /*Job Section */
 // Active inactive particular job
 const active_inactive_job = async (req, res) => {
     try {
@@ -1787,7 +1787,7 @@ const active_inactive_job = async (req, res) => {
 
                                                    
                                                      
-            const create_privacy_policy = async( req ,res)=>{
+            const create_privacy_policy = async( req , res)=>{
                 try {
                            const adminId = req.params.adminId
                            const { Heading , Description} = req.body
@@ -1925,7 +1925,7 @@ const active_inactive_job = async (req, res) => {
 
                                                          /* Term & Conditions Section */
 
-        // Api for get All client Term & Condition
+                    // Api for create and update term and condition details
 
                   
                     const create_term_condition = async( req ,res)=>{
@@ -1951,8 +1951,7 @@ const active_inactive_job = async (req, res) => {
                                      success : false ,
                                      message : 'admin Details not found'
                                 })
-                               }
-    
+                               }    
                                  
                         
                             // check for already exist term _ condition 
@@ -1965,8 +1964,8 @@ const active_inactive_job = async (req, res) => {
                                         exist_t_c.Heading = Heading
                                         exist_t_c.Description = Description
     
-                                    await exist_t_c.save()
-                                      return res.status(200).json({
+                                          await exist_t_c.save()
+                                         return res.status(200).json({
                                              success : true,
                                              message : 'term & condition updated successfully'
                                       })
@@ -2016,7 +2015,7 @@ const active_inactive_job = async (req, res) => {
                             })
                         }
                 }
-    
+         // Api for get All client Term & Condition
                 const get_admin_term_condition = async( req , res)=>{
     
                     try {
@@ -3076,7 +3075,6 @@ const active_inactive_job = async (req, res) => {
                                     })
                                  }
 
-
                                  // check for newData
 
                                  const newData = new cms_Blogsection1Model({
@@ -3727,9 +3725,8 @@ const active_inactive_job = async (req, res) => {
 
             
         const cms_training_developement = async (req, res) => {
-            try {                 
-        
-                const { Heading, Description , Description1 } = req.body;
+            try {             
+                        const { Heading, Description , Description1 } = req.body;
         
                 // Check for exist hr consultancy
                 const exist_t_d = await cms_t_d_Model.findOne({ });
@@ -3742,8 +3739,7 @@ const active_inactive_job = async (req, res) => {
 
                     if (req.file) {
                         exist_t_d.image = req.file.filename;
-                    }
-        
+                    }        
                     await exist_t_d.save();
         
                     return res.status(200).json({
@@ -3758,8 +3754,7 @@ const active_inactive_job = async (req, res) => {
                             message: 'Heading is required'
                         });
                     }
-        
-                    // Check for Description
+                            // Check for Description
                     if (!Description) {
                         return res.status(400).json({
                             success: false,
@@ -3774,8 +3769,7 @@ const active_inactive_job = async (req, res) => {
                             message: 'Description1 is required'
                         });
                     }
-                 
-                    // Add image 
+                                     // Add image 
                     const image =  null;
                     if (req.file && req.file.filename) {
                         // Get the file extension
@@ -3796,15 +3790,13 @@ const active_inactive_job = async (req, res) => {
                         });
                         }
                     }
-        
-                    // Add new Data
+                            // Add new Data
                     const newData = new cms_t_d_Model ({
                        
                         image: image ,
                         Heading: Heading,
                         Description: Description,
-                        Description1 : Description1
-                       
+                        Description1 : Description1                       
                     });
         
                     await newData.save();
@@ -4002,6 +3994,7 @@ const active_inactive_job = async (req, res) => {
                 // Update existing section
                 exist_eO.Heading = Heading;
                 exist_eO.Description = Description;
+                 
     
                 if (req.file && req.file.filename) {
                     // Get the file extension
@@ -5147,7 +5140,7 @@ const DeleteContactUS = async ( req ,res )=>{
         }
     };
 
-       // Api for EOSB
+       // Api for calculating  EOSB
 
        const calculate_EOSB = async (req, res) => {
         try {
@@ -5169,6 +5162,7 @@ const DeleteContactUS = async ( req ,res )=>{
             if (EOSB_days_per_year) {
                 EOSB_days_per_year = EOSB_days_per_year
             }
+                  
             if (untilized_leave_days) {
                 untilized_leave_days = untilized_leave_days
             }
@@ -5187,8 +5181,18 @@ const DeleteContactUS = async ( req ,res )=>{
             const year_served = (endDate - startDate) / (365.25 * 24 * 60 * 60 * 1000);
     
             // Round up years served to the nearest two decimal places
-            const rounded_year_served = Math.round(year_served * 100) / 100;
-    
+            const rounded_year_served = Math.round(year_served * 100) / 100; 
+
+            // check for year served
+
+            if (rounded_year_served <= 1) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'You are not eligible for end of service benefit pay.'
+                });
+            }
+            
+                
             // Calculate gross EOSB
             const EOSB = Math.round((Basic_pay * EOSB_days_per_year * rounded_year_served) / 22); 
     
@@ -5223,8 +5227,7 @@ const DeleteContactUS = async ( req ,res )=>{
                     Basic_salary: `SLE ${formatNumber(Basic_pay)}`,                   
                     Gross_EOSB: `SLE ${formatNumber(EOSB)}`,             
                     tax_on_EOSB: `SLE ${formatNumber(tax_on_EOSB)}`,
-                    net_EOSB: `SLE ${formatNumber(net_EOSB)}`,
-                  
+                    net_EOSB: `SLE ${formatNumber(net_EOSB)}`,      
                     
                     
                 }
@@ -5243,7 +5246,7 @@ const DeleteContactUS = async ( req ,res )=>{
 // Api for calculate Net salary
 const net_salary = async (req, res) => {
     try {
-      let { Basic_pay, total_Allowance , nassit_percent } = req.body;
+      let { Basic_pay, total_Allowance } = req.body;
   
         if(!Basic_pay)
             {
@@ -5278,7 +5281,7 @@ const net_salary = async (req, res) => {
       const non_taxable_pay = total_Allowance < 500 ? total_Allowance : 500;
   
       // Calculate NASSIT Percentage
-      const nassit_percentage = Math.round(Basic_pay * nassit_percent)/100 ;
+      const nassit_percentage = Math.round(Basic_pay * 5 )/100 ;
   
       // Calculate Taxable Pay
       const taxable_pay = Math.round((Basic_pay - nassit_percentage + total_Allowance) - non_taxable_pay);
@@ -5317,7 +5320,7 @@ const net_salary = async (req, res) => {
             gross_salary :  `SLE ${formatNumber(gross_salary)}`  ,
             non_taxable_pay :  `SLE${formatNumber(non_taxable_pay)}`   ,
             taxable_pay : `SLE ${formatNumber(taxable_pay)}`  ,
-            nassit: nassit_percentage,
+            nassit: `SLE ${formatNumber(nassit_percentage)}`,
           PAYE : `SLE ${formatNumber(Deducation_pay)}`,
           total_deduction :  `SLE ${formatNumber(total_deduction)}`,
           net_Salary : `SLE ${formatNumber(net_Salary)}`,
@@ -5437,51 +5440,54 @@ const net_salary = async (req, res) => {
       
        const get_talent_pool_count = async (req, res) => {
         try {
-          const currentYear = new Date().getFullYear();
-          const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      
-          if (currentYear) {
-            const all_talent_poolByMonth = [];
-      
-            for (let i = 0; i < 12; i++) {
-              // Construct start and end dates for each month
-              const startDate = new Date(currentYear, i, 1);
-              const endDate = new Date(currentYear, i + 1, 0);
-      
-              // Query the database for applied talent pool created within the current month
-              const all_talent_pool = await appliedjobModel.find({
-                createdAt: { $gte: startDate, $lte: endDate }
-              });
-      
-              // Count talent pool for the current month
-              const talentPoolCount = all_talent_pool.length;
-      
-              // Add month count to the array
-              all_talent_poolByMonth.push({
-                month: month[i],
-                talentPool_count: talentPoolCount
-              });
+            const currentYear = new Date().getFullYear();
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const details = [];
+    
+            if (currentYear) {
+                for (let i = 0; i < 12; i++) {
+                    const startDate = new Date(currentYear, i, 1);
+                    const endDate = new Date(currentYear, i + 1, 0);
+    
+                    const all_talent_pool = await appliedjobModel.find({
+                        createdAt: { $gte: startDate, $lte: endDate }
+                    });
+    
+                    const female_screened = await appliedjobModel.find({
+                        gender: 'Female',
+                        createdAt: { $gte: startDate, $lte: endDate }
+                    });
+    
+                    const talentPoolCount = all_talent_pool.length;
+                    const femaleScreenedCount = female_screened.length;
+    
+                    details.push({
+                        month: monthNames[i],
+                        talentPool_count: talentPoolCount,
+                        Female_screened_count: femaleScreenedCount
+                    });
+                }
+    
+                return res.status(200).json({
+                    success: true,
+                    message: 'Talent Pool Details',
+                    details: details
+                });
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Date or month and year are required'
+                });
             }
-      
-            return res.status(200).json({
-              success: true,
-              message: 'talentPool Details',
-              details: all_talent_poolByMonth
-            });
-          } else {
-            return res.status(200).json({
-              success: false,
-              date_required: 'Date or month and year are required'
-            });
-          }
         } catch (error) {
-          console.error(error);
-          return res.status(500).json({
-            success: false,
-            message: 'Server error'
-          });
+            console.error(error);
+            return res.status(500).json({
+                success: false,
+                message: 'Server error'
+            });
         }
-      };
+    };
+    
 
 
       // Api for get all Female Screen candidate counts
@@ -6027,7 +6033,6 @@ const net_salary = async (req, res) => {
                     }
                 }
     
-                     
     
                 // Add new Data
                 const newData = new cms_acadmic_credentials_verifier_Model({
@@ -6507,7 +6512,7 @@ const net_salary = async (req, res) => {
                 .status(200)
                 .json({
                   success: true,
-                  message: `skill_Name : ${skill_Name} , added successfully for jobTitle : ${jobTitle}`,
+                  message: ` ${skill_Name} , added successfully`,
                   
                 });
             } catch (error) {
@@ -6678,11 +6683,9 @@ const cms_labour_tool = async ( req , res )=> {
 
             // Add new Data
             const newData = new cms_labour_tool_Model({
-               
-               
+              
                 Heading: Heading,
                 Description: Description,
-              
                
             });
 
@@ -6850,9 +6853,8 @@ const cms_labour_tool = async ( req , res )=> {
                         success: true,
                         message: 'Details updated successfully'
                     });
-                } else {
+                } else { 
                    
-        
                     // Check for Description
                     if (!Description) {
                         return res.status(400).json({
@@ -6863,13 +6865,10 @@ const cms_labour_tool = async ( req , res )=> {
                    
         
                     // Add new Data
-                    const newData = new cms_home_Model({
-                       
+                    const newData = new cms_home_Model({                      
                        
                         Heading: Heading,
                         Description: Description,
-                      
-                       
                     });
         
                     await newData.save();

@@ -286,7 +286,7 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
         // Api for  deletejobskill
                 router.delete("/deletejobskill/:jobskill_id", Admin_and_staffController.deletejobskill)  
         // Api for getJs
-                router.get("/getJs", Admin_and_staffController.getJs)
+                router.post("/getJs", Admin_and_staffController.getJs)
 
 
 module.exports = router
