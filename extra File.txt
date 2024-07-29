@@ -1,3 +1,112 @@
+const calculate_EOSB = async (req, res) => {
+    try {
+        let { contract_start_Date, Employment_end_Date, EOSB_days_per_year = 0, untilized_leave_days = 0, Basic_pay } = req.body;
+
+        // Check for required fields
+        if (!contract_start_Date) {
+            return res.status(400).json({
+                success: false,
+                message: 'contract_start_Date required'
+            });
+        }
+        if (!Employment_end_Date) {
+            return res.status(400).json({
+                success: false,
+                message: 'Employment_end_Date required'
+            });
+        }
+        if (!Basic_pay) {
+            return res.status(400).json({
+                success: false,
+                message: 'Basic_pay required'
+            });
+        }
+
+        // Convert contract_start_Date and Employment_end_Date to Date objects
+        const startDate = new Date(contract_start_Date);
+        const endDate = new Date(Employment_end_Date);
+
+        // Calculate the number of months between the dates
+        const totalMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth());
+
+        // Calculate the number of full years
+        const fullYears = Math.floor(totalMonths / 12);
+
+        // Calculate the number of additional months beyond the full years
+        const additionalMonths = totalMonths % 12;
+
+        // Apply the custom logic for partial years
+        let partialYear = 0;
+        if (additionalMonths >= 6) {
+            partialYear = 1;
+        } else if (additionalMonths >= 3) {
+            partialYear = 0.5;
+        }
+
+        // Calculate the total years served
+        const totalYearsServed = fullYears + partialYear;
+
+        // Round up years served to the nearest two decimal places
+        const rounded_year_served = Math.round(totalYearsServed * 100) / 100;
+
+        // Check for year served eligibility
+        if (rounded_year_served < 1) {
+            return res.status(400).json({
+                success: false,
+                message: 'You are not eligible for end of service benefit pay.'
+            });
+        }
+
+        // Calculate gross EOSB
+        const EOSB = Math.round((Basic_pay * EOSB_days_per_year * rounded_year_served) / 22);
+
+        // Calculate payment for unutilized leave days
+        const payment_for_unutilized_leave_days = Math.round((Basic_pay / 22) * untilized_leave_days);
+
+        // Calculate gross salary
+        const gross_salary = EOSB + payment_for_unutilized_leave_days;
+
+        // Calculate tax on EOSB
+        let tax_on_EOSB = 0;
+        if (gross_salary > 50000) {
+            tax_on_EOSB = Math.round((gross_salary - 50000) * 0.05);
+        }
+
+        // Calculate net EOSB
+        const net_EOSB = gross_salary - tax_on_EOSB;
+
+        // Function to add thousand separators
+        const formatNumber = num => new Intl.NumberFormat('en-US').format(num);
+
+        // Return the calculated values
+        return res.status(200).json({
+            success: true,
+            message: 'Calculation successful',
+            data: {
+                contract_start_Date,
+                Employment_end_Date,
+                year_served: rounded_year_served,
+                EOSB_days_per_year,
+                Basic_salary: `SLE ${formatNumber(Basic_pay)}`,
+                Gross_EOSB: `SLE ${formatNumber(EOSB)}`,
+                tax_on_EOSB: `SLE ${formatNumber(tax_on_EOSB)}`,
+                net_EOSB: `SLE ${formatNumber(net_EOSB)}`
+            }
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+
+
+
+
 
 User Authentication and Authorization:
 

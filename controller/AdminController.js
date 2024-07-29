@@ -5143,6 +5143,124 @@ const DeleteContactUS = async ( req ,res )=>{
        // Api for calculating  EOSB
 
        const calculate_EOSB = async (req, res) => {
+          try {
+            let { contract_start_Date, Employment_end_Date, EOSB_days_per_year = 0, untilized_leave_days = 0, Basic_pay } = req.body;
+
+               // Check for required fields
+               if (!contract_start_Date) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'contract_start_Date required'
+                });
+            }
+            if (!Employment_end_Date) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Employment_end_Date required'
+                });
+            }
+
+            if (!Basic_pay) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Basic_pay required'
+                });
+            }
+
+                // convert contract startdate and end date to date object format
+
+                const startDate = new Date(contract_start_Date)
+                const endDate = new Date(Employment_end_Date)
+
+                // calculate the number of month between the dates
+
+                const totalMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth())
+
+                // calculate the number of full year
+                    const fullyears = Math.floor(totalMonths / 12)
+
+                    // calculate the number of additional months beyoond the years
+
+                    const additionalMonths = totalMonths % 12
+
+                    // apply for the custome logic for partial years
+
+                    let partialYears = 0
+                    if(additionalMonths >= 6)
+                    {
+                        partialYears = 1
+                    }
+                    else if( additionalMonths >= 3)
+                    {
+                        partialYears = 0.6
+                    }
+
+
+                      // calculate the total years served
+
+                      const totalYearsServed = fullyears + partialYears
+
+                      // Round up the value of the year nearest two decimal places
+
+                      const rounded_year_served = Math.round(totalYearsServed * 100 ) / 100
+
+                      // check for year served eligibility
+
+                      if( rounded_year_served < 1)
+                      {
+                            return res.status(400).json({
+                                 success : false ,
+                                 message :  'you are not eligile for end of service benefit pay'
+                            })
+                      }
+
+                      // calculate gross EOSB
+                        const EOSB = Math.round(( Basic_pay * EOSB_days_per_year * rounded_year_served) / 22)
+
+                                  // Calculate gross salary
+        const gross_salary = EOSB + untilized_leave_days;
+
+        // Calculate tax on EOSB
+        let tax_on_EOSB = 0;
+        if (gross_salary > 50000) {
+            tax_on_EOSB = Math.round((gross_salary - 50000) * 0.05);
+        }
+
+        // Calculate net EOSB
+        const net_EOSB = gross_salary - tax_on_EOSB;
+
+        // Function to add thousand separators
+        const formatNumber = num => new Intl.NumberFormat('en-US').format(num);
+
+        // Return the calculated values
+        return res.status(200).json({
+            success: true,
+            message: 'Calculation successful',
+            data: {
+                contract_start_Date,
+                Employment_end_Date,
+                year_served: rounded_year_served,
+                EOSB_days_per_year,
+                Basic_salary: `SLE ${formatNumber(Basic_pay)}`,
+                Gross_EOSB: `SLE ${formatNumber(EOSB)}`
+                // tax_on_EOSB: `SLE ${formatNumber(tax_on_EOSB)}`,
+                // net_EOSB: `SLE ${formatNumber(net_EOSB)}`
+            }
+        });
+
+
+          } catch (error) {
+                return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+                })
+          }
+       }
+
+/*
+
+       const calculate_EOSB = async (req, res) => {
         try {
             let { contract_start_Date, Employment_end_Date, EOSB_days_per_year = 0, untilized_leave_days = 0, Basic_pay } = req.body;
     
@@ -5242,6 +5360,8 @@ const DeleteContactUS = async ( req ,res )=>{
         }
     };
     
+  */
+ 
     
 // Api for calculate Net salary
 const net_salary = async (req, res) => {
