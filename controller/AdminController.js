@@ -52,6 +52,7 @@ const jobSkills_Model = require('../model/jobSkills')
 const cms_labour_tool_Model = require('../model/cms_basic_labout_tool')
 const cms_online_courses_Model = require('../model/cms_online_cources')
 const cms_home_Model = require("../model/cms_Home")
+const job_status_Email = require("../utils/job_email")
 
 
 
@@ -1662,6 +1663,7 @@ const active_inactive_job = async (req, res) => {
     try {
         const jobId = req.params.jobId;
         const newStatus = req.body.newStatus; 
+        
         // Check for jobId
         if (!jobId) {
             return res.status(400).json({
@@ -1671,9 +1673,7 @@ const active_inactive_job = async (req, res) => {
         }
 
         // Check for Job existence
-        const job = await jobModel.findOne({
-            jobId: jobId
-        });
+        const job = await jobModel.findOne({ jobId: jobId });
 
         if (!job) {
             return res.status(400).json({
@@ -1682,13 +1682,67 @@ const active_inactive_job = async (req, res) => {
             });
         }
 
+        // Access emp id from the job
+        const emp_Id = job.emp_Id;
+
+        // Check for the employer's details
+        const employer = await employeeModel.findOne({ _id: emp_Id });
+
         // Validate new status
-        if (![0, 1, 2 , 3 ].includes(newStatus)) {
+        if (![0, 1, 2, 3].includes(newStatus)) {
             return res.status(400).json({
                 success: false,
                 message: 'Invalid status value'
             });
         }
+
+        let statusMessage = '';
+        switch (newStatus) {
+            case 1:
+                statusMessage = 'Scheduled';
+                break;
+            case 2:
+                statusMessage = 'Job requirement fulfilled';
+                break;
+            case 3:
+                statusMessage = 'Inactive';
+                break;
+            default:
+                statusMessage = 'Unknown Status';
+        }
+
+        // Create email content
+        const emailContent = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="font-family: Arial, sans-serif; background-color: #f7f7f7; margin: 0; padding: 20px;">
+            <div style="background-color: #ffffff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); max-width: 600px; margin: auto; border: 1px solid #dddddd;">
+                <div style="font-size: 20px; font-weight: bold; color: #333333; margin-bottom: 20px; text-align: center;">
+                    Update on Your Job Posting Status
+                </div>
+                <div style="font-size: 16px; line-height: 1.6; color: #555555;">
+                    <p>Dear ${employer.name},</p>
+                    <p>We hope this message finds you well. We are writing to inform you that the status of your job posting has been updated.</p>
+                    <p><strong>Job Title:</strong> ${job.job_title}</p>
+                    <p><strong>Current Status:</strong> ${statusMessage}</p>
+                    <p>If you have any questions or need assistance, please contact our admin at <a href="mailto:info@smartstart.sl" style="color: #007BFF;">Smart Start</a>.</p>
+                </div>
+                <div style="font-size: 14px; color: #999999; margin-top: 20px; text-align: center;">
+                    <p>Thank you for choosing <strong>Smart Start</strong>. We value your partnership and are here to support you.</p>
+                    <p>Smart Start</p>
+                    <p>+23272065065, +23288353535</p>
+                    <p>Head Office: 1 Jangah Close, Main Peninsular Road, Baw Baw</p>
+                </div>
+            </div>
+        </body>
+        </html>`;
+
+        // Send email (Assuming a sendEmail function exists)
+        await job_status_Email(employer.email, 'Update on Your Job Posting Status', emailContent);
 
         // Update job status
         job.status = newStatus;
@@ -1696,27 +1750,9 @@ const active_inactive_job = async (req, res) => {
         // Save the updated job status
         await job.save();
 
-        let message = '';
-        switch (newStatus) {
-            case 1:
-                message = 'scheduled';
-                break;
-            case 0:
-                message = 'pending';
-                break;
-            case 2:
-                message = 'Job requirement fulfilled';
-                break;
-            case 3:
-                 message = 'Inactive'
-                 break;
-            default:
-                message = 'Unknown Status';
-        }
-
         return res.status(200).json({
             success: true,
-            message: `${message}`,
+            message: `${statusMessage}`,
             status: newStatus
         });
     } catch (error) {
@@ -1727,6 +1763,7 @@ const active_inactive_job = async (req, res) => {
         });
     }
 };
+
 
 
 
