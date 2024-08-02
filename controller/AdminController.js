@@ -5067,17 +5067,32 @@ const DeleteContactUS = async ( req ,res )=>{
             }
     
             // Calculate Basic Pay per Day
+            
             const Basic_pay_per_day = Math.round(Basic_pay / 22);
+            const basic_pay_per_day_without_rounded = (Basic_pay / 22);
     
             // Calculate Pay per Hour
-            const Basic_pay_per_Hour = Math.round(Basic_pay_per_day / 8);
+            const Basic_pay_per_Hour = (Basic_pay_per_day / 8);
+            const Basic_pay_per_Hour_rounded = Math.round(Basic_pay_per_Hour);
+
+            
+
     
-            // Calculate overtime computation on weekdays
-            const OT_computation_on_weekday = Basic_pay_per_Hour * OT_Hours_weekday * 1.5;
-    
+            // Calculate overtime computation on weekdays using the provided formula
+        let OT_computation_on_weekday;
+        let OT_computation_on_weekday_rounded;
+        if (OT_Hours_weekday > 4) {
+            OT_computation_on_weekday = (4 * Basic_pay_per_Hour * 1.5) + ((OT_Hours_weekday - 4) * Basic_pay_per_Hour * 2);
+            OT_computation_on_weekday_rounded = Math.round(OT_computation_on_weekday)
+        } else {
+            OT_computation_on_weekday = OT_Hours_weekday * Basic_pay_per_Hour * 1.5;
+            OT_computation_on_weekday_rounded = Math.round(OT_computation_on_weekday)
+        }
+
+             const Basic_pay_per_Hour_for_weekend = (basic_pay_per_day_without_rounded / 8)
             // Calculate overtime computation on weekends
-            const OT_computation_on_weekend = Basic_pay_per_Hour * OT_Hours_weekend * 2;
-    
+            const OT_computation_on_weekend =  Basic_pay_per_Hour_for_weekend * OT_Hours_weekend * 2;
+           
             // Calculate total overtime
             const total_overTime = Math.round(OT_computation_on_weekday + OT_computation_on_weekend);
                 // Function to add thousand separators
@@ -5092,8 +5107,8 @@ const DeleteContactUS = async ( req ,res )=>{
                     OT_Hours_weekday : OT_Hours_weekday, 
                     OT_Hours_weekend  : OT_Hours_weekend ,
                     Basic_pay_per_day: `SLE ${formatNumber(Basic_pay_per_day)}`,  
-                    Basic_pay_per_Hour: `SLE ${formatNumber(Basic_pay_per_Hour)}`,
-                    OT_computation_on_weekday: `SLE ${formatNumber(OT_computation_on_weekday)}`,
+                    Basic_pay_per_Hour: `SLE ${formatNumber(Basic_pay_per_Hour_rounded)}`,
+                    OT_computation_on_weekday: `SLE ${formatNumber(OT_computation_on_weekday_rounded)}`,
                     OT_computation_on_weekend: `SLE ${formatNumber(OT_computation_on_weekend)}`,
                     total_overTime: `SLE ${formatNumber(total_overTime)}`
                 }
@@ -5106,7 +5121,7 @@ const DeleteContactUS = async ( req ,res )=>{
                 error_message: error.message
             });
         }
-    };
+    };       
     
 
     // Api for Leave allowence
@@ -5146,6 +5161,7 @@ const DeleteContactUS = async ( req ,res )=>{
                 {
                     income_tax = 0
                 }
+                    
                 
                 // calculate net leave allow
                   let net_leave_allow = leave_allowence - income_tax
