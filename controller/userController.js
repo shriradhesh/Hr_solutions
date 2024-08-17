@@ -29,6 +29,24 @@ const { countDocuments } = require('../model/Admin_and_staffs')
 const blog_section_comment_Model = require('../model/blog_detail_comment')
 const path = require('path')
 const fixit_finder_model = require('../model/fixit_finder_model')
+const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+const save_candidate_profile = require('../model/save_candidate_profile_for_later')
+
+require('dotenv').config(); // Load environment variables from .env file
+const nodemailer = require('nodemailer');
+const validator = require('validator'); 
+const fs = require('fs')
+const pdfParse = require('pdf-parse');
+const pretty = require('pretty')
+const { NlpManager } = require('node-nlp');
+const PDFPoppler = require("pdf-poppler");
+const Tesseract = require('tesseract.js');
+
+
+const mammoth = require('mammoth');
+const { execSync } = require('child_process')
+const { htmlToText } = require('html-to-text')
+
 
 
 
@@ -1241,8 +1259,12 @@ const deleteJob_Description = async (req, res) => {
 
                 } = req.body;
                        
+
+                      
+                       
                         
-                                    
+                         
+                                       
                 if (!empId) {
                     return res.status(400).json({
                         success: false,
@@ -1328,9 +1350,9 @@ const deleteJob_Description = async (req, res) => {
                     employee_email: employee.email,
                     phone_no: employee.phone_no,
                     company_Industry: employee.company_industry,
-                    status: 0,
+                    status: 1,
                     isPsychometricTest  ,
-                    psychometric_Test : psychometric_Test,
+                    psychometric_Test : psychometric_Test || '',
                     job_image : job_image || ''
                 });
         
@@ -1454,7 +1476,55 @@ const deleteJob_Description = async (req, res) => {
                 })
             }
         }
+                    // Api for update the Job for the client
 
+                    const updateJob = async ( req , res )=> {
+                         try {
+                                 const jobId = req.params.jobId
+                            const {Number_of_emp_needed , job_type , job_schedule ,
+                                job_Description , job_Responsibility , startDate , endDate , Experience
+                             } = req.body
+
+                                        console.log(req.body);
+                                        
+                                 // check for job Id required
+                                 if(!jobId)
+                                 {
+                                    return res.status(400).json({
+                                         success : false ,
+                                         message : 'Job id required'
+                                    })
+                                 }
+
+                                // check for job
+                                const job = await jobModel.findOne({
+                                    jobId : jobId   })
+
+                                       // update the details of the Job
+                                
+                                    job.Number_of_emp_needed = Number_of_emp_needed
+                                    job.job_type = job_type
+                                    job.job_schedule = job_schedule                                   
+                                    job.job_Description = job_Description
+                                    job.job_Responsibility = job_Responsibility
+                                    job.startDate = startDate
+                                    job.endDate = endDate
+                                    job.Experience = Experience
+
+                                    await job.save()
+                                    return res.status(200).json({
+                                         success : true ,
+                                         message : 'job Details updated successfully'
+                                    })
+                            
+                         } catch (error) {
+                              return res.status(500).json({
+                                 success : false ,
+                                 message : 'server error',
+                                 error_message : error.message
+                              })
+                         }
+                    }
         // Api for get active jobs by client
 
         const activejobs_by_client = async (req, res) => {
@@ -1673,7 +1743,9 @@ const deleteJob_Description = async (req, res) => {
                                 relevant_Experience: candidate.job_experience, 
                                 Total_experience: candidate.Total_experience,
                                 jobSeeker_status : candidate.jobSeeker_status,
-                                candidateStatus : candidate.candidateStatus
+                                candidateStatus : candidate.candidateStatus,
+                                saved_status : candidate.saved_status,
+                                candidate_rating : candidate.candidate_rating
 
 
                             }))
@@ -1755,7 +1827,10 @@ const deleteJob_Description = async (req, res) => {
                         relevant_Experience: candidate.job_experience, 
                         Total_experience: candidate.Total_experience,
                         jobSeeker_status : candidate.jobSeeker_status,
-                        candidateStatus : candidate.candidateStatus
+                        candidateStatus : candidate.candidateStatus,
+                        saved_status : candidate.saved_status,
+                        candidate_rating : candidate.candidate_rating
+
 
 
                     }))
@@ -2251,34 +2326,36 @@ const deleteJob_Description = async (req, res) => {
 
         
 
- cron.schedule('* * * * *', async () => {
-                                  try {
-                                    const currentDate = new Date();
-                                
-                                    // find trips with end Date over
-                                    const expiredJob = await jobModel.find({
-                                      endDate: {
-                                        $lt: currentDate,
-                                      },
-                                      status: { $ne: 3 }, 
-                                    });
-                                
-                                    if (expiredJob.length > 0) {
-                                      await jobModel.updateMany(
-                                        {
-                                          jobId: {
-                                            $in: expiredJob.map((job) => job.jobId),
-                                          },
-                                        },
-                                        {
-                                          status: 3,
-                                        }
-                                      );
-                                    }
-                                  } catch (error) {
-                                    console.error('Error while updating job status:', error);
-                                  }
-                                });
+            cron.schedule('* * * * *', async () => {
+                try {
+                  const currentDate = new Date();
+                  currentDate.setHours(0, 0, 0, 0); // Set current time to 00:00:00 for date comparison
+              
+                  // Find jobs with endDate less than the current date
+                  const expiredJob = await jobModel.find({
+                    endDate: {
+                      $lt: currentDate,
+                    },
+                    status: { $ne: 3 }, 
+                  });
+              
+                  if (expiredJob.length > 0) {
+                    await jobModel.updateMany(
+                      {
+                        jobId: {
+                          $in: expiredJob.map((job) => job.jobId),
+                        },
+                      },
+                      {
+                        status: 3,
+                      }
+                    );
+                  }
+                } catch (error) {
+                  console.error('Error while updating job status:', error);
+                }
+              });
+              
 
            
 // Api for search Job
@@ -2326,11 +2403,12 @@ const deleteJob_Description = async (req, res) => {
         
                 // Use regular expressions to perform partial matches
                 const jobs = await jobModel.find({
-                    status: 1,
-                    job_title: { $regex: job_title, $options: 'i' }, // Case insensitive
-                    company_address: { $regex: company_address, $options: 'i' },
-                    ...filter
+                    status: { $ne: 3 }, // Corrected: Find jobs where status is not equal to 3
+                    job_title: { $regex: job_title, $options: 'i' }, // Case insensitive partial match for job title
+                    company_address: { $regex: company_address, $options: 'i' }, // Case insensitive partial match for company address
+                    ...filter // Spread any additional filter conditions
                 });
+                
         
                 if (jobs.length === 0) {
                     return res.status(400).json({
@@ -2423,7 +2501,224 @@ const filterJob = async (req, res) => {
 };
 
 
+const convertPDFToImage = async (pdfPath, outputPath) => {
+    let file = pdfPath;
+    let opt = {
+        format: 'png',
+        out_dir: outputPath,
+        out_prefix: 'page',
+        page: null
+    };
+    
+    try {
+        await PDFPoppler.convert(file, opt);
+       
+    } catch (error) {
+        console.error("Error converting PDF:", error);
+        throw new Error('Error converting PDF');
+    }
+};
 
+const performOCR = async (imagePaths) => {
+    try {
+        let allText = '';
+        for (const imagePath of imagePaths) {
+            const { data: { text } } = await Tesseract.recognize(imagePath, 'eng', {
+                logger: info => console.log(info)
+            });
+            allText += text + '\n'; // Combine text from all images
+        }
+        return allText;
+    } catch (error) {
+        console.error('Error performing OCR:', error);
+        throw new Error('Error performing OCR');
+    }
+};
+
+const improveTextFormatting = (text) => {
+    // Add space after punctuation if it's not followed by a space
+    text = text.replace(/([.,!?;:])(?=\S)/g, '$1 ');
+
+    // Ensure space between a punctuation and the next word
+    text = text.replace(/(\S)([.,!?;:])(\S)/g, '$1$2 $3');
+
+    // Add space after a period if it's not followed by a space
+    text = text.replace(/([a-zA-Z])\.(?=\S)/g, '$1. ');
+
+    // Replace multiple spaces with a single space
+    text = text.replace(/\s{2,}/g, ' ');
+
+    // Add line breaks between sections (e.g., addresses, education)
+    text = text.replace(/([A-Z][A-Z\s]+)(\n|$)/g, '\n\n$1\n');
+
+    // Add extra line breaks for better readability
+    text = text.replace(/(\.\s+)(?=\S)/g, '$1\n\n');
+
+    // Remove extra newlines and leading/trailing spaces
+    text = text.replace(/\n{3,}/g, '\n\n');
+    text = text.trim();
+
+    return text;
+};
+
+const calculateMatchRating = (cvText, jobDescription) => {
+    // Helper function to preprocess and tokenize text
+    const preprocessText = (text) => {
+        return text.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/);
+    };
+
+    // Helper function to compute Jaccard similarity
+    const jaccardSimilarity = (setA, setB) => {
+        const intersection = new Set([...setA].filter(item => setB.has(item))).size;
+        const union = new Set([...setA, ...setB]).size;
+        return intersection / union;
+    };
+
+    // Define criteria and their weights
+    const criteria = {
+        'education': 0.25,
+        'experience': 0.35,
+        'skills': 0.35,
+        'certifications': 0.15,
+        'other': 0.15
+    };
+
+    // Define rating scale
+    const maxRating = 5;
+
+    // Initialize scores
+    let criterionScores = {};
+    Object.keys(criteria).forEach(criterion => {
+        criterionScores[criterion] = 0;
+    });
+
+    // Split job description and CV into lines
+    const jobDescriptionLines = jobDescription.split('\n').map(line => line.trim()).filter(line => line !== '');
+    const cvLines = cvText.split('\n').map(line => line.trim()).filter(line => line !== '');
+
+    // Calculate score for each criterion
+    for (const [criterion, weight] of Object.entries(criteria)) {
+        // Filter lines containing the criterion
+        const jobCriterionLines = jobDescriptionLines.filter(line => line.toLowerCase().includes(criterion));
+        let bestMatch = 0;
+
+        // Compute the best match score for this criterion
+        jobCriterionLines.forEach(jobLine => {
+            const jobTokens = new Set(preprocessText(jobLine));
+            cvLines.forEach(cvLine => {
+                const cvTokens = new Set(preprocessText(cvLine));
+                const similarity = jaccardSimilarity(jobTokens, cvTokens);
+                if (similarity > bestMatch) {
+                    bestMatch = similarity;
+                }
+            });
+        });
+
+        // Scale best match to a rating out of maxRating (1 to 5)
+        const rating = Math.round(bestMatch * maxRating);
+        criterionScores[criterion] = rating;
+    }
+
+    // Calculate the overall rating
+    let totalScore = 0;
+    for (const [criterion, weight] of Object.entries(criteria)) {
+        totalScore += criterionScores[criterion] * weight;
+    }
+
+    // Return the overall rating and individual criterion ratings
+    return {
+        overallRating: totalScore.toFixed(2),
+        individualRatings: criterionScores
+    };
+};
+
+
+
+
+
+
+
+
+const convertToHTML = (text) => {
+    let htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Job Description</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                margin: 20px;
+                padding: 0;
+            }
+            h1, h2, h3 {
+                color: #333;
+            }
+            p {
+                margin-bottom: 10px;
+            }
+            ul {
+                margin-bottom: 10px;
+                padding-left: 20px;
+            }
+            li {
+                margin-bottom: 5px;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+            }
+            table, th, td {
+                border: 1px solid #ddd;
+            }
+            th, td {
+                padding: 10px;
+                text-align: left;
+            }
+            th {
+                background-color: #f4f4f4;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Job Description</h1>
+        ${text}
+    </body>
+    </html>
+    `;
+
+    // Convert double newlines into paragraphs
+    htmlContent = htmlContent.replace(/\n\n/g, '<p></p>');
+
+    // Convert single newlines into line breaks
+    htmlContent = htmlContent.replace(/\n/g, '<br>');
+
+    // Convert headings that are in all caps into <h2> tags
+    htmlContent = htmlContent.replace(/([A-Z][A-Z\s]+)(<br>|$)/g, '<h2>$1</h2>');
+
+    // Convert numbered lists into <li> items within <ul> tags
+    htmlContent = htmlContent
+        .replace(/(\d+\.)\s+/g, '<li>')      // Replace number bullet with <li>
+        .replace(/<\/li>\s*(\d+\.)/g, '</li><li>'); // Close current <li> before starting new one
+
+    // Wrap the entire list of <li> items in <ul> tags
+    if (htmlContent.includes('<li>')) {
+        htmlContent = htmlContent.replace(/<li>([\s\S]+?)<\/li>/g, '<ul><li>$1</li></ul>');
+    }
+
+    return htmlContent;
+};
+
+
+const convertToPlainText = (html) => {
+    return htmlToText(html, {
+        wordwrap: 130
+    });
+};
         
         
 
@@ -2431,180 +2726,117 @@ const filterJob = async (req, res) => {
 
         // APi for apply on job
 
-                    const apply_on_job = async (req, res) => {
-                        try {
-                            const jobId = req.params.jobId;
-                            const {
-                                first_Name,
-                                last_Name,
-                                user_Email,
-                                city,
-                                state,
-                                phone_no,
-                                gender,
-                                Highest_Education,
-                                job_experience,
-                                Total_experience,
-                                time_range_for_interview
-                            } = req.body;
-                    
-                            // Check for JobId
-                            if (!jobId) {
-                                return res.status(400).json({
-                                    success: false,
-                                    message: 'job Id required'
-                                });
-                            }
-                    
-                            // Check for required fields
-                            const requiredFields = ["first_Name", "last_Name", "user_Email", "city",
-                                "state", "phone_no", "gender", "Highest_Education", "job_experience",
-                                "Total_experience", 
-                            ];
-                    
-                            for (const field of requiredFields) {
-                                if (!req.body[field]) {
-                                    return res.status(400).json({
-                                        message: `Missing ${field.replace("_", " ")}`,
-                                        success: false,
-                                    });
-                                }
-                            }
-                    
-                            // Check for job
-                            const job = await jobModel.findOne({
-                                jobId: jobId,
-                                status : 1
-                            });
-                            if (!job) {
-                                return res.status(400).json({
-                                    success: false,
-                                    message: 'active job not found'
-                                });
-                            }
-                    
-                            // Access job Details
-                            const job_Heading = job.job_title;
-                            const Salary = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
-                            const job_expired_Date = job.endDate;
-                            const job_status = job.status;
-                            const company_name = job.company_name;
-                            const empId = job.emp_Id
-                    
-                            // Check if job seeker has already applied for this job
-                            const jobseeker_apply = await appliedjobModel.findOne({
-                                user_Email : user_Email,
-                                jobId: jobId
-                            });
-                    
-                            if (jobseeker_apply) {
-                                return res.status(400).json({
-                                    success: false,
-                                    message: 'you already applied on this job'
-                                });
-                            }
-                                            
-                                                // Upload resume file
-
-                        const uploadResume = req.file ? req.file : null;
-                        if (!uploadResume) {
-                            return res.status(400).json({
-                                success: false,
-                                message: 'Resume required'
-                            });
-                        }
-
-                        // Check if the uploaded file is a PDF
-                        const allowedExtensions = ['.pdf'];
-                        let fileExtension = uploadResume.originalname ? uploadResume.originalname.split('.').pop().toLowerCase() : null;
-                        fileExtension = fileExtension.trim()
-
-
-                        if (!fileExtension || !allowedExtensions.includes('.' + fileExtension)) {
-                        
-                            return res.status(400).json({
-                                success: false,
-                                message: 'Only PDF files are allowed for resume upload'
-                            });
-                        }
-
-                            // Add new data
-                            const newData = new appliedjobModel({
-                                first_Name,
-                                last_Name,
-                                user_Email,
-                                city,
-                                state,
-                                phone_no,
-                                gender,
-                                Highest_Education,
-                                job_experience,
-                                Total_experience,
-                                time_range_for_interview,
-                                uploadResume : uploadResume.filename,
-                                job_Heading,
-                                Salary,
-                                job_expired_Date,
-                                job_status,
-                                jobId : jobId,
-                                candidateStatus : 1,
-                                job_title : job.job_title,
-                                company_location : job.company_address
-                            });
-                            
-                            try {
-                                var newNotification = await empNotificationModel.create({
-                                    empId: empId,
-                                    message: `${first_Name} applied on job ${job_Heading}`,
-                                    date: new Date(),
-                                    status: 1,
-                                });
-                            
-                                await newNotification.save();
-                            } catch (notificationError) {
-                                // Handle notification creation error
-                                console.error('Error creating notification:', notificationError);
-                                // Optionally, you can choose to return an error response here or handle it in another way
-                            }
-                            await newData.save();
-                    
-                            const emailContent = `<!DOCTYPE html>
-                            <html lang="en">
-                            <head>
-                                <meta charset="UTF-8">
-                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                                <title></title>
-                            </head>
-                            <body style="font-family: Arial, sans-serif; background-color: #f2f2f2; padding: 20px;">
-                
-                                <div style="background-color: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
-                                    <h2 style="color: #333; text-align: center; margin-bottom: 20px;">Job Application Confirmation</h2>
-                                    <p>Thank you for applying for the <strong> ${job_Heading} </strong> position at <strong> ${company_name}</strong>.  Your application has been received, and we appreciate your interest in joining our team. Our hiring team will carefully review your qualifications, and if your skills and experience align with our requirements, we will be in touch to discuss next steps. In the meantime, feel free to explore more about our company and the opportunities we offer. Thank you again for considering <strong> ${company_name} </strong> as your potential employer.</p>
-                                    <p>Your job application for " <strong> ${job_Heading} </strong> " has been successfully received. A confirmation email will be sent to you shortly.</p>
-                                    <p>If you have any questions, feel free to contact us.</p> <br>
-                                
-
-                                 <P><strong> ${company_name} </strong> </P> 
-
-               
-                            </body>
-                            </html>`;
-                    
-                            sendjobEmail  (user_Email, `Job Application Confirmation ..!`, emailContent);
-
-                    
-                            return res.status(200).json({
-                                success: true,
-                                message: 'job Applied successfully'
-                            });
-                        } catch (error) {
-                            return res.status(500).json({
-                                success: false,
-                                message: 'server error',
-                                error_message: error.message
-                            });
-                        }
+        const apply_on_job = async (req, res) => {
+            try {
+                const jobId = req.params.jobId;
+                const {
+                    first_Name, last_Name, user_Email, city, state, phone_no,
+                    gender, Highest_Education, job_experience, Total_experience,
+                    time_range_for_interview
+                } = req.body;
+        
+                if (!jobId) {
+                    return res.status(400).json({ success: false, message: 'Job ID required' });
+                }
+        
+                const requiredFields = ["first_Name", "last_Name", "user_Email", "city", "state", "phone_no", "gender", "Highest_Education", "job_experience", "Total_experience"];
+                for (const field of requiredFields) {
+                    if (!req.body[field]) {
+                        return res.status(400).json({ success: false, message: `Missing ${field.replace("_", " ")}` });
                     }
+                }
+        
+                const job = await jobModel.findOne({ jobId: jobId, status: 1 });
+                if (!job) {
+                    return res.status(400).json({ success: false, message: 'Active job not found' });
+                }
+        
+                const job_Heading = job.job_title;
+                const Salary = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
+                const job_expired_Date = job.endDate;
+                const company_name = job.company_name;
+                const empId = job.emp_Id;
+        
+                const jobseeker_apply = await appliedjobModel.findOne({ user_Email: user_Email, jobId: jobId });
+                if (jobseeker_apply) {
+                    return res.status(400).json({ success: false, message: 'You already applied for this job' });
+                }
+        
+                const uploadResume = req.file;
+                if (!uploadResume || !uploadResume.filename) {
+                    return res.status(400).json({ success: false, message: 'Resume required' });
+                }
+        
+                const allowedExtensions = ['.pdf'];
+                const fileExtension = path.extname(uploadResume.originalname).toLowerCase();
+                if (!allowedExtensions.includes(fileExtension)) {
+                    return res.status(400).json({ success: false, message: 'Only PDF files are allowed for resume upload' });
+                }
+        
+                const jd = await jobDescription_model.findOne({ jobTitle: job_Heading });
+                const jobDescription = jd.job_Description;
+                const job_Responsibilities = jd.Responsibilities;
+                const combine_jd = `${jobDescription} \n\n ${job_Responsibilities}`;
+                const htmlCombineJd = convertToHTML(combine_jd);
+                const plainTextCombineJd = convertToPlainText(htmlCombineJd);
+        
+                const candidateCvPath = uploadResume.path;
+                const imagesDir = path.join(__dirname, '..', 'images');
+                if (!fs.existsSync(imagesDir)) {
+                    fs.mkdirSync(imagesDir, { recursive: true });
+                }
+        
+                await convertPDFToImage(candidateCvPath, imagesDir);
+                const imageFiles = fs.readdirSync(imagesDir).filter(file => file.startsWith('page') && file.endsWith('.png'));
+                const imagePaths = imageFiles.map(file => path.join(imagesDir, file));
+                const cvText = await performOCR(imagePaths);
+                const improvedCvText = improveTextFormatting(cvText);
+        
+                const MatchRating = await calculateMatchRating(improvedCvText, plainTextCombineJd);
+               
+                
+                imageFiles.forEach(file => fs.unlinkSync(path.join(imagesDir, file)));
+        
+                const newData = new appliedjobModel({
+                    first_Name, last_Name, user_Email, city, state, phone_no, gender,
+                    Highest_Education, job_experience, Total_experience, time_range_for_interview,
+                    uploadResume: uploadResume.filename, job_Heading, Salary, job_expired_Date,
+                    job_status: job.status, jobId: jobId, candidateStatus: 1, job_title: job.job_title,
+                    candidate_rating : MatchRating.overallRating,
+
+                    company_location: job.company_address
+                });
+        
+                await newData.save();
+        
+                const newNotification = await empNotificationModel.create({
+                    empId: empId, message: `${first_Name} applied for job ${job_Heading}`, date: new Date(), status: 1
+                });
+                await newNotification.save();
+        
+                const emailContent = `<!DOCTYPE html>
+                <html lang="en">
+                <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+                <body style="font-family: Arial, sans-serif; background-color: #f2f2f2; padding: 20px;">
+                    <div style="background-color: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+                        <h2 style="color: #333; text-align: center; margin-bottom: 20px;">Job Application Confirmation</h2>
+                        <p>Thank you for applying for the <strong>${job_Heading}</strong> position at <strong>${company_name}</strong>. Your application has been received. We appreciate your interest.</p>
+                        <p>Your job application for "<strong>${job_Heading}</strong>" has been successfully received. A confirmation email will be sent to you shortly.</p>
+                        <p>If you have any questions, feel free to contact us.</p>
+                        <p><strong>${company_name}</strong></p>
+                    </div>
+                </body>
+                </html>`;
+        
+                sendjobEmail(user_Email, `Job Application Confirmation`, emailContent);
+        
+                return res.status(200).json({ success: true, message: 'Job applied successfully' });
+            } catch (error) {
+                console.error('Error applying for job:', error);
+                return res.status(500).json({ success: false, message: 'Server error', error_message: error.message });
+            }
+        };
+        
         
                                                             /* Notification section */
     // Api for get Notification of the particular employee
@@ -3519,9 +3751,442 @@ const client_dashboardCount = async (req, res) => {
          }
         
 
+
+
+ const download_jd = async (req, res) => {
+    try {
+        const jd_id = req.params.jd_id;
+    
+        // Check for jd_id
+        if (!jd_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Job ID required'
+            });
+        }
+    
+        // Check for JD
+        const jd = await jobDescription_model.findById(jd_id);
+        
+        if (!jd) {
+            return res.status(400).json({
+                success: false,
+                message: 'Job Description not found'
+            });
+        }
+    
+        // Access job details
+        const { jobTitle, job_Description, Responsibilities } = jd;
+    
+        // Create a new PDF document
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage();
+        const { width, height } = page.getSize();
+    
+        // Set some basic styles
+        const fontSize = 12;
+        const titleFontSize = 20;
+        const headingFontSize = 16;
+        const textColor = rgb(0, 0, 0);
+        const margin = 50;
+        const maxWidth = width - 2 * margin;
+    
+        // Load a standard font
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    
+        // Function to wrap text
+        const wrapText = (text, font, fontSize, maxWidth) => {
+            const words = text.split(' ');
+            let lines = [];
+            let currentLine = words[0];
+    
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i];
+                const width = font.widthOfTextAtSize(currentLine + ' ' + word, fontSize);
+                if (width < maxWidth) {
+                    currentLine += ' ' + word;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        };
+    
+        // Add job title
+        page.drawText(jobTitle, {
+            x: margin,
+            y: height - margin,
+            size: titleFontSize,
+            color: rgb(0, 0, 1),
+            font
+        });
+    
+        // Add job description
+        page.drawText('Job Description', {
+            x: margin,
+            y: height - margin - 40,
+            size: headingFontSize,
+            color: rgb(0, 0, 1),
+            font
+        });
+    
+        const descriptionLines = wrapText(job_Description, font, fontSize, maxWidth);
+        let y = height - margin - 60;
+        descriptionLines.forEach(line => {
+            page.drawText(line, {
+                x: margin,
+                y,
+                size: fontSize,
+                color: textColor,
+                font
+            });
+            y -= fontSize + 4;
+        });
+    
+        // Add job responsibilities
+        page.drawText('Job Responsibilities', {
+            x: margin,
+            y: y - 20,
+            size: headingFontSize,
+            color: rgb(0, 0, 1),
+            font
+        });
+    
+        y -= 40;
+        Responsibilities.split('\n').forEach(item => {
+            const responsibilityLines = wrapText(`- ${item.trim()}`, font, fontSize, maxWidth);
+            responsibilityLines.forEach(line => {
+                page.drawText(line, {
+                    x: margin,
+                    y,
+                    size: fontSize,
+                    color: textColor,
+                    font
+                });
+                y -= fontSize + 4;
+            });
+        });
+    
+        // Serialize the PDFDocument to bytes (a Uint8Array)
+        const pdfBytes = await pdfDoc.save();
+    
+        // Set response headers to download the PDF
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Length': pdfBytes.length,
+            'Content-Disposition': `attachment; filename=job_description.pdf`,
+        });
+    
+        res.send(Buffer.from(pdfBytes));
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+ }
+
+
+    
+   // Api for share candidate CV
+   const share_cv = async (req, res) => {
+    try {
+        const candidate_id = req.params.candidate_id;
+        const { to, from, subject, message, shareVia, country_code, receiver_no } = req.body;
+
+        // Check for candidate_id
+        if (!candidate_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Candidate ID required'
+            });
+        }
+
+        // Check for shareVia method
+        if (!shareVia || ![1, 2].includes(shareVia)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid share method. Please choose either 1 (email) or 2 (WhatsApp).'
+            });
+        }
+
+        // Check for candidate profile
+        const candidate = await appliedjobModel.findOne({ _id: candidate_id });
+        if (!candidate) {
+            return res.status(400).json({
+                success: false,
+                message: 'Candidate not found'
+            });
+        }
+
+        // Check for candidate CV
+        const candidate_cv = path.resolve(__dirname, '..', 'uploads', candidate.uploadResume);
+        if (!fs.existsSync(candidate_cv)) {
+            return res.status(400).json({
+                success: false,
+                message: `Candidate CV not found at path: ${candidate_cv}`
+            });
+        }
+
+       
+
+        if (shareVia === 1) { // Email sharing
+            // Check for required fields
+            if (!to || (typeof to === 'string' && !validator.isEmail(to)) || (Array.isArray(to) && to.length === 0)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Receiver email(s) required'
+                });
+            }
+            if (typeof to === 'string') {
+                to = [to];  // Convert to a single-element array
+            }
+            if (!from || !validator.isEmail(from)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Valid sender email required'
+                });
+            }
+            if (!subject) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Subject is required'
+                });
+            }
+
+            // Validate receiver emails
+            for (let email of to) {
+                if (!validator.isEmail(email)) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Invalid email address in receiver list: ${email}`
+                    });
+                }
+            }
+
+            // Setup nodemailer transporter
+            const transporter = nodemailer.createTransport({
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false, // true for 465, false for other ports
+                requireTLS: true,
+                auth: {
+                    user: process.env.SMTP_MAIL,
+                    pass: process.env.SMTP_PASSWORD,
+                },
+            });
+
+            // Prepare email options
+            const mailOptions = {
+                from: from || client_number,  // Use client_number if from is not provided
+                to: to.join(', '),
+                subject: subject,
+                text: message || 'Please find the attached CV.',
+                attachments: [
+                    {
+                        filename: candidate.uploadResume,
+                        path: candidate_cv,
+                        contentType: 'application/pdf'
+                    }
+                ]
+            };
+
+            // Send email
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) {
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Error sending email',
+                        error_message: error.message
+                    });
+                } else {
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Email sent successfully',
+                    });
+                }
+            });
+
+        } else if (shareVia === 2) { // WhatsApp sharing
+            if (!country_code) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Country code are required for WhatsApp'
+                });
+            }
+            if (!receiver_no) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'receiver_no  are required for WhatsApp'
+                });
+            }
+
+
+
+            // Prepare WhatsApp message with CV URL
+            const cvURL = `http://192.168.1.74:4102/${candidate.uploadResume}`;
+            const whatsappMessage = encodeURIComponent(message || `Please find the attached CV: ${cvURL}`);
+            const whatsappURL = `https://wa.me/${country_code}${receiver_no}?text=${cvURL}`;
+
+            return res.status(200).json({
+                success: true,
+                message: 'CV URL shared via WhatsApp',
+                whatsappURL: whatsappURL
+            });
+        }
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+
+
+  // Api for save candidate profile 
+  const save_candidate_profile_for_later = async (req, res) => {
+    try {
+        const { candidate_id } = req.params;
+
+        // Validate candidate_id
+        if (!candidate_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Candidate ID is required.'
+            });
+        }
+
+        // Check if candidate profile exists
+        const candidate = await appliedjobModel.findById(candidate_id);
+        if (!candidate) {
+            return res.status(404).json({
+                success: false,
+                message: 'Candidate not found.'
+            });
+        }
+
+        // Check if the associated job exists
+        const job = await jobModel.findOne({ jobId: candidate.jobId });
+        if (!job) {
+            return res.status(404).json({
+                success: false,
+                message: 'Job not found for the candidate.'
+            });
+        }
+
+        // Check if the candidate profile is already saved
+        let existingSavedProfile = await save_candidate_profile.findOne({ candidate_id });
+
+        if (existingSavedProfile) {
+            // If already saved, unsave and update the candidate status
+            await existingSavedProfile.deleteOne();
+            candidate.saved_status = 0;
+            await candidate.save();
+
+            return res.status(200).json({
+                success: true,
+                message: 'Candidate profile unsaved successfully.'
+            });
+        }
+
+        // Save the candidate profile and update the candidate status
+        existingSavedProfile = new save_candidate_profile({ 
+            candidate_id,
+            client_id: job.emp_Id
+        });
+        await existingSavedProfile.save();
+
+        candidate.saved_status = 1;
+        await candidate.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Candidate profile saved successfully.'
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error.',
+            error_message: error.message
+        });
+    }
+};
+
+
+
+    // get all the saved candidate profile of the client 
+    const get_saved_candidate_profile = async (req, res) => {
+        try {
+            const { client_id } = req.params;
+    
+            // Check for client ID
+            if (!client_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Client ID is required.'
+                });
+            }
+    
+            // Get all saved candidates for the client
+            const savedProfiles = await save_candidate_profile.find({ client_id });
+    
+            // Check if there are any saved profiles
+            if (savedProfiles.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No profiles saved yet.'
+                });
+            }
+    
+            // Retrieve detailed information for each candidate
+            const candidateDetails = await Promise.all(
+                savedProfiles.map(async (profile) => {
+                    const candidate = await appliedjobModel.findById(profile.candidate_id).select(
+                        'firstname user_Email phone_no city state Total_experience job_experience uploadResume jobSeeker_status'
+                    );
+    
+                    if (!candidate) {
+                        return null;
+                    }
+    
+                    // Format the candidate data
+                    return {
+                        name: candidate.firstname,
+                        email: candidate.user_Email,
+                        phone_no: candidate.phone_no,
+                        location: `${candidate.city}, ${candidate.state}`,
+                        Total_experience: candidate.Total_experience,
+                        job_experience: candidate.job_experience,
+                        CV: candidate.uploadResume,
+                        jobSeeker_status: candidate.jobSeeker_status,
+                    };
+                })
+            );
+    
+            // Filter out null values (in case a candidate ID does not have corresponding data)
+            const filteredCandidateDetails = candidateDetails.filter((detail) => detail !== null);
+    
+            return res.status(200).json({
+                success: true,
+                candidates: filteredCandidateDetails,
+                message: 'Saved candidate profiles retrieved successfully.'
+            });
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error.',
+                error_message: error.message
+            });
+        }
+    };
     
 
-        
         
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
@@ -3534,5 +4199,6 @@ module.exports = {
     forgetPassOTP,  verifyOTP  ,  clientResetPass,  create_contactUS , getJob , addJob_Description , alljobDescription ,
     deleteJob_Description , getJd , fixit_finder , uploadResume , get_upload_section_candidates , 
     candidate_recruitment_process_for_uploaded_candidate , get_successfull_candidate , all_active_jobs_Count_with_title ,
-    blog_section_comment , get_all__blog_section_comments
+    blog_section_comment , get_all__blog_section_comments , updateJob , download_jd , share_cv , save_candidate_profile_for_later ,
+    get_saved_candidate_profile
 } 

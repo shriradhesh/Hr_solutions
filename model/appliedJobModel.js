@@ -81,6 +81,16 @@ const appliedJobSchema = mongoose.Schema({
     } ,
     company_location : {
            type : String
+    },
+    saved_status : {
+         type : Number,
+         enum : [0 ,1],
+         default : 0     
+    },
+    candidate_rating : {
+         type : Number,
+        //  enum : [1,2,3,4,5],
+         default : 5
     }
 
 }, { timestamps: true });

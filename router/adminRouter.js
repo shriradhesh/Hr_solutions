@@ -72,7 +72,9 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
         // 
                                              /* ATS Section */
         // Api for get All_candidates
-                     router.get('/getAll_candidates', Admin_and_staffController.getAll_candidates)  
+                     router.get('/getAll_candidates', Admin_and_staffController.getAll_candidates) 
+        // Api for candidate_cv_rating
+                     router.get('/candidate_cv_rating/:candidate_id',  Admin_and_staffController.candidate_cv_rating) 
 
                                              /* Privacy & policy Section */
        

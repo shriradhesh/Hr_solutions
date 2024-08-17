@@ -57,6 +57,22 @@ const job_status_Email = require("../utils/job_email")
 
 
 
+const fs = require('fs')
+const pdfParse = require('pdf-parse');
+const pretty = require('pretty')
+const { NlpManager } = require('node-nlp');
+const PDFPoppler = require("pdf-poppler");
+const Tesseract = require('tesseract.js');
+const { PDFDocument } = require('pdf-lib');
+
+const mammoth = require('mammoth');
+const { execSync } = require('child_process')
+const { htmlToText } = require('html-to-text');
+
+
+
+
+
 
                                                  /* Admin and staff Section */
            
@@ -65,6 +81,7 @@ const job_status_Email = require("../utils/job_email")
 
     const login = async (req, res) => {
         try {
+
             const { email, password } = req.body;
             if (!email) {
                 return res.status(400).json({
@@ -507,7 +524,7 @@ const job_status_Email = require("../utils/job_email")
                     title : 'password reset',
                     message: `Your account password reset successfully`,
                     date: new Date(),
-                    status: 1,
+                    status : 1,
                 });
                 adminNotification.save();
             } catch (notificationError) {
@@ -1181,284 +1198,136 @@ const job_status_Email = require("../utils/job_email")
     const candidate_recruitment_process = async (req, res) => {
         try {
             const candidateId = req.params.candidateId;
-            const { seeker_status } = req.body;
+            const { seeker_status, emailSubject, emailContent } = req.body;
     
             // Check for candidateId
             if (!candidateId) {
                 return res.status(400).json({
                     success: false,
-                    message: 'candidate Id Required'
+                    message: 'Candidate ID required'
+                });
+            }
+    
+            // Validate seeker_status
+            const validStatuses = [
+                'schedule interview',
+                'assessment',
+                'HR_Discussion',
+                'complete',
+                'shortlist',
+                'reject'
+            ];
+            
+            if (!validStatuses.includes(seeker_status)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid seeker status'
                 });
             }
     
             // Check for candidate
-            const candidate = await appliedjobModel.findOne({
-                _id: candidateId
-            });          
-            
-                 
+            const candidate = await appliedjobModel.findOne({ _id: candidateId });
             if (!candidate) {
                 return res.status(400).json({
                     success: false,
-                    message: 'candidate not found'
+                    message: 'Candidate not found'
                 });
             }
-                
-                   // access candidate details
-                   const first_Name = candidate.first_Name
-                   const last_Name = candidate.last_Name
-                   const job_Heading = candidate.job_Heading
-                   
-                   const jobId =  candidate.jobId
-
-              // check for jobId
-                    const checkJob = await jobModel.findOne({
-                        jobId : jobId
-                    })
-
-                    if(!checkJob)
-                    {
-                        return res.status(400).json({
-                            success : false ,
-                            message : 'job not found'
-                        })
-                    }
-                  
-                     // access job details
-                     const company_name = checkJob.company_name
-                     const startDate = checkJob.startDate
-                     const endDate = checkJob.endDate
-                     const company_address = checkJob.company_address
-                     const empId = checkJob.emp_Id
-
-                     // check for nextDate
-                     const nextDate = new Date(startDate);
-                     nextDate.setDate(startDate.getDate() + 1)                  
-                    
-                     const nextDateFormatted = nextDate.toISOString().slice(0, 23);
-
-                // check for employee
-                const checkemp = await employeeModel.findOne({ _id : empId})
-
-                   const emp_name = checkemp.name
-
-                  
-
-                    // Email content for  job scheduling
-           const  emailcontent2 = `<!DOCTYPE html>
-           <html lang="en">
-           <head>
-           <meta charset="UTF-8">
-           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-           <title>Interview Invitation</title>
-           </head>
-           <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
-           
-             <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-               <h2 style="text-align: center; color: #333; margin-bottom: 20px;">Interview Invitation</h2>
-               <div style="padding: 20px;">
-                 <p>Dear <strong>${first_Name} ${last_Name}</strong>,</p>
-                 <p>We are impressed with your application for the <strong>${job_Heading}</strong> position at <strong>${company_name}</strong>. We would like to invite you for an interview on <strong>${startDate}</strong> at <strong>10 am</strong>. The interview will be held at <strong>${company_address}</strong>.</p>
-                 <p>Please confirm your availability, and let us know if this works for you. We are eager to meet you and discuss your fit for the role.</p>
-                 <p>Best regards,</p>
-                 <p><strong>${emp_name}</strong> <br>
-                 <strong>${company_name}</strong></p>
-               </div>
-             </div>
-           </body>
-           </html>
-           `
-
-
-                // Email content for assesment
-
-              const emailcontent3 = `<!DOCTYPE html>
-              <html lang="en">
-              <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <title>Second Round Assessment Invitation</title>
-              </head>
-              <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
-              
-                <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-                  <h2 style="text-align: center; color: #333; margin-bottom: 20px;"> Assessment Invitation</h2>
-                  <div style="padding: 20px;">
-                    <p>Hello <strong style="color: #000;">${first_Name} ${last_Name}</strong>,</p>
-                    <p>Hope you're doing well!</p>
-                    <p>Congratulations on making it to the next round for the <strong style="color: #000;">${job_Heading}</strong> position at <strong style="color: #000;">${company_name}</strong>. We were impressed by your performance in the initial stage and would like to invite you to the second round assessment.</p>
-                    <p>Details:</p>
-                    <p>Date: <strong style="color: #000;">${nextDateFormatted}</strong></p>
-                    <p>Time: <strong style="color: #000;">10 AM</strong></p>
-                    <p>Location: <strong style="color: #000;">${company_address}</strong></p>
-                    <p>Please confirm your availability for this session. If the proposed date and time don't work for you, just let us know, and we'll find an alternative.</p>
-                    <p>Looking forward to continuing our discussions.</p>
-                    <p>Best regards,</p>
-                    <p><strong style="color: #000;">${emp_name}</strong> <br>
-                    <strong style="color: #000;">${company_name}</strong></p>
-                  </div>
-                </div>
-              </body>
-              </html>
-              `
-              
-
-                // Email content for HR Discussion
-               const emailcontent4 = `<!DOCTYPE html>
-               <html lang="en">
-               <head>
-               <meta charset="UTF-8">
-               <meta name="viewport" content="width=device-width, initial-scale=1.0">
-               <title>HR Discussion Invitation</title>
-               </head>
-               <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
-               
-                 <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-                   <h2 style="text-align: center; color: #333; margin-bottom: 20px;">HR Discussion Invitation</h2>
-                   <div style="padding: 20px;">
-                     <p>Hello <strong style="color: #000;">${first_Name} ${last_Name}</strong>,</p>
-                     <p>I hope you're doing well!</p>
-                     <p>Congratulations on progressing to the next stage of our hiring process for the <strong style="color: #000;">${job_Heading}</strong> position at <strong style="color: #000;">${company_name}</strong>. We're excited to invite you to an <strong style="color: #000;">HR Discussion session</strong>.</p>
-                     <p>Details:</p>
-                     <p>Date: <strong style="color: #000;">${endDate}</strong></p>
-                     <p>Time: <strong style="color: #000;">10 AM</strong></p>
-                     <p>Location: <strong style="color: #000;">${company_address}</strong></p>
-                     <p>Please let us know if this time works for you. If not, we can find an alternative that suits your schedule.</p>
-                     <p>Looking forward to chatting with you soon!</p>
-                     <p>Best regards,</p>
-                     <p><strong style="color: #000;">${emp_name}</strong> <br>
-                     <strong style="color: #000;">${company_name}</strong></p>
-                   </div>
-                 </div>
-               </body>
-               </html>
-               `
-           
-               // Email content for shortlist
-
-               const emailcontent6 = `<!DOCTYPE html>
-               <html lang="en">
-               <head>
-               <meta charset="UTF-8">
-               <meta name="viewport" content="width=device-width, initial-scale=1.0">
-               <title>Offer Letter Notification</title>
-               </head>
-               <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
-               
-                 <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-                   <h2 style="text-align: center; color: #333; margin-bottom: 20px;">Offer Letter Notification</h2>
-                   <div style="padding: 20px;">
-                     <p>Dear <strong style="color: #000;">${first_Name} ${last_Name}</strong>,</p>
-                     <p>I hope this email finds you well.</p>
-                     <p>I am pleased to inform you that <strong style="color: #000;">you have been selected as one of the shortlisted candidates</strong> for the <strong style="color: #000;">${job_Heading}</strong> position at <strong style="color: #000;">${company_name}</strong>. Your qualifications and experiences have impressed us, and we believe you would be a valuable addition to our team.</p>
-                     <p>We are in the process of finalizing the details of your offer letter, which will include information about your compensation, benefits, and other pertinent details. Rest assured, we are working diligently to ensure a smooth and timely release of the offer letter to you.</p>
-                     <p>Once the offer letter is ready, we will send it to you via email for your review and consideration. If you have any questions or require further information in the meantime, please feel free to reach out to us.</p>
-                     <p>We are excited about the possibility of welcoming you to our team and look forward to working together.</p>
-                     <p>Congratulations once again, and thank you for your interest in joining <strong style="color: #000;">${company_name}</strong>.</p>
-                     <p>Best regards,</p>
-                     <p><strong style="color: #000;">${emp_name}</strong> <br>
-                     <strong style="color: #000;">${company_name}</strong></p>
-                   </div>
-                 </div>
-               </body>
-               </html>
-               `
-
-               //Email Content for Reject 
-
-               const emailcontent7 = `<!DOCTYPE html>
-               <html lang="en">
-               <head>
-               <meta charset="UTF-8">
-               <meta name="viewport" content="width=device-width, initial-scale=1.0">
-               <title>Application Status Update</title>
-               </head>
-               <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
-               
-                 <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-                   <h2 style="text-align: center; color: #333; margin-bottom: 20px;">Application Status Update</h2>
-                   <div style="padding: 20px;">
-                     <p>Hello <strong style="color: #000;">${first_Name} ${last_Name}</strong>,</p>
-                     <p>I hope you're doing well.</p>
-                     <p>Thank you for applying for the <strong style="color: #000;">${job_Heading}</strong> position at <strong style="color: #000;">${company_name}</strong>. We appreciated the opportunity to consider you for the role.</p>
-                     <p>After careful review, we've decided to move forward with other candidates whose qualifications better match our current needs. We want to thank you for your interest and time spent with us.</p>
-                     <p>We wish you all the best in your job search and future endeavors. If you have any questions or need further assistance, feel free to reach out.</p>
-                     <p>Best regards,</p>
-                     <p><strong style="color: #000;">${emp_name}</strong></p>
-                     <p><strong style="color: #000;">${company_name}</strong></p>
-                   </div>
-                 </div>
-               </body>
-               </html>
-               `
-             
-
-            let cStatus ;
+    
+            // Check for jobId and job
+            const jobId = candidate.jobId;
+            const checkJob = await jobModel.findOne({ jobId: jobId });
+            if (!checkJob) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Job not found'
+                });
+            }
+    
+            // Access job details
+            const empId = checkJob.emp_Id;
+    
             let candidate_status;
+            let cStatus;
+            let emailSubjectText;
+            let emailContentText;
+    
             switch (seeker_status) {
-                case 'schedule_Interview':
+                case 'schedule interview':
                     candidate_status = 2;
                     cStatus = 2;
-                    send_candidateEmail (candidate.user_Email, `Your Interview Has been Scheduled ..!`, emailcontent2)
-
+                    emailSubjectText = emailSubject || 'Your Interview Has been Scheduled ..!';
+                    emailContentText = emailContent || `Your interview has been scheduled. Please check your email for more details.`;
                     break;
     
                 case 'assessment':
                     candidate_status = 3;
                     cStatus = 2;
-                    send_candidateEmail (candidate.user_Email, `Assesment Round..!`, emailcontent3)
+                    emailSubjectText =  emailSubject || 'Assessment Round..!';
+                    emailContentText = emailContent || `You are scheduled for an assessment round. Please check your email for more details.`;
                     break;
-
+    
                 case 'HR_Discussion':
-                        candidate_status = 4;
-                        cStatus = 2;
-                        send_candidateEmail (candidate.user_Email, `HR Discussion Round..!`, emailcontent4)
-                        break;
+                    candidate_status = 4;
+                    cStatus = 2;
+                    emailSubjectText =  emailSubject || 'HR Discussion Round..!';
+                    emailContentText = emailContent || `You are scheduled for an HR discussion round. Please check your email for more details.`;
+                    break;
     
                 case 'complete':
                     candidate_status = 5;
                     cStatus = 3;
+                    emailSubjectText = emailSubject || 'Process Completed..!';
+                    emailContentText = emailContent || `The recruitment process is now complete.`;
                     break;
     
                 case 'shortlist':
                     candidate_status = 6;
                     cStatus = 2;
-                     send_candidateEmail (candidate.user_Email, `Congratulation You have been Shortlisted..!`, emailcontent6)
+                    emailSubjectText =  emailSubject || 'Congratulations! You have been Shortlisted..!';
+                    emailContentText = emailContent || `Congratulations! You have been shortlisted. Please check your email for more details.`;
                     break;
     
                 case 'reject':
                     candidate_status = 7;
                     cStatus = 0;
-                    send_candidateEmail (candidate.user_Email, `For Better Luck Next Time..!`, emailcontent7)
+                    emailSubjectText = 'For Better Luck Next Time..!';
+                    emailContentText = emailContent || `Unfortunately, you were not selected this time. We wish you better luck in your future endeavors.`;
                     break;
     
                 default:
-                    return res.status(400).json({ status: false, message: "Invalid seeker status" });
+                    return res.status(400).json({ success: false, message: "Invalid seeker status" });
             }
     
-            // Update jobSeeker_status of the candidate
-            const updatedCandidate = await appliedjobModel.findOneAndUpdate({ _id: candidateId }, { jobSeeker_status: candidate_status , candidateStatus : cStatus } , { new: true });
+            // Send email
+            const emailOptions = {
+                to: candidate.user_Email,
+                subject: emailSubjectText,
+                html: emailContentText
+            };
     
-            if (!updatedCandidate) {
-                return res.status(400).json({ status : false , message: "Applied job not found" });
-            }
-        
-               
-              
-                res.status(200).json({
-                     success : true ,
-                     message : 'jobseeker status updated',
-                     updated_Candidate : updatedCandidate
-                })
-            
+            await send_candidateEmail(emailOptions);
+    
+            // Update candidate status
+            candidate.jobSeeker_status = candidate_status;
+            candidate.candidateStatus = cStatus;
+            const updatedCandidate = await candidate.save();
+    
+            return res.status(200).json({
+                success: true,
+                message: 'Jobseeker status updated',
+             
+            });
         } catch (error) {
+            console.error('Error in candidate_recruitment_process:', error);
             return res.status(500).json({
                 success: false,
-                message: 'server error',
+                message: 'Server error',
                 error_message: error.message
             });
         }
     };
+    
     
 
      // APi for get all candidates
@@ -1686,6 +1555,7 @@ const active_inactive_job = async (req, res) => {
         const emp_Id = job.emp_Id;
 
         // Check for the employer's details
+        
         const employer = await employeeModel.findOne({ _id: emp_Id });
 
         // Validate new status
@@ -1699,13 +1569,13 @@ const active_inactive_job = async (req, res) => {
         let statusMessage = '';
         switch (newStatus) {
             case 1:
-                statusMessage = 'Scheduled';
+                statusMessage = 'open';
                 break;
             case 2:
-                statusMessage = 'Job requirement fulfilled';
+                statusMessage = 'requirement in progress';
                 break;
             case 3:
-                statusMessage = 'Inactive';
+                statusMessage = 'close';
                 break;
             default:
                 statusMessage = 'Unknown Status';
@@ -1808,7 +1678,10 @@ const active_inactive_job = async (req, res) => {
                                         relevant_Experience: candidate.job_experience, 
                                         Total_experience: candidate.Total_experience,
                                         jobId : candidate.jobId,
-                                        candidateStatus : candidate.candidateStatus
+                                        candidateStatus : candidate.candidateStatus,
+                                        saved_status : candidate.saved_status,
+                                       candidate_rating : candidate.candidate_rating
+
                                     }))
                                 });
                                 } catch (error) {
@@ -5557,6 +5430,7 @@ const net_salary = async (req, res) => {
                   
       const { parse, format, eachDayOfInterval } = require('date-fns');
       const e = require('cors')
+const jobDescription_model = require('../model/jobDescription')
       
       // Api for get all clients counts
 
@@ -7091,6 +6965,295 @@ const cms_labour_tool = async ( req , res )=> {
       }
     
 
+      const convertPDFToImage = async (pdfPath, outputPath) => {
+        let file = pdfPath;
+        let opt = {
+            format: 'png',
+            out_dir: outputPath,
+            out_prefix: 'page',
+            page: null
+        };
+        
+        try {
+            await PDFPoppler.convert(file, opt);
+           
+        } catch (error) {
+            console.error("Error converting PDF:", error);
+            throw new Error('Error converting PDF');
+        }
+    };
+    
+    const performOCR = async (imagePaths) => {
+        try {
+            let allText = '';
+            for (const imagePath of imagePaths) {
+                const { data: { text } } = await Tesseract.recognize(imagePath, 'eng', {
+                    logger: info => console.log(info)
+                });
+                allText += text + '\n'; // Combine text from all images
+            }
+            return allText;
+        } catch (error) {
+            console.error('Error performing OCR:', error);
+            throw new Error('Error performing OCR');
+        }
+    };
+
+    const improveTextFormatting = (text) => {
+        // Add space after punctuation if it's not followed by a space
+        text = text.replace(/([.,!?;:])(?=\S)/g, '$1 ');
+    
+        // Ensure space between a punctuation and the next word
+        text = text.replace(/(\S)([.,!?;:])(\S)/g, '$1$2 $3');
+    
+        // Add space after a period if it's not followed by a space
+        text = text.replace(/([a-zA-Z])\.(?=\S)/g, '$1. ');
+    
+        // Replace multiple spaces with a single space
+        text = text.replace(/\s{2,}/g, ' ');
+    
+        // Add line breaks between sections (e.g., addresses, education)
+        text = text.replace(/([A-Z][A-Z\s]+)(\n|$)/g, '\n\n$1\n');
+    
+        // Add extra line breaks for better readability
+        text = text.replace(/(\.\s+)(?=\S)/g, '$1\n\n');
+    
+        // Remove extra newlines and leading/trailing spaces
+        text = text.replace(/\n{3,}/g, '\n\n');
+        text = text.trim();
+    
+        return text;
+    };
+
+    const calculateMatchRating = (cvText, jobDescription) => {
+        // Helper function to preprocess and tokenize text
+        const preprocessText = (text) => {
+            return text.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/);
+        };
+    
+        // Helper function to compute Jaccard similarity
+        const jaccardSimilarity = (setA, setB) => {
+            const intersection = new Set([...setA].filter(item => setB.has(item))).size;
+            const union = new Set([...setA, ...setB]).size;
+            return intersection / union;
+        };
+    
+        // Define criteria and their weights
+        const criteria = {
+            'education': 0.25,
+            'experience': 0.35,
+            'skills': 0.35,
+            'certifications': 0.15,
+            'other': 0.15
+        };
+    
+        // Define rating scale
+        const maxRating = 5;
+    
+        // Initialize scores
+        let criterionScores = {};
+        Object.keys(criteria).forEach(criterion => {
+            criterionScores[criterion] = 0;
+        });
+    
+        // Split job description and CV into lines
+        const jobDescriptionLines = jobDescription.split('\n').map(line => line.trim()).filter(line => line !== '');
+        const cvLines = cvText.split('\n').map(line => line.trim()).filter(line => line !== '');
+    
+        // Calculate score for each criterion
+        for (const [criterion, weight] of Object.entries(criteria)) {
+            // Filter lines containing the criterion
+            const jobCriterionLines = jobDescriptionLines.filter(line => line.toLowerCase().includes(criterion));
+            let bestMatch = 0;
+    
+            // Compute the best match score for this criterion
+            jobCriterionLines.forEach(jobLine => {
+                const jobTokens = new Set(preprocessText(jobLine));
+                cvLines.forEach(cvLine => {
+                    const cvTokens = new Set(preprocessText(cvLine));
+                    const similarity = jaccardSimilarity(jobTokens, cvTokens);
+                    if (similarity > bestMatch) {
+                        bestMatch = similarity;
+                    }
+                });
+            });
+    
+            // Scale best match to a rating out of maxRating (1 to 5)
+            const rating = Math.round(bestMatch * maxRating);
+            criterionScores[criterion] = rating;
+        }
+    
+        // Calculate the overall rating
+        let totalScore = 0;
+        for (const [criterion, weight] of Object.entries(criteria)) {
+            totalScore += criterionScores[criterion] * weight;
+        }
+    
+        // Return the overall rating and individual criterion ratings
+        return {
+            overallRating: totalScore.toFixed(2),
+            individualRatings: criterionScores
+        };
+    };
+    
+ 
+    
+    
+  
+    
+    
+    
+    const convertToHTML = (text) => {
+        let htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Job Description</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 20px;
+                    padding: 0;
+                }
+                h1, h2, h3 {
+                    color: #333;
+                }
+                p {
+                    margin-bottom: 10px;
+                }
+                ul {
+                    margin-bottom: 10px;
+                    padding-left: 20px;
+                }
+                li {
+                    margin-bottom: 5px;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 20px;
+                }
+                table, th, td {
+                    border: 1px solid #ddd;
+                }
+                th, td {
+                    padding: 10px;
+                    text-align: left;
+                }
+                th {
+                    background-color: #f4f4f4;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>Job Description</h1>
+            ${text}
+        </body>
+        </html>
+        `;
+    
+        // Convert double newlines into paragraphs
+        htmlContent = htmlContent.replace(/\n\n/g, '<p></p>');
+    
+        // Convert single newlines into line breaks
+        htmlContent = htmlContent.replace(/\n/g, '<br>');
+    
+        // Convert headings that are in all caps into <h2> tags
+        htmlContent = htmlContent.replace(/([A-Z][A-Z\s]+)(<br>|$)/g, '<h2>$1</h2>');
+    
+        // Convert numbered lists into <li> items within <ul> tags
+        htmlContent = htmlContent
+            .replace(/(\d+\.)\s+/g, '<li>')      // Replace number bullet with <li>
+            .replace(/<\/li>\s*(\d+\.)/g, '</li><li>'); // Close current <li> before starting new one
+    
+        // Wrap the entire list of <li> items in <ul> tags
+        if (htmlContent.includes('<li>')) {
+            htmlContent = htmlContent.replace(/<li>([\s\S]+?)<\/li>/g, '<ul><li>$1</li></ul>');
+        }
+    
+        return htmlContent;
+    };
+    
+    
+    const convertToPlainText = (html) => {
+        return htmlToText(html, {
+            wordwrap: 130
+        });
+    };
+    const candidate_cv_rating = async (req, res) => {
+        try {
+            const candidate_id = req.params.candidate_id;
+    
+            if (!candidate_id) {
+                return res.status(400).json({ success: false, message: 'Candidate ID required' });
+            }
+    
+            const candidate = await appliedjobModel.findOne({ _id: candidate_id });
+            if (!candidate) {
+                return res.status(400).json({ success: false, message: 'Candidate not found' });
+            }
+    
+            const candidate_cv = candidate.uploadResume;
+    
+            if (!candidate_cv) {
+                return res.status(400).json({ success: false, message: 'Candidate CV not found' });
+            }
+    
+            const check_Jd = await jobDescription_model.findOne({ jobTitle: candidate.job_Heading });
+            if (!check_Jd) {
+                return res.status(400).json({ success: false, message: 'No Job Description found' });
+            }
+    
+            const job_description = check_Jd.job_Description || '';
+            const job_responsibility = check_Jd.Responsibilities || '';
+            let combine_jd = `${job_description} \n\n ${job_responsibility}`;
+    
+            const htmlCombineJd = convertToHTML(combine_jd);
+            const plainTextCombineJd = convertToPlainText(htmlCombineJd);
+    
+            const candidateCvPath = path.join(__dirname, '..', 'uploads', candidate_cv);
+            const imagesDir = path.join(__dirname, '..', 'images');
+            
+            if (!fs.existsSync(candidateCvPath)) {
+                return res.status(400).json({ success: false, message: 'Candidate CV file not found on server' });
+            }
+    
+            await convertPDFToImage(candidateCvPath, imagesDir);
+    
+            const imageFiles = fs.readdirSync(imagesDir).filter(file => file.startsWith('page') && file.endsWith('.png'));
+            const imagePaths = imageFiles.map(file => path.join(imagesDir, file));
+            
+            const cvText = await performOCR(imagePaths);
+            const improvedCvText = improveTextFormatting(cvText);
+
+                  
+                   
+                    
+
+            const MatchRating = await calculateMatchRating (improvedCvText, plainTextCombineJd);
+    
+            imageFiles.forEach(file => fs.unlinkSync(path.join(imagesDir, file)));
+    
+            return res.status(200).json({
+                success: true,
+                MatchRating: MatchRating ,
+                message: 'CV rating calculated successfully',
+            });
+    
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message,
+            });
+        }
+    };
+    
+    
+      
       
             
                 
@@ -7119,6 +7282,6 @@ module.exports = {
      cms_get_started_today , get_started_todayDetails , cms_why_choose_us , getDetails_why_choose_us , cms_elite_talent_pool , get_cms_elite_talent_pool,
      cms_footer_content , get_cms_footer_content , cms_acadmic_credentials_verifier , get_acadmic_credentials_verifier , newsLetter , getAll_newsLetter,
      new_carrer_advice , all_carrer_details , delete_carrer_advice , generate_sampleFile , import_file , cms_labour_tool , get_cms_labour_tool_details,
-     cms_online_cources , get_cms_online_courses_details , cms_Home , get_cms_Home 
+     cms_online_cources , get_cms_online_courses_details , cms_Home , get_cms_Home  , candidate_cv_rating
      
 }

@@ -1,8 +1,7 @@
 const nodemailer = require('nodemailer');
 
-const send_candidateEmail  = async (recipientEmail, subject, content) => {
+const send_candidateEmail = async ({ to, subject, html }) => {
     try {
-     
         const transporter = nodemailer.createTransport({
             host: 'smtp.gmail.com',
             port: 587,
@@ -16,14 +15,14 @@ const send_candidateEmail  = async (recipientEmail, subject, content) => {
 
         await transporter.sendMail({
             from: process.env.SMTP_MAIL,
-            to: recipientEmail,
-            subject: subject,
-            html: content ,
+            to,
+            subject,
+            html,
         });
         console.log('Email sent successfully');
     } catch (error) {
-        console.log(error, 'Email not sent');
+        console.log('Error:', error);
     }
 };
 
-module.exports = send_candidateEmail ;
+module.exports = send_candidateEmail;

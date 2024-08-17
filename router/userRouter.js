@@ -53,6 +53,8 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
                         router.post('/getJd' , userController.getJd)
         // Api for deleteJob_Description
                         router.delete('/deleteJob_Description/:Jd_id', userController.deleteJob_Description)
+          // Api for download_jd
+                        router.get('/download_jd/:jd_id' , userController.download_jd)
 
                                            /* psychomatric testing section */
         // Api for add psychometric_questions
@@ -75,6 +77,8 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
                                        /* POST job section */
         // Api for postJob
                 router.post('/postJob/:empId', upload.single('job_image') , userController.postJob)
+        // Api for updateJob
+                 router.post('/updateJob/:jobId' , userController.updateJob)
         // Api for getJobs_posted_by_employee
                 router.get('/getJobs_posted_by_employee/:empId' , userController.getJobs_posted_by_employee)
         // Api for get particular job'
@@ -170,6 +174,16 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
                  router.post('/blog_section_comment', userController.blog_section_comment)
         // Api for get_all__blog_section_comments
                  router.get('/get_all__blog_section_comments', userController.get_all__blog_section_comments)
+
+        // Api for share_cv
+                 router.post('/share_cv/:candidate_id' , userController.share_cv)
+        // Api for save_candidate_profile_for_later
+                 router.post('/save_candidate_profile_for_later/:candidate_id', userController.save_candidate_profile_for_later)
+        // Api for get_saved_candidate_profile
+                 router.get('/get_saved_candidate_profile/:client_id' , userController.get_saved_candidate_profile)
+
+      
+                 
 
 
 

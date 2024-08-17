@@ -81,7 +81,7 @@ const jobSchema = new mongoose.Schema({
     status : {
         type : Number,
         enum : [0 , 1, 2, 3],
-        default : 0
+        default : 1
     },
     isPsychometricTest : {
         type: Number,
@@ -89,8 +89,8 @@ const jobSchema = new mongoose.Schema({
         default: 0
     },
     psychometric_Test : {
-        type : mongoose.Schema.Types.ObjectId ,
-        ref : "PsychometricModel"
+        type : String ,
+       
   },
 
   fav_status : {

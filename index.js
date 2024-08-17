@@ -16,6 +16,7 @@ app.use(express.json())
 app.use(bodyParser.urlencoded({ extended : true }))
 app.use(cors())
 app.use(express.static('uploads'))
+app.use(express.static('images'))
 
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*'); 
