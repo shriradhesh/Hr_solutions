@@ -90,7 +90,7 @@ const appliedJobSchema = mongoose.Schema({
     candidate_rating : {
          type : Number,
         //  enum : [1,2,3,4,5],
-         default : 5
+         default : 1
     }
 
 }, { timestamps: true });

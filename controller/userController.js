@@ -31,21 +31,16 @@ const path = require('path')
 const fixit_finder_model = require('../model/fixit_finder_model')
 const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const save_candidate_profile = require('../model/save_candidate_profile_for_later')
+const Psychometric_Personality_test_Model = require('../model/psyhometric_personality_test')
+const CvBuilderModel = require('../model/cv_builder')
+const online_courses_enq_model = require('../model/online_course_enq')
 
 require('dotenv').config(); // Load environment variables from .env file
 const nodemailer = require('nodemailer');
 const validator = require('validator'); 
 const fs = require('fs')
-const pdfParse = require('pdf-parse');
-const pretty = require('pretty')
-const { NlpManager } = require('node-nlp');
-const PDFPoppler = require("pdf-poppler");
-const Tesseract = require('tesseract.js');
-
-
-const mammoth = require('mammoth');
-const { execSync } = require('child_process')
-const { htmlToText } = require('html-to-text')
+const parse5 = require('parse5');
+const cms_online_courses_Model = require('../model/cms_online_cources')
 
 
 
@@ -346,13 +341,15 @@ const { htmlToText } = require('html-to-text')
 
                    return res.status(200).json({
                          success : true ,
-                         message : 'Employee Details updated successfully '
+                         message : 'Employee Details updated successfully ',
+                         data : exist_emp
                    })
             } catch (error) {
                return res.status(500).json({
                      success : false ,
                      message : 'server error',
                      error_message : error.message
+                  
                })
             }
        }
@@ -615,7 +612,7 @@ const { htmlToText } = require('html-to-text')
       if (existjobTitle) {
         return res
           .status(400)
-          .json({ message: " jobTitle already exist ", success: false });
+          .json({ message: "JobTitle already exist ", success: false });
       }
   
       const newjobTitle = new jobTitleModel({
@@ -627,7 +624,7 @@ const { htmlToText } = require('html-to-text')
         .status(200)
         .json({
           success: true,
-          message: `jobTitle added successfully `,
+          message: `JobTitle added successfully `,
           stop: savedjobTitle,
         });
     } catch (error) {
@@ -653,7 +650,7 @@ const { htmlToText } = require('html-to-text')
         if (jobTitles.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: "No jobTitles found",
+                message: "No JobTitles found",
             });
         } else {
             // Map jobTitles to required format
@@ -665,7 +662,7 @@ const { htmlToText } = require('html-to-text')
             // Send formatted jobTitles as response
             res.status(200).json({
                 success: true,
-                message: "All jobTitles",
+                message: "All JobTitles",
                 details: formattedJobTitles
             });
         }
@@ -685,7 +682,7 @@ const deletejobTitle = async (req, res) => {
       // Check for route existence
       const existingjobTitle = await jobTitleModel.findOne({ _id: jobtitle_id });
       if (!existingjobTitle) {
-        return res.status(400).json({ success: false, error: `jobTitle not found` });
+        return res.status(400).json({ success: false, error: `JobTitle not found` });
       }
   
       // Delete the jobTitle from the database
@@ -693,7 +690,7 @@ const deletejobTitle = async (req, res) => {
   
       res
         .status(200)
-        .json({ success: true, message: "jobTitle deleted successfully" });
+        .json({ success: true, message: "JobTitle deleted successfully" });
     } catch (error) {
       console.error(error);
       res
@@ -825,7 +822,7 @@ const deletejobTitle = async (req, res) => {
                         {
                             return res.status(400).json({
                                  success : false ,
-                                 message :  `JOb Description not found for the given jobTitle : ${jobTitle}`
+                                 message :  `Job Description not found for the given jobTitle : ${jobTitle}`
                             })
                         }
 
@@ -872,366 +869,381 @@ const deleteJob_Description = async (req, res) => {
   };
 
                                            /* Psychometric Testing Section   */
-
-
-        // Api for add psychometric test questions
+ // Api for add psychometric  questions
      
-        const psychometric_questions = async (req, res) => {
-            try {
-                const { job_title, question, options, correctAnswerIndex } = req.body;               
-        
-                // Check if job_title is provided
-                if (!job_title) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'job_title is required'
-                    });
-                }
-        
-                // Check if question is provided and is a non-empty string
-                if (!question) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Question Required'
-                    });
-                }
-        
-                // Check if options array is provided and is not empty
-                if (!Array.isArray(options) || options.length === 0) {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Options array is required '
-                    });
-                }
-        
-                // Check if correctAnswerIndex is provided and is a number
-                if (typeof correctAnswerIndex !== 'number') {
-                    return res.status(400).json({
-                        success: false,
-                        message: 'Correct answer index must be a number'
-                    });
-                }
-        
-                // Create a new psychometric test for the job title
-                const newPsychometric = new PsychometricModel({ job_title, questions: [] });
-        
-                // Push the new question object to the array
-                newPsychometric.questions.push({ question, options, correctAnswerIndex });
-        
-                // Save the new psychometric test
-                await newPsychometric.save();
-        
-                // Return success response
-                res.status(200).json({
-                    success: true,
-                    message: 'New psychometric test created successfully',
-                    psychometric: newPsychometric
-                });
-            } catch (error) {
-                console.error(error);
-                return res.status(500).json({
-                    success: false,
-                    message: 'Server error',
-                    error_message: error.message
-                });
-            }
-        }
-        
-        // Api for get Detials of psychometric_questions
-             const getquestions = async( req , res )=>{
-                    try {
-                        const psychometric_questions_Id = req.params.psychometric_questions_Id;
-                        // check for psychometric_questions_Id
-                        if(!psychometric_questions_Id)
-                        {
-                            return res.status(400).json({
-                                 success : false ,
-                                 message : 'psychometric_questions_Id Required'
-                            })
-                        }
+ const psychometric_questions = async (req, res) => {
+    try {
+        const { question, options, correctAnswerIndex } = req.body;
 
-                        // check for details
-
-                        const cd = await PsychometricModel.findOne({
-                                  _id : psychometric_questions_Id
-                        })
-
-                        if(!cd)
-                        {
-                            return res.status(400).json({
-                                 success : false ,
-                                 message : 'no Details found'
-                            })
-                        }
-
-                           return res.status(200).json({
-                                success : true ,
-                                message : 'Questions Details',
-                                Question : cd.questions
-                           })
-                    } catch (error) {
-                         return res.status(500).json({
-                             success : false ,
-                             message : 'server error',
-                             error_message : error.message
-                         })
-                    }
-             }
-    // Api for add Question on particular one
-    const addQuestion = async (req, res) => {
-        
-        try {
-                    const psychometric_questions_Id = req.params.psychometric_questions_Id;
-                const { question, options, correctAnswerIndex } = req.body;          
-            
-                
-    
-            const psychometric_question = await PsychometricModel.findOne({ _id: psychometric_questions_Id });
-    
-            if (!psychometric_question) {
-                return res.status(400).json({
-                    success: false,
-                    message: `psychometric_questions not found with the psychometric_questions ${psychometric_questions_Id}`,
-                });
-            }
-    
-            // Check if the question already exists
-            const duplicateQuestion = psychometric_question.questions.find(
-                (questionObj) => questionObj.question === question
-            );
-    
-            if (duplicateQuestion) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Question '${question}' already exists in the psychometric_question array`,
-                });
-            }
-    
-            // Add the new question to the array
-            psychometric_question.questions.push({
-                question,
-                options,
-                correctAnswerIndex,
+        // Check if question is provided and is a non-empty string
+        if (!question) {
+            return res.status(400).json({
+                success: false,
+                message: 'Question is required'
             });
+        }
+
+        // Check if options array is provided and is not empty
+        if (!Array.isArray(options) || options.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Options array is required'
+            });
+        }
+
+        // Check if correctAnswerIndex is provided and is a number
+        if (typeof correctAnswerIndex !== 'number') {
+            return res.status(400).json({
+                success: false,
+                message: 'Correct answer index must be a number'
+            });
+        }
+
+        // Check for already existing question
+        const check_que = await PsychometricModel.findOne({ question });
+        if (check_que) {
+            return res.status(400).json({
+                success: false,
+                message: 'Question already exists'
+            });
+        }
+
+        // Create a new psychometric question
+        const newPsychometric = new PsychometricModel({
+            question,
+            options,
+            correctAnswerIndex
+        });
+
+        // Save the new question
+        await newPsychometric.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Psychometric question added successfully',
+            psychometric: newPsychometric
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+
+// Api for get Detials of psychometric_questions
+     const getquestions = async( req , res )=>{
+        try {
+            const { psychometric_questions_Id } = req.params;
     
-            // Save the updated psychometric_question
-            await psychometric_question.save();
+            // Check for psychometric_questions_Id
+            if (!psychometric_questions_Id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'psychometric_questions_Id is required'
+                });
+            }
     
+            // Fetch details from the database
+            const questionDetails = await PsychometricModel.findById(psychometric_questions_Id);
+    
+            if (!questionDetails) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'No details found'
+                });
+            }
+    
+            // Respond with the question details
             return res.status(200).json({
                 success: true,
-                message: "Question added successfully",
+                message: 'Question details',
+                question: {
+                    question: questionDetails.question,
+                    options: questionDetails.options,
+                    correctAnswerIndex: questionDetails.correctAnswerIndex
+                }
             });
+    
         } catch (error) {
-            console.error(error);
             return res.status(500).json({
                 success: false,
-                message: "server error",
-                error: error.message,
+                message: 'Server error',
+                error_message: error.message
             });
         }
-    };
-    
-    
-        
-        // get all psychometric_questions options for particular 
-        
-        const getAll_psychometric_questions = async(req , res)=>{
-               try {
-                      const { job_title} = req.body
-                    // check for job_title
-                    if(!job_title)
-                    {
-                        return res.status(400).json({
-                             success : false ,
-                             message : 'job title required'
-                        })
-                    }
+     }
 
-                     // check for all psychometric_questions
 
-                     const checkpsychometric_Q = await PsychometricModel.find({
-                        job_title: { $regex: job_title, $options: 'i' },
-                     })
 
-                     if(!checkpsychometric_Q)
-                     {
-                        return res.status(400).json({
-                             success : false ,
-                             message : `no psychometric Test found for Job_Title${job_title}`
-                        })
-                     }
 
-                     // sort data]
+// get all psychometric_questions options for particular 
 
-                     const sorteddata = checkpsychometric_Q.sort(( a , b ) => b.createdAt - a.createdAt )
+const getAll_psychometric_questions = async(req , res)=>{
+       try {
+           
+             // check for all psychometric_questions
 
-                     return res.status(200).json({
-                         success : true ,
-                         message : `psychometric Test for Job_Title${job_title}`,
-                         options : sorteddata
-                                   
-                     })
-               } catch (error) {
-                return res.status(500).json({
+             const checkpsychometric_Q = await PsychometricModel.find({                        
+             })
+
+             if(!checkpsychometric_Q)
+             {
+                return res.status(400).json({
                      success : false ,
-                     message : 'server error',
-                     error_message : error.message
+                     message : `no psychometric Questions Found`
                 })
-               }
-        }
-        
-    // Api for get all test
-              const getAllTest = async( req , res)=>{
-                        try {
-                                   // check for all tests
-                                   const chechT = await PsychometricModel.find({
-                                    
-                                   })
+             }
 
-                                   if(!chechT)
-                                   {
-                                    return res.status(400).json({
-                                         success : false ,
-                                         message : 'no Test found'
-                                    })
-                                   }
-                                        // sort details
-                        const sortedData = chechT.sort(( a , b ) => b.createdAt - a.createdAt)
-                                   return res.status(200).json({
+             // sort data
+
+             const sorteddata = checkpsychometric_Q.sort(( a , b ) => b.createdAt - a.createdAt )
+
+             return res.status(200).json({
+                 success : true ,
+                 message : `psychometric questions`,
+                 Questions : sorteddata
+                           
+             })
+       } catch (error) {
+        return res.status(500).json({
+             success : false ,
+             message : 'server error',
+             error_message : error.message
+        })
+       }
+}
+
+
+       // Api for delete psychometric_test
+
+                    const deletepsychometrcTest = async( req , res)=>{
+                            try {
+                                  const psychometric_id = req.params.psychometric_id
+                                // check for psychometric_id
+                            if(!psychometric_id)
+                            {
+                                return res.status(400).json({
+                                     success : false ,
+                                     message : 'psychometric Id required'
+                                })
+                            }
+
+                            // check for psychometric_test
+                            const pt = await PsychometricModel.findOne({
+                                    _id : psychometric_id
+                            })
+
+                            if(!pt)
+                            {
+                                return res.status(400).json({
+                                       success : false ,
+                                       message : 'no Test found'
+                                })
+                            }
+
+                                await pt.deleteOne()
+                                
+                                return res.status(200).json({
                                      success : true ,
-                                     message : 'Tests',
-                                     Test : sortedData
-                                   })
-                        } catch (error) {
-                               return res.status(500).json({
+                                     message : 'psychometric test Deleted successfully'
+                                })
+
+                            } catch (error) {
+                                return res.status(500).json({
                                       success : false ,
                                       message : 'server error',
                                       error_message : error.message
-                               })
-                        }
-              }
-
-               // Api for delete psychometric_test
-
-                            const deletepsychometrcTest = async( req , res)=>{
-                                    try {
-                                          const psychometric_id = req.params.psychometric_id
-                                        // check for psychometric_id
-                                    if(!psychometric_id)
-                                    {
-                                        return res.status(400).json({
-                                             success : false ,
-                                             message : 'psychometric Id required'
-                                        })
-                                    }
-
-                                    // check for psychometric_test
-                                    const pt = await PsychometricModel.findOne({
-                                            _id : psychometric_id
-                                    })
-
-                                    if(!pt)
-                                    {
-                                        return res.status(400).json({
-                                               success : false ,
-                                               message : 'no Test found'
-                                        })
-                                    }
-
-                                        await pt.deleteOne()
-                                        
-                                        return res.status(200).json({
-                                             success : true ,
-                                             message : 'psychometric test Deleted successfully'
-                                        })
-
-                                    } catch (error) {
-                                        return res.status(500).json({
-                                              success : false ,
-                                              message : 'server error',
-                                              error_message : error.message
-                                        })
-                                    }
-                            }
-          
-            // Api for delete particular psychometric question
-            const deletequestion_in_Test = async (req, res) => {
-                let testId;
-                try {
-                    const questionId = req.params.questionId;
-                    testId = req.params.testId;
-                    const existTest = await PsychometricModel.findOne({ _id: testId });
-            
-                    if (!existTest) {
-                        return res.status(400).json({ success: false, message: "Test not found" });
-                    }
-            
-                    // Check for Question
-                    const existQuestionIndex = existTest.questions.findIndex(
-                        (que) => que._id.toString() === questionId
-                    );
-                    if (existQuestionIndex === -1) {
-                        return res.status(400).json({ success: false, message: "Question not found" });
-                    }
-            
-                    // Remove the Question from the question array
-                    existTest.questions.splice(existQuestionIndex, 1);
-            
-                    await PsychometricModel.findOneAndUpdate(
-                        { _id: testId },
-                        { questions: existTest.questions }
-                    );
-            
-                    res.status(200).json({ success: true, message: "Question deleted successfully in Test" });
-                } catch (error) {
-                    res.status(500).json({
-                        success: false,
-                        message: `Server error`,
-                        error_message: error.message
-                    });
-                }
-            };
-            
-                  // Api for get particular test
-
-                  const getTest = async( req , res)=>{
-                       try {
-                             const test_id = req.params.test_id
-                            // check for test id
-                            if(!test_id)
-                                {
-                                    return res.status(400).json({
-                                         success : false ,
-                                         message : 'Test Id required'
-                                    })
-                                }
-
-                                // check for test
-                                const test = await PsychometricModel.findOne({
-                                         _id : test_id
                                 })
-                                if(!test)
-                                    {
-                                        return res.status(400).json
-                                        ({
-                                              success : false ,
-                                              message : 'No test found'
-                                        })
-                                    }
+                            }
+                    }
+  
+// Api for add personality test question for psychometric section
 
-                                    return res.status(200).json({
-                                           success : true,
-                                           message : 'Test',
-                                           Test : test
-                                    })
-                       } catch (error) {
-                        return res.status(500).json({
-                             success : false ,
-                             message : 'server error',
-                             error_message : error.message
-                        })
-                       }
-                  }
+const add_personality_test_question = async ( req , res ) => {
+try {
+    const { question, options, correctAnswerIndex } = req.body;
+
+    // Validate that the question is provided and is a non-empty string
+    if (!question || typeof question !== 'string') {
+        return res.status(400).json({
+            success: false,
+            message: 'Question is required '
+        });
+    }
+
+    // Validate that options array is provided and contains exactly 5 valid strings
+    if (!Array.isArray(options) || options.length !== 5 || !options.every(opt => ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"].includes(opt))) {
+        return res.status(400).json({
+            success: false,
+            message: 'Options array required and must contain exactly 5 valid strings: "Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"'
+        });
+    }
+
+    // Validate that correctAnswerIndex is provided, is a number, and is within the range 0-4
+    if (typeof correctAnswerIndex !== 'number' || correctAnswerIndex < 0 || correctAnswerIndex > 4) {
+        return res.status(400).json({
+            success: false,
+            message: 'Correct answer index must be a number between 0 and 4'
+        });
+    }
+
+    // Check if the question already exists in the database
+    const existingQuestion = await Psychometric_Personality_test_Model.findOne({ question });
+    if (existingQuestion) {
+        return res.status(400).json({
+            success: false,
+            message: 'Question already exists'
+        });
+    }
+
+    // Create a new psychometric personality test question
+    const newPsychometricQuestion = new Psychometric_Personality_test_Model({
+        question,
+        options,
+        correctAnswerIndex
+    });
+
+    // Save the new question to the database
+    await newPsychometricQuestion.save();
+
+    return res.status(200).json({
+        success: true,
+        message: 'Psychometric personality test question added successfully',
+        
+    });
+} catch (error) {
+    console.error(error);
+    return res.status(500).json({
+        success: false,
+        message: 'Server error',
+        error_message: error.message
+    });
+}
+}
+
+// Api for Get all psychometric personal Ability Questions
+const getAll_psychometric_personal_ability_questions = async(req , res)=>{
+try {
+    
+      // check for all psychometric_questions
+
+      const checkpsychometric_Q = await Psychometric_Personality_test_Model.find({                        
+      })
+
+      if(!checkpsychometric_Q)
+      {
+         return res.status(400).json({
+              success : false ,
+              message : `no Questions Found for Personal Ability Test`
+         })
+      }
+
+      // sort data
+
+      const sorteddata = checkpsychometric_Q.sort(( a , b ) => b.createdAt - a.createdAt )
+
+      return res.status(200).json({
+          success : true ,
+          message : `Personal Ability Test questions`,
+          Questions : sorteddata
+                    
+      })
+} catch (error) {
+ return res.status(500).json({
+      success : false ,
+      message : 'server error',
+      error_message : error.message
+ })
+}
+}
+         
+// Api for get perticular personal Ability test question
+
+ const get_personal_ability_question = async ( req , res )=> {
+    try {
+        const { questions_Id } = req.params;
+
+        // Check for questions_Id
+        if (!questions_Id) {
+            return res.status(400).json({
+                success: false,
+                message: 'questions_Id is required'
+            });
+        }
+
+        // Fetch details from the database
+        const questionDetails = await Psychometric_Personality_test_Model.findOne({ _id : questions_Id });
+
+        if (!questionDetails) {
+            return res.status(400).json({
+                success: false,
+                message: 'No details found'
+            });
+        }
+
+        // Respond with the question details
+        return res.status(200).json({
+            success: true,
+            message: 'Question details',
+            question: {
+                question: questionDetails.question,
+                options: questionDetails.options,
+                correctAnswerIndex: questionDetails.correctAnswerIndex
+            }
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+ }
+
+ // Api for delete personal Ability Question
+   const Delete_personal_ability_ques = async ( req , res )=> {
+       try {
+              const question_Id = req.params.question_Id
+              // check for question_Id
+            if(!question_Id)
+            {
+                 return res.status(400).json({
+                        success : false ,
+                        message : 'Question Id required'
+                 })
+            }
+            
+          //check for question
+            const question = await Psychometric_Personality_test_Model.findOne({ _id : question_Id })
+            if(!question)
+            {
+                    return res.status(400).json({
+                         success : false ,
+                         message : 'No Question found'
+                    })
+            }
+
+              await question.deleteOne()
+               return res.status(200).json({
+                  success : true ,
+                  message : 'Question Deleted Successfully'
+               })
+       } catch (error) {
+           return res.status(500).json({
+                success : false ,
+                message : 'server error',
+                error_message : error.message
+           })
+       }
+   }
+
+
+        
                                                  /* Job Section */
         // Api for post job
         const postJob = async (req, res) => {
@@ -1254,16 +1266,12 @@ const deleteJob_Description = async (req, res) => {
                     Experience,
                     company_address,
                     template_type,
-                    isPsychometricTest,
-                    psychometric_Test
+                    location
+                    // isPsychometricTest,
+                    // psychometric_Test
 
                 } = req.body;
                        
-
-                      
-                       
-                        
-                         
                                        
                 if (!empId) {
                     return res.status(400).json({
@@ -1351,44 +1359,44 @@ const deleteJob_Description = async (req, res) => {
                     phone_no: employee.phone_no,
                     company_Industry: employee.company_industry,
                     status: 1,
-                    isPsychometricTest  ,
-                    psychometric_Test : psychometric_Test || '',
+                    location :  location,
+                    // isPsychometricTest  ,
+                    // psychometric_Test : psychometric_Test || '',
                     job_image : job_image || ''
                 });
         
                 await newJob.save();
-        // Job has expired, send notification
-        try {
-            const newNotification =  empNotificationModel.create({
-                empId: empId,
-                message: `your Job ${job_title} post successfully`,
-                date: new Date(),
-                status: 1,
-            });
-             newNotification.save();            
-              
-        } catch (notificationError) {
-            console.error('Error creating notification:', notificationError);
-        }
-        
-              // send notification to admin
-              try {
-                const adminNotification =  adminNotificationModel.create({
-                    title : `New Job`,
-                    message: `${employee.name} from ${employee.company_name} has posted a new job. Please schedule it promptly.`,
-                    date: new Date(),
-                    status: 1,
-                });
-                adminNotification.save();
-            } catch (notificationError) {
-                console.error('Error creating notification:', notificationError);
-            }
+                try {
+                    const newNotification = new empNotificationModel({
+                        empId: empId,
+                        message: `your Job ${job_title} post successfully`,
+                        date: new Date(),
+                        status: 1,
+                    });
+                    await newNotification.save();
+                } catch (notificationError) {
+                    console.error('Error creating notification:', notificationError);
+                }
+                
+                // send notification to admin
+                try {
+                    const adminNotification = new adminNotificationModel({
+                        title: `New Job`,
+                        message: `${employee.name} from ${employee.company_name} has posted a new job.`,
+                        date: new Date(),
+                        status: 1,
+                    });
+                    await adminNotification.save();
+                } catch (notificationError) {
+                    console.error('Error creating notification:', notificationError);
+                }
+                
         
                 return res.status(200).json({
                     success: true,
                     message: 'Job posted successfully',
                     jobId: newJob.jobId,
-                    isPsychometricTest : isPsychometricTest
+                   
                 });
             } catch (error) {
                 console.error(error);
@@ -1403,79 +1411,92 @@ const deleteJob_Description = async (req, res) => {
 
         // Api for get jobs posted by employee
 
-        const getJobs_posted_by_employee = async( req , res)=>{
+        const getJobs_posted_by_employee = async (req, res) => {
             try {
-                     const empId = req.params.empId
-                     // check for empId
-                if(!empId)
-                {
-                    return res.status(400).json({
-                          success : false ,
-                          message : 'employer Id required'
-                    })
-                }
-        
-                  // check for employee jobs
-            const emp_jobs = await jobModel.find({
-                     emp_Id : empId,                    
-        
-            })
-        
-            if(!emp_jobs)
-            {
+              const empId = req.params.empId;
+              const { status } = req.query; 
+          
+              // Check for empId
+              if (!empId) {
                 return res.status(400).json({
-                       success : false ,
-                       message : 'No Jobs Found'
-                })
-            }
-        
-            const jobsData = emp_jobs.map(job => {
+                  success: false,
+                  message: 'Employer ID required',
+                });
+              }
+          
+              // Build the query object
+              const query = {
+                emp_Id: empId,
+              };
+          
+              // Add status filter if provided
+              if (status) {
+                if (status === '1' || status === '3') {
+                  query.status = status;
+                } else {
+                  return res.status(400).json({
+                    success: false,
+                    message: 'Invalid status value. Use 1 for active and 3 for inactive',
+                  });
+                }
+              }
+          
+              // Check for employee jobs based on the query
+              const emp_jobs = await jobModel.find(query);
+          
+              if (!emp_jobs || emp_jobs.length === 0) {
+                return res.status(400).json({
+                  success: false,
+                  message: 'No jobs found',
+                });
+              }
+          
+              // Map job data
+              const jobsData = emp_jobs.map((job) => {
                 const salary_pay = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
                 return {
-                     jobId : job.jobId,
-                    job_title: job.job_title,
-                    company_name: job.company_name,               
-                    Number_of_emp_needed: job.Number_of_emp_needed,
-                    job_type: job.job_type,
-                    job_schedule: job.job_schedule,
-                    salary_pay: salary_pay,
-                    job_Description: job.job_Description,
-                    job_Responsibility : job.job_Responsibility || null, 
-                    company_address: job.company_address,
-                    employee_email: job.employee_email,
-                    requirement_timeline: job.requirement_timeline,
-                    startDate: job.startDate,
-                    endDate: job.endDate,
-                    phone_no: job.phone_no,
-                    key_qualification: job.key_qualification,
-                    Experience: job.Experience,
-                    template_type: job.template_type,
-                    company_Industry: job.company_Industry,
-                    job_photo: job.job_photo,
-                    status: job.status,
-                    isPsychometricTest : job.isPsychometricTest,
-                    psychometric_Test : job.psychometric_Test,
-                    job_image : job.job_image
-
-
+                  jobId: job.jobId,
+                  job_title: job.job_title,
+                  company_name: job.company_name,
+                  Number_of_emp_needed: job.Number_of_emp_needed,
+                  job_type: job.job_type,
+                  job_schedule: job.job_schedule,
+                  salary_pay: salary_pay,
+                  job_Description: job.job_Description,
+                  job_Responsibility: job.job_Responsibility || null,
+                  company_address: job.company_address,
+                  employee_email: job.employee_email,
+                  requirement_timeline: job.requirement_timeline,
+                  startDate: job.startDate,
+                  endDate: job.endDate,
+                  phone_no: job.phone_no,
+                  key_qualification: job.key_qualification,
+                  Experience: job.Experience,
+                  template_type: job.template_type,
+                  company_Industry: job.company_Industry,
+                  job_photo: job.job_photo,
+                  status: job.status,
+                  isPsychometricTest: job.isPsychometricTest,
+                  psychometric_Test: job.psychometric_Test,
+                  job_image: job.job_image,
+                  location: job.location,
                 };
-            });
-        
-            return res.status(200).json({
+              });
+          
+              return res.status(200).json({
                 success: true,
                 message: 'All Jobs',
                 JobsCount: emp_jobs.length,
-                emp_jobs: jobsData
-            });
-        
+                emp_jobs: jobsData,
+              });
             } catch (error) {
-                return res.status(500).json({
-                       success : false ,
-                       message : 'server error',
-                       error_message : error.message
-                })
+              return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message,
+              });
             }
-        }
+          };
                     // Api for update the Job for the client
 
                     const updateJob = async ( req , res )=> {
@@ -1514,7 +1535,7 @@ const deleteJob_Description = async (req, res) => {
                                     await job.save()
                                     return res.status(200).json({
                                          success : true ,
-                                         message : 'job Details updated successfully'
+                                         message : 'Job details updated successfully'
                                     })
                             
                          } catch (error) {
@@ -1616,7 +1637,7 @@ const deleteJob_Description = async (req, res) => {
                 // Check for Inactive jobs
                 const InactiveJob = await jobModel.find({
                     emp_Id: client_id,
-                    status: { $in: [0, 2] }
+                    status: { $in: [0, 3] }
                 });
         
                 if (InactiveJob.length === 0) {
@@ -2154,7 +2175,8 @@ const deleteJob_Description = async (req, res) => {
                         maleCandidateCount: maleCandidateCount,
                         femaleCandidateCount: femaleCandidateCount,
                         fav_status : job.fav_status,
-                        job_image : job.job_image || ''
+                        job_image : job.job_image || '',
+                        location : job.location
                     };
                 }));
                 
@@ -2403,12 +2425,11 @@ const deleteJob_Description = async (req, res) => {
         
                 // Use regular expressions to perform partial matches
                 const jobs = await jobModel.find({
-                    status: { $ne: 3 }, // Corrected: Find jobs where status is not equal to 3
-                    job_title: { $regex: job_title, $options: 'i' }, // Case insensitive partial match for job title
-                    company_address: { $regex: company_address, $options: 'i' }, // Case insensitive partial match for company address
-                    ...filter // Spread any additional filter conditions
+                    status: 1,
+                    job_title: { $regex: job_title, $options: 'i' }, // Case insensitive
+                    company_address: { $regex: company_address, $options: 'i' },
+                    ...filter
                 });
-                
         
                 if (jobs.length === 0) {
                     return res.status(400).json({
@@ -2501,224 +2522,7 @@ const filterJob = async (req, res) => {
 };
 
 
-const convertPDFToImage = async (pdfPath, outputPath) => {
-    let file = pdfPath;
-    let opt = {
-        format: 'png',
-        out_dir: outputPath,
-        out_prefix: 'page',
-        page: null
-    };
-    
-    try {
-        await PDFPoppler.convert(file, opt);
-       
-    } catch (error) {
-        console.error("Error converting PDF:", error);
-        throw new Error('Error converting PDF');
-    }
-};
 
-const performOCR = async (imagePaths) => {
-    try {
-        let allText = '';
-        for (const imagePath of imagePaths) {
-            const { data: { text } } = await Tesseract.recognize(imagePath, 'eng', {
-                logger: info => console.log(info)
-            });
-            allText += text + '\n'; // Combine text from all images
-        }
-        return allText;
-    } catch (error) {
-        console.error('Error performing OCR:', error);
-        throw new Error('Error performing OCR');
-    }
-};
-
-const improveTextFormatting = (text) => {
-    // Add space after punctuation if it's not followed by a space
-    text = text.replace(/([.,!?;:])(?=\S)/g, '$1 ');
-
-    // Ensure space between a punctuation and the next word
-    text = text.replace(/(\S)([.,!?;:])(\S)/g, '$1$2 $3');
-
-    // Add space after a period if it's not followed by a space
-    text = text.replace(/([a-zA-Z])\.(?=\S)/g, '$1. ');
-
-    // Replace multiple spaces with a single space
-    text = text.replace(/\s{2,}/g, ' ');
-
-    // Add line breaks between sections (e.g., addresses, education)
-    text = text.replace(/([A-Z][A-Z\s]+)(\n|$)/g, '\n\n$1\n');
-
-    // Add extra line breaks for better readability
-    text = text.replace(/(\.\s+)(?=\S)/g, '$1\n\n');
-
-    // Remove extra newlines and leading/trailing spaces
-    text = text.replace(/\n{3,}/g, '\n\n');
-    text = text.trim();
-
-    return text;
-};
-
-const calculateMatchRating = (cvText, jobDescription) => {
-    // Helper function to preprocess and tokenize text
-    const preprocessText = (text) => {
-        return text.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/);
-    };
-
-    // Helper function to compute Jaccard similarity
-    const jaccardSimilarity = (setA, setB) => {
-        const intersection = new Set([...setA].filter(item => setB.has(item))).size;
-        const union = new Set([...setA, ...setB]).size;
-        return intersection / union;
-    };
-
-    // Define criteria and their weights
-    const criteria = {
-        'education': 0.25,
-        'experience': 0.35,
-        'skills': 0.35,
-        'certifications': 0.15,
-        'other': 0.15
-    };
-
-    // Define rating scale
-    const maxRating = 5;
-
-    // Initialize scores
-    let criterionScores = {};
-    Object.keys(criteria).forEach(criterion => {
-        criterionScores[criterion] = 0;
-    });
-
-    // Split job description and CV into lines
-    const jobDescriptionLines = jobDescription.split('\n').map(line => line.trim()).filter(line => line !== '');
-    const cvLines = cvText.split('\n').map(line => line.trim()).filter(line => line !== '');
-
-    // Calculate score for each criterion
-    for (const [criterion, weight] of Object.entries(criteria)) {
-        // Filter lines containing the criterion
-        const jobCriterionLines = jobDescriptionLines.filter(line => line.toLowerCase().includes(criterion));
-        let bestMatch = 0;
-
-        // Compute the best match score for this criterion
-        jobCriterionLines.forEach(jobLine => {
-            const jobTokens = new Set(preprocessText(jobLine));
-            cvLines.forEach(cvLine => {
-                const cvTokens = new Set(preprocessText(cvLine));
-                const similarity = jaccardSimilarity(jobTokens, cvTokens);
-                if (similarity > bestMatch) {
-                    bestMatch = similarity;
-                }
-            });
-        });
-
-        // Scale best match to a rating out of maxRating (1 to 5)
-        const rating = Math.round(bestMatch * maxRating);
-        criterionScores[criterion] = rating;
-    }
-
-    // Calculate the overall rating
-    let totalScore = 0;
-    for (const [criterion, weight] of Object.entries(criteria)) {
-        totalScore += criterionScores[criterion] * weight;
-    }
-
-    // Return the overall rating and individual criterion ratings
-    return {
-        overallRating: totalScore.toFixed(2),
-        individualRatings: criterionScores
-    };
-};
-
-
-
-
-
-
-
-
-const convertToHTML = (text) => {
-    let htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Job Description</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                line-height: 1.6;
-                margin: 20px;
-                padding: 0;
-            }
-            h1, h2, h3 {
-                color: #333;
-            }
-            p {
-                margin-bottom: 10px;
-            }
-            ul {
-                margin-bottom: 10px;
-                padding-left: 20px;
-            }
-            li {
-                margin-bottom: 5px;
-            }
-            table {
-                width: 100%;
-                border-collapse: collapse;
-                margin-bottom: 20px;
-            }
-            table, th, td {
-                border: 1px solid #ddd;
-            }
-            th, td {
-                padding: 10px;
-                text-align: left;
-            }
-            th {
-                background-color: #f4f4f4;
-            }
-        </style>
-    </head>
-    <body>
-        <h1>Job Description</h1>
-        ${text}
-    </body>
-    </html>
-    `;
-
-    // Convert double newlines into paragraphs
-    htmlContent = htmlContent.replace(/\n\n/g, '<p></p>');
-
-    // Convert single newlines into line breaks
-    htmlContent = htmlContent.replace(/\n/g, '<br>');
-
-    // Convert headings that are in all caps into <h2> tags
-    htmlContent = htmlContent.replace(/([A-Z][A-Z\s]+)(<br>|$)/g, '<h2>$1</h2>');
-
-    // Convert numbered lists into <li> items within <ul> tags
-    htmlContent = htmlContent
-        .replace(/(\d+\.)\s+/g, '<li>')      // Replace number bullet with <li>
-        .replace(/<\/li>\s*(\d+\.)/g, '</li><li>'); // Close current <li> before starting new one
-
-    // Wrap the entire list of <li> items in <ul> tags
-    if (htmlContent.includes('<li>')) {
-        htmlContent = htmlContent.replace(/<li>([\s\S]+?)<\/li>/g, '<ul><li>$1</li></ul>');
-    }
-
-    return htmlContent;
-};
-
-
-const convertToPlainText = (html) => {
-    return htmlToText(html, {
-        wordwrap: 130
-    });
-};
         
         
 
@@ -2726,117 +2530,193 @@ const convertToPlainText = (html) => {
 
         // APi for apply on job
 
-        const apply_on_job = async (req, res) => {
-            try {
-                const jobId = req.params.jobId;
-                const {
-                    first_Name, last_Name, user_Email, city, state, phone_no,
-                    gender, Highest_Education, job_experience, Total_experience,
-                    time_range_for_interview
-                } = req.body;
-        
-                if (!jobId) {
-                    return res.status(400).json({ success: false, message: 'Job ID required' });
-                }
-        
-                const requiredFields = ["first_Name", "last_Name", "user_Email", "city", "state", "phone_no", "gender", "Highest_Education", "job_experience", "Total_experience"];
-                for (const field of requiredFields) {
-                    if (!req.body[field]) {
-                        return res.status(400).json({ success: false, message: `Missing ${field.replace("_", " ")}` });
-                    }
-                }
-        
-                const job = await jobModel.findOne({ jobId: jobId, status: 1 });
-                if (!job) {
-                    return res.status(400).json({ success: false, message: 'Active job not found' });
-                }
-        
-                const job_Heading = job.job_title;
-                const Salary = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
-                const job_expired_Date = job.endDate;
-                const company_name = job.company_name;
-                const empId = job.emp_Id;
-        
-                const jobseeker_apply = await appliedjobModel.findOne({ user_Email: user_Email, jobId: jobId });
-                if (jobseeker_apply) {
-                    return res.status(400).json({ success: false, message: 'You already applied for this job' });
-                }
-        
-                const uploadResume = req.file;
-                if (!uploadResume || !uploadResume.filename) {
-                    return res.status(400).json({ success: false, message: 'Resume required' });
-                }
-        
-                const allowedExtensions = ['.pdf'];
-                const fileExtension = path.extname(uploadResume.originalname).toLowerCase();
-                if (!allowedExtensions.includes(fileExtension)) {
-                    return res.status(400).json({ success: false, message: 'Only PDF files are allowed for resume upload' });
-                }
-        
-                const jd = await jobDescription_model.findOne({ jobTitle: job_Heading });
-                const jobDescription = jd.job_Description;
-                const job_Responsibilities = jd.Responsibilities;
-                const combine_jd = `${jobDescription} \n\n ${job_Responsibilities}`;
-                const htmlCombineJd = convertToHTML(combine_jd);
-                const plainTextCombineJd = convertToPlainText(htmlCombineJd);
-        
-                const candidateCvPath = uploadResume.path;
-                const imagesDir = path.join(__dirname, '..', 'images');
-                if (!fs.existsSync(imagesDir)) {
-                    fs.mkdirSync(imagesDir, { recursive: true });
-                }
-        
-                await convertPDFToImage(candidateCvPath, imagesDir);
-                const imageFiles = fs.readdirSync(imagesDir).filter(file => file.startsWith('page') && file.endsWith('.png'));
-                const imagePaths = imageFiles.map(file => path.join(imagesDir, file));
-                const cvText = await performOCR(imagePaths);
-                const improvedCvText = improveTextFormatting(cvText);
-        
-                const MatchRating = await calculateMatchRating(improvedCvText, plainTextCombineJd);
-               
-                
-                imageFiles.forEach(file => fs.unlinkSync(path.join(imagesDir, file)));
-        
-                const newData = new appliedjobModel({
-                    first_Name, last_Name, user_Email, city, state, phone_no, gender,
-                    Highest_Education, job_experience, Total_experience, time_range_for_interview,
-                    uploadResume: uploadResume.filename, job_Heading, Salary, job_expired_Date,
-                    job_status: job.status, jobId: jobId, candidateStatus: 1, job_title: job.job_title,
-                    candidate_rating : MatchRating.overallRating,
+                    const apply_on_job = async (req, res) => {
+                        try {
+                            const jobId = req.params.jobId;
+                            const {
+                                first_Name,
+                                last_Name,
+                                user_Email,
+                                city,
+                                state,
+                                phone_no,
+                                gender,
+                                Highest_Education,
+                                job_experience,
+                                Total_experience,
+                                time_range_for_interview
+                            } = req.body;
+                    
+                            // Check for JobId
+                            if (!jobId) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: 'job Id required'
+                                });
+                            }
+                                        if(!city)
+                                        {
+                                            return res.status(400).json({
+                                                 success : false ,
+                                                 message : 'Required Destrict'
+                                            })
+                                        }
+                                        if(!state)
+                                            {
+                                                return res.status(400).json({
+                                                     success : false ,
+                                                     message : 'Required Country'
+                                                })
+                                            }
+                            // Check for required fields
+                            const requiredFields = ["first_Name", "last_Name", "user_Email", 
+                                 "phone_no", "gender", "Highest_Education", "job_experience",
+                                "Total_experience", 
+                            ];
+                    
+                            for (const field of requiredFields) {
+                                if (!req.body[field]) {
+                                    return res.status(400).json({
+                                        message: `Missing ${field.replace("_", " ")}`,
+                                        success: false,
+                                    });
+                                }
+                            }
+                    
+                            // Check for job
+                            const job = await jobModel.findOne({
+                                jobId: jobId,
+                                status : 1
+                            });
+                            if (!job) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: 'active job not found'
+                                });
+                            }
+                    
+                            // Access job Details
+                            const job_Heading = job.job_title;
+                            const Salary = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
+                            const job_expired_Date = job.endDate;
+                            const job_status = job.status;
+                            const company_name = job.company_name;
+                            const empId = job.emp_Id
+                    
+                            // Check if job seeker has already applied for this job
+                            const jobseeker_apply = await appliedjobModel.findOne({
+                                user_Email : user_Email,
+                                jobId: jobId
+                            });
+                    
+                            if (jobseeker_apply) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: 'you already applied on this job'
+                                });
+                            }
+                                            
+                                                // Upload resume file
 
-                    company_location: job.company_address
-                });
-        
-                await newData.save();
-        
-                const newNotification = await empNotificationModel.create({
-                    empId: empId, message: `${first_Name} applied for job ${job_Heading}`, date: new Date(), status: 1
-                });
-                await newNotification.save();
-        
-                const emailContent = `<!DOCTYPE html>
-                <html lang="en">
-                <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-                <body style="font-family: Arial, sans-serif; background-color: #f2f2f2; padding: 20px;">
-                    <div style="background-color: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
-                        <h2 style="color: #333; text-align: center; margin-bottom: 20px;">Job Application Confirmation</h2>
-                        <p>Thank you for applying for the <strong>${job_Heading}</strong> position at <strong>${company_name}</strong>. Your application has been received. We appreciate your interest.</p>
-                        <p>Your job application for "<strong>${job_Heading}</strong>" has been successfully received. A confirmation email will be sent to you shortly.</p>
-                        <p>If you have any questions, feel free to contact us.</p>
-                        <p><strong>${company_name}</strong></p>
-                    </div>
-                </body>
-                </html>`;
-        
-                sendjobEmail(user_Email, `Job Application Confirmation`, emailContent);
-        
-                return res.status(200).json({ success: true, message: 'Job applied successfully' });
-            } catch (error) {
-                console.error('Error applying for job:', error);
-                return res.status(500).json({ success: false, message: 'Server error', error_message: error.message });
-            }
-        };
-        
+                        const uploadResume = req.file ? req.file : null;
+                        if (!uploadResume) {
+                            return res.status(400).json({
+                                success: false,
+                                message: 'CV required'
+                            });
+                        }
+
+                        // Check if the uploaded file is a PDF
+                        const allowedExtensions = ['.pdf'];
+                        let fileExtension = uploadResume.originalname ? uploadResume.originalname.split('.').pop().toLowerCase() : null;
+                        fileExtension = fileExtension.trim()
+
+
+                        if (!fileExtension || !allowedExtensions.includes('.' + fileExtension)) {
+                        
+                            return res.status(400).json({
+                                success: false,
+                                message: 'Only PDF files are allowed for resume upload'
+                            });
+                        }
+
+                            // Add new data
+                            const newData = new appliedjobModel({
+                                first_Name,
+                                last_Name,
+                                user_Email,
+                                city,
+                                state,
+                                phone_no,
+                                gender,
+                                Highest_Education,
+                                job_experience,
+                                Total_experience,
+                                time_range_for_interview,
+                                uploadResume : uploadResume.filename,
+                                job_Heading,
+                                Salary,
+                                job_expired_Date,
+                                job_status,
+                                jobId : jobId,
+                                candidateStatus : 1,
+                                job_title : job.job_title,
+                                company_location : job.company_address
+                            });
+                            
+                            try {
+                                var newNotification = await empNotificationModel.create({
+                                    empId: empId,
+                                    message: `${first_Name} applied on job ${job_Heading}`,
+                                    date: new Date(),
+                                    status: 1,
+                                });
+                            
+                                await newNotification.save();
+                            } catch (notificationError) {
+                                // Handle notification creation error
+                                console.error('Error creating notification:', notificationError);
+                                // Optionally, you can choose to return an error response here or handle it in another way
+                            }
+                            await newData.save();
+                    
+                            const emailContent = `<!DOCTYPE html>
+                            <html lang="en">
+                            <head>
+                                <meta charset="UTF-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <title></title>
+                            </head>
+                            <body style="font-family: Arial, sans-serif; background-color: #f2f2f2; padding: 20px;">
+                
+                                <div style="background-color: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+                                    <h2 style="color: #333; text-align: center; margin-bottom: 20px;">Job Application Confirmation</h2>
+                                    <p>Thank you for applying for the <strong> ${job_Heading} </strong> position at <strong> ${company_name}</strong>.  Your application has been received, and we appreciate your interest in joining our team. Our hiring team will carefully review your qualifications, and if your skills and experience align with our requirements, we will be in touch to discuss next steps. In the meantime, feel free to explore more about our company and the opportunities we offer. Thank you again for considering <strong> ${company_name} </strong> as your potential employer.</p>
+                                    <p>Your job application for " <strong> ${job_Heading} </strong> " has been successfully received. A confirmation email will be sent to you shortly.</p>
+                                    <p>If you have any questions, feel free to contact us.</p> <br>
+                                
+
+                                 <P><strong> ${company_name} </strong> </P> 
+
+               
+                            </body>
+                            </html>`;
+                    
+                            sendjobEmail  (user_Email, `Job Application Confirmation ..!`, emailContent);
+
+                    
+                            return res.status(200).json({
+                                success: true,
+                                message: 'job Applied successfully'
+                            });
+                        } catch (error) {
+                            return res.status(500).json({
+                                success: false,
+                                message: 'server error',
+                                error_message: error.message
+                            });
+                        }
+                    }
         
                                                             /* Notification section */
     // Api for get Notification of the particular employee
@@ -3019,13 +2899,13 @@ const convertToPlainText = (html) => {
                                                           {
                                                             return res.status(400).json({
                                                                   success : false ,
-                                                                  message : 'no term & Condition Details found'
+                                                                  message : 'No Term & Condition Details found'
                                                             })
                                                           }
                                                               
                                                             return res.status(200).json({
                                                                  success : true ,
-                                                                 message : 'term & conditions',
+                                                                 message : 'term & Conditions',
                                                                  Details : get_t_c
                                                             })
                                                         
@@ -3436,13 +3316,21 @@ const client_dashboardCount = async (req, res) => {
                                                                     home_address,
                                                                     location
                                                                 } = req.body;
-                                                        
+                                                                
+
+                                                                if(!city)
+                                                                    {
+                                                                        return res.status(400).json({
+                                                                             success : false ,
+                                                                             message : 'Required Destrict'
+                                                                        })
+                                                                    }
                                                                 // Required fields
                                                                 const requiredFields = [
                                                                     'first_Name',
                                                                     'last_Name',
                                                                     'email',
-                                                                    'city',
+                                                                    
                                                                     'phone_no',
                                                                     'gender',
                                                                     'job_title',
@@ -3753,141 +3641,200 @@ const client_dashboardCount = async (req, res) => {
 
 
 
- const download_jd = async (req, res) => {
-    try {
-        const jd_id = req.params.jd_id;
-    
-        // Check for jd_id
-        if (!jd_id) {
-            return res.status(400).json({
-                success: false,
-                message: 'Job ID required'
-            });
-        }
-    
-        // Check for JD
-        const jd = await jobDescription_model.findById(jd_id);
+         const download_jd = async (req, res) => {
+            try {
+                const jd_id = req.params.jd_id;
         
-        if (!jd) {
-            return res.status(400).json({
-                success: false,
-                message: 'Job Description not found'
-            });
-        }
-    
-        // Access job details
-        const { jobTitle, job_Description, Responsibilities } = jd;
-    
-        // Create a new PDF document
-        const pdfDoc = await PDFDocument.create();
-        const page = pdfDoc.addPage();
-        const { width, height } = page.getSize();
-    
-        // Set some basic styles
-        const fontSize = 12;
-        const titleFontSize = 20;
-        const headingFontSize = 16;
-        const textColor = rgb(0, 0, 0);
-        const margin = 50;
-        const maxWidth = width - 2 * margin;
-    
-        // Load a standard font
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    
-        // Function to wrap text
-        const wrapText = (text, font, fontSize, maxWidth) => {
-            const words = text.split(' ');
-            let lines = [];
-            let currentLine = words[0];
-    
-            for (let i = 1; i < words.length; i++) {
-                const word = words[i];
-                const width = font.widthOfTextAtSize(currentLine + ' ' + word, fontSize);
-                if (width < maxWidth) {
-                    currentLine += ' ' + word;
-                } else {
-                    lines.push(currentLine);
-                    currentLine = word;
+                if (!jd_id) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Job ID required',
+                    });
                 }
-            }
-            lines.push(currentLine);
-            return lines;
-        };
-    
-        // Add job title
-        page.drawText(jobTitle, {
-            x: margin,
-            y: height - margin,
-            size: titleFontSize,
-            color: rgb(0, 0, 1),
-            font
-        });
-    
-        // Add job description
-        page.drawText('Job Description', {
-            x: margin,
-            y: height - margin - 40,
-            size: headingFontSize,
-            color: rgb(0, 0, 1),
-            font
-        });
-    
-        const descriptionLines = wrapText(job_Description, font, fontSize, maxWidth);
-        let y = height - margin - 60;
-        descriptionLines.forEach(line => {
-            page.drawText(line, {
-                x: margin,
-                y,
-                size: fontSize,
-                color: textColor,
-                font
-            });
-            y -= fontSize + 4;
-        });
-    
-        // Add job responsibilities
-        page.drawText('Job Responsibilities', {
-            x: margin,
-            y: y - 20,
-            size: headingFontSize,
-            color: rgb(0, 0, 1),
-            font
-        });
-    
-        y -= 40;
-        Responsibilities.split('\n').forEach(item => {
-            const responsibilityLines = wrapText(`- ${item.trim()}`, font, fontSize, maxWidth);
-            responsibilityLines.forEach(line => {
-                page.drawText(line, {
+        
+                const jd = await jobDescription_model.findById(jd_id);
+                if (!jd) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Job Description not found',
+                    });
+                }
+        
+                const { jobTitle, job_Description, Responsibilities } = jd;
+        
+                const pdfDoc = await PDFDocument.create();
+                const page = pdfDoc.addPage();
+                const { width, height } = page.getSize();
+        
+                const fontSize = 12;
+                const titleFontSize = 20;
+                const headingFontSize = 16;
+                const textColor = rgb(0, 0, 0);
+                const bulletColor = rgb(0.1, 0.1, 0.1);
+                const margin = 50;
+                const maxWidth = width - 2 * margin;
+        
+                const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        
+                const wrapText = (text, font, fontSize, maxWidth) => {
+                    const words = text.split(' ');
+                    let lines = [];
+                    let currentLine = words[0];
+        
+                    for (let i = 1; i < words.length; i++) {
+                        const word = words[i];
+                        const width = font.widthOfTextAtSize(currentLine + ' ' + word, fontSize);
+                        if (width < maxWidth) {
+                            currentLine += ' ' + word;
+                        } else {
+                            lines.push(currentLine);
+                            currentLine = word;
+                        }
+                    }
+                    lines.push(currentLine);
+                    return lines;
+                };
+        
+                const renderNode = (node, x, y, font, fontSize, maxWidth) => {
+                    let currentY = y;
+        
+                    const drawText = (text, options) => {
+                        const lines = wrapText(text, options.font, options.size, maxWidth);
+                        lines.forEach(line => {
+                            page.drawText(line, {
+                                x: options.x,
+                                y: currentY,
+                                size: options.size,
+                                color: options.color,
+                                font: options.font,
+                            });
+                            currentY -= options.size + 4;
+                        });
+                    };
+        
+                    if (node.nodeName === '#text') {
+                        const text = node.value.trim();
+                        if (text) {
+                            drawText(text, { x, size: fontSize, color: textColor, font });
+                        }
+                    } else if (node.nodeName === 'b' || node.nodeName === 'strong') {
+                        node.childNodes.forEach(childNode => {
+                            if (childNode.nodeName === '#text') {
+                                const text = childNode.value.trim();
+                                if (text) {
+                                    drawText(text, { x, size: fontSize, color: textColor, font });
+                                }
+                            } else {
+                                currentY = renderNode(childNode, x, currentY, font, fontSize, maxWidth);
+                            }
+                        });
+                    } else if (node.nodeName === 'i' || node.nodeName === 'em') {
+                        node.childNodes.forEach(childNode => {
+                            if (childNode.nodeName === '#text') {
+                                const text = childNode.value.trim();
+                                if (text) {
+                                    drawText(text, { x, size: fontSize, color: textColor, font });
+                                }
+                            } else {
+                                currentY = renderNode(childNode, x, currentY, font, fontSize, maxWidth);
+                            }
+                        });
+                    } else if (node.nodeName === 'p' || node.nodeName === 'div') {
+                        node.childNodes.forEach(childNode => {
+                            currentY = renderNode(childNode, x, currentY, font, fontSize, maxWidth);
+                        });
+                        currentY -= 10; // Extra space after paragraph
+                    } else if (node.nodeName === 'ul' || node.nodeName === 'ol') {
+                        node.childNodes.forEach((liNode, index) => {
+                            if (liNode.nodeName === 'li') {
+                                const bullet = node.nodeName === 'ul' ? '• ' : `${index + 1}. `;
+                                const bulletWidth = font.widthOfTextAtSize(bullet, fontSize);
+                                
+                                // Draw the bullet
+                                page.drawText(bullet, {
+                                    x: x,
+                                    y: currentY,
+                                    size: fontSize,
+                                    color: bulletColor,
+                                    font,
+                                });
+                                
+                                // Draw the list item content with indentation
+                                currentY = renderNode(liNode, x + bulletWidth + 10, currentY, font, fontSize, maxWidth - bulletWidth - 10);
+                            }
+                        });
+                        currentY -= 10; // Extra space after list
+                    } else {
+                        node.childNodes.forEach(childNode => {
+                            currentY = renderNode(childNode, x, currentY, font, fontSize, maxWidth);
+                        });
+                    }
+        
+                    return currentY;
+                };
+        
+                // Parse HTML and render content
+                const parseAndRenderHTML = (html, startY) => {
+                    const fragment = parse5.parseFragment(html);
+                    let currentY = startY;
+        
+                    fragment.childNodes.forEach(node => {
+                        currentY = renderNode(node, margin, currentY, font, fontSize, maxWidth);
+                    });
+        
+                    return currentY;
+                };
+        
+                // Add job title
+                page.drawText(jobTitle, {
                     x: margin,
-                    y,
-                    size: fontSize,
-                    color: textColor,
-                    font
+                    y: height - margin,
+                    size: titleFontSize,
+                    color: rgb(0, 0, 1),
+                    font,
                 });
-                y -= fontSize + 4;
-            });
-        });
-    
-        // Serialize the PDFDocument to bytes (a Uint8Array)
-        const pdfBytes = await pdfDoc.save();
-    
-        // Set response headers to download the PDF
-        res.set({
-            'Content-Type': 'application/pdf',
-            'Content-Length': pdfBytes.length,
-            'Content-Disposition': `attachment; filename=job_description.pdf`,
-        });
-    
-        res.send(Buffer.from(pdfBytes));
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error_message: error.message
-        });
-    }
- }
+        
+                // Add job description
+                page.drawText('Job Description', {
+                    x: margin,
+                    y: height - margin - 40,
+                    size: headingFontSize,
+                    color: rgb(0, 0, 1),
+                    font,
+                });
+        
+                let y = height - margin - 60;
+                y = parseAndRenderHTML(job_Description, y);
+        
+                // Add job responsibilities
+                page.drawText('Job Responsibilities', {
+                    x: margin,
+                    y: y - 20,
+                    size: headingFontSize,
+                    color: rgb(0, 0, 1),
+                    font,
+                });
+        
+                y -= 40;
+                parseAndRenderHTML(Responsibilities, y);
+        
+                const pdfBytes = await pdfDoc.save();
+        
+                res.set({
+                    'Content-Type': 'application/pdf',
+                    'Content-Length': pdfBytes.length,
+                    'Content-Disposition': `attachment; filename=job_description.pdf`,
+                });
+        
+                res.send(Buffer.from(pdfBytes));
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message,
+                });
+            }
+        };
 
 
     
@@ -3895,7 +3842,7 @@ const client_dashboardCount = async (req, res) => {
    const share_cv = async (req, res) => {
     try {
         const candidate_id = req.params.candidate_id;
-        const { to, from, subject, message, shareVia, country_code, receiver_no } = req.body;
+        const { to, from, subject, message } = req.body;
 
         // Check for candidate_id
         if (!candidate_id) {
@@ -3905,12 +3852,37 @@ const client_dashboardCount = async (req, res) => {
             });
         }
 
-        // Check for shareVia method
-        if (!shareVia || ![1, 2].includes(shareVia)) {
+        // Check for required fields
+        if (!to || (typeof to === 'string' && !validator.isEmail(to)) || (Array.isArray(to) && to.length === 0)) {
             return res.status(400).json({
                 success: false,
-                message: 'Invalid share method. Please choose either 1 (email) or 2 (WhatsApp).'
+                message: 'Receiver email(s) required'
             });
+        }
+        if (typeof to === 'string') {
+            to = [to];  // Convert to a single-element array
+        }
+        if (!from || !validator.isEmail(from)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Valid sender email required'
+            });
+        }
+        if (!subject) {
+            return res.status(400).json({
+                success: false,
+                message: 'Subject is required'
+            });
+        }
+
+        // Validate receiver emails
+        for (let email of to) {
+            if (!validator.isEmail(email)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Invalid email address in receiver list: ${email}`
+                });
+            }
         }
 
         // Check for candidate profile
@@ -3931,112 +3903,49 @@ const client_dashboardCount = async (req, res) => {
             });
         }
 
-       
+        // Setup nodemailer transporter
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false, // true for 465, false for other ports
+            requireTLS: true,
+            auth: {
+                user: process.env.SMTP_MAIL,
+                pass: process.env.SMTP_PASSWORD,
+            },
+        });
 
-        if (shareVia === 1) { // Email sharing
-            // Check for required fields
-            if (!to || (typeof to === 'string' && !validator.isEmail(to)) || (Array.isArray(to) && to.length === 0)) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Receiver email(s) required'
-                });
-            }
-            if (typeof to === 'string') {
-                to = [to];  // Convert to a single-element array
-            }
-            if (!from || !validator.isEmail(from)) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Valid sender email required'
-                });
-            }
-            if (!subject) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Subject is required'
-                });
-            }
-
-            // Validate receiver emails
-            for (let email of to) {
-                if (!validator.isEmail(email)) {
-                    return res.status(400).json({
-                        success: false,
-                        message: `Invalid email address in receiver list: ${email}`
-                    });
+        // Prepare email options
+        const mailOptions = {
+            from: from,
+            to: to.join(', '), 
+            subject: subject,
+            text: message || 'Please find the attached CV.',
+            attachments: [
+                {
+                    filename: candidate.uploadResume,
+                    path: candidate_cv,  
+                    contentType: 'application/pdf'
                 }
-            }
+            ]
+        };
 
-            // Setup nodemailer transporter
-            const transporter = nodemailer.createTransport({
-                host: 'smtp.gmail.com',
-                port: 587,
-                secure: false, // true for 465, false for other ports
-                requireTLS: true,
-                auth: {
-                    user: process.env.SMTP_MAIL,
-                    pass: process.env.SMTP_PASSWORD,
-                },
-            });
-
-            // Prepare email options
-            const mailOptions = {
-                from: from || client_number,  // Use client_number if from is not provided
-                to: to.join(', '),
-                subject: subject,
-                text: message || 'Please find the attached CV.',
-                attachments: [
-                    {
-                        filename: candidate.uploadResume,
-                        path: candidate_cv,
-                        contentType: 'application/pdf'
-                    }
-                ]
-            };
-
-            // Send email
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    return res.status(500).json({
-                        success: false,
-                        message: 'Error sending email',
-                        error_message: error.message
-                    });
-                } else {
-                    return res.status(200).json({
-                        success: true,
-                        message: 'Email sent successfully',
-                    });
-                }
-            });
-
-        } else if (shareVia === 2) { // WhatsApp sharing
-            if (!country_code) {
-                return res.status(400).json({
+        // Send email
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                return res.status(500).json({
                     success: false,
-                    message: 'Country code are required for WhatsApp'
+                    message: 'Error sending email',
+                    error_message: error.message
+                });
+            } else {
+                return res.status(200).json({
+                    success: true,
+                    message: 'Email sent successfully',
+                    
                 });
             }
-            if (!receiver_no) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'receiver_no  are required for WhatsApp'
-                });
-            }
-
-
-
-            // Prepare WhatsApp message with CV URL
-            const cvURL = `http://192.168.1.74:4102/${candidate.uploadResume}`;
-            const whatsappMessage = encodeURIComponent(message || `Please find the attached CV: ${cvURL}`);
-            const whatsappURL = `https://wa.me/${country_code}${receiver_no}?text=${cvURL}`;
-
-            return res.status(200).json({
-                success: true,
-                message: 'CV URL shared via WhatsApp',
-                whatsappURL: whatsappURL
-            });
-        }
+        });
 
     } catch (error) {
         return res.status(500).json({
@@ -4045,8 +3954,7 @@ const client_dashboardCount = async (req, res) => {
             error_message: error.message
         });
     }
-};
-
+}; 
 
 
   // Api for save candidate profile 
@@ -4186,7 +4094,447 @@ const client_dashboardCount = async (req, res) => {
         }
     };
     
+// Api for update candidate rating 
+    const update_candidate_rating = async (req, res) => {
+        try {
+            const candidate_id = req.params.candidate_id;
+            const rating = req.body.rating;
+    
+            // Check for candidate ID
+            if (!candidate_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Candidate ID is required'
+                });
+            }
+    
+            // Check if rating is provided and valid
+            if (rating === undefined || isNaN(rating) || rating < 1 || rating > 5) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Valid rating is required (1 to 5)'
+                });
+            }
+    
+            // Check for candidate
+            const candidate = await appliedjobModel.findOne({ _id: candidate_id });
+            if (!candidate) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Candidate not found'
+                });
+            }
+    
+            // Update candidate rating
+            candidate.candidate_rating = rating;
+            await candidate.save();
+    
+            return res.status(200).json({
+                success: true,
+                message: 'Rating updated successfully'
+            });
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
+        }
+    };
 
+// Api for get female candidate for client 
+const get_female_candidate_for_client = async (req, res) => {
+    try {
+        const client_id = req.params.client_id;
+        
+        // Check for client id
+        if (!client_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Client Id is required'
+            });
+        }
+
+        // Check for client existence
+        const client = await employeeModel.findById(client_id);
+        if (!client) {
+            return res.status(400).json({
+                success: false,
+                message: 'Client not found'
+            });
+        }
+
+        // Check total job posted by client
+        const totalJobs = await jobModel.find({ emp_Id: client_id });
+        
+  
+
+        // Check for female candidates
+        const femaleCandidates = await appliedjobModel.find({ jobId: { $in: totalJobs.map(job => job.jobId) }, gender: 'Female' }).sort({ createdAt : -1 }).lean()
+       
+
+        
+
+        return res.status(200).json({
+            success: true,
+            message: 'Female Candidate Details', 
+            femaleCandidate :  femaleCandidates
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+    
+// Api for male candidate for client
+const get_male_candidate_for_client = async (req, res) => {
+    try {
+        const client_id = req.params.client_id;
+        
+        // Check for client id
+        if (!client_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Client Id is required'
+            });
+        }
+
+        // Check for client existence
+        const client = await employeeModel.findById(client_id);
+        if (!client) {
+            return res.status(400).json({
+                success: false,
+                message: 'Client not found'
+            });
+        }
+
+        // Check total job posted by client
+        const totalJobs = await jobModel.find({ emp_Id: client_id });
+        
+  
+
+        // Check for male candidates
+        const maleCandidates = await appliedjobModel.find({ jobId: { $in: totalJobs.map(job => job.jobId) }, gender: 'Male' }).sort({ createdAt : -1 }).lean()
+       
+
+        
+
+        return res.status(200).json({
+            success: true,
+            message: 'male Candidate Details', 
+            maleCandidate :  maleCandidates
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+// Api for get all candidate  for client
+const get_all_candidate_for_client = async (req, res) => {
+    try {
+        const client_id = req.params.client_id;
+        const gender = req.query.gender;  
+
+        // Check for client id
+        if (!client_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Client Id is required'
+            });
+        }
+
+        // Check for client existence
+        const client = await employeeModel.findById(client_id);
+        if (!client) {
+            return res.status(400).json({
+                success: false,
+                message: 'Client not found'
+            });
+        }
+
+        // Check total jobs posted by client
+        const totalJobs = await jobModel.find({ emp_Id: client_id });
+
+        // Check for all candidates
+        const allCandidates = await appliedjobModel
+            .find({ jobId: { $in: totalJobs.map(job => job.jobId) } })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        // Apply gender filter if provided, otherwise return all candidates
+        let filteredCandidates = allCandidates;
+        if (gender) {
+            if (gender === "Male" || gender === "Female") {
+                filteredCandidates = allCandidates.filter(candidate => candidate.gender === gender);
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid gender value"
+                });
+            }
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'All Candidate Details',
+            candidates: filteredCandidates
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+
+
+// Api for Build cv for candidate
+
+const build_cv = async (req, res) => {
+
+    try {
+        const {
+            firstName,
+            lastName,
+            city,
+            country,
+            zip,
+            phoneNo,
+            userEmail,
+            jobTitleSummary,
+            templateType
+        } = req.body;
+
+        // Initialize jobExperience, education, skills, etc. as empty arrays
+        let jobExperience = [];
+        let education = [];
+        let skills = [];
+        let certificates = [];
+        let languagesKnown = [];
+        let websitesAndSocialLinks = [];
+        let awardsAndAchievements = [];
+
+        // Parse arrays/objects from strings if provided
+        if (req.body.jobExperience) {
+            if (req.body.jobExperience !== '') {
+                jobExperience = JSON.parse(req.body.jobExperience);
+            }
+        }
+        if (req.body.education) {
+            if (req.body.education !== '') {
+                education = JSON.parse(req.body.education);
+            }
+        }         
+        if (req.body.skills) {
+            if (req.body.skills !== '') {
+                skills = JSON.parse(req.body.skills);
+            }
+        }
+        if (req.body.certificates) {
+            if (req.body.certificates !== '') {
+                certificates = JSON.parse(req.body.certificates);
+            }
+        }
+        if (req.body.languagesKnown) {
+            if (req.body.languagesKnown !== '') {
+                languagesKnown = JSON.parse(req.body.languagesKnown);
+            }
+        }   
+        if (req.body.websitesAndSocialLinks) {
+            if (req.body.websitesAndSocialLinks !== '') {
+                websitesAndSocialLinks = JSON.parse(req.body.websitesAndSocialLinks);
+            }
+        }
+        if (req.body.awardsAndAchievements) {
+            if (req.body.awardsAndAchievements !== '') {
+                awardsAndAchievements = JSON.parse(req.body.awardsAndAchievements);
+            }
+        }
+
+        // Handling file upload (profileImage)
+        let profileImage = '';
+        if (req.file) {
+            profileImage = req.file.filename;
+        }
+
+        // Initialize a new CV document
+        let newCv = new CvBuilderModel({
+            firstName,
+            lastName,
+            city,
+            country,
+            zip,
+            phoneNo,
+            userEmail,
+            jobTitleSummary,
+            templateType,
+            profileImage: profileImage
+        });
+
+        // Add job experience
+        if (jobExperience.length > 0) {
+            jobExperience.forEach(exp => {
+                if (exp.isCurrentlyWorking === 1) {
+                    exp.endDate = undefined;  
+                }
+                newCv.jobExperience.push(exp);
+            });
+        }
+
+        // Add education
+        if (education.length > 0) {
+            education.forEach(edu => {
+                if (edu.graduationDate && edu.graduationDate.isStillEnrolled === 1) {
+                    edu.graduationDate.end_Date = undefined;  
+                }
+                newCv.Education.push(edu);
+            });
+        }
+
+        // Add skills
+        if (skills.length > 0) {
+            skills.forEach(skill => {
+                newCv.skills.push(skill);
+            });
+        }
+
+        // Add certificates
+        if (certificates.length > 0) {
+            certificates.forEach(certificate => {
+                newCv.certificates.push(certificate);
+            });
+        }
+
+        // Add languages known
+        if (languagesKnown.length > 0) {
+            languagesKnown.forEach(language => {
+                newCv.languagesKnown.push(language);
+            });
+        }
+
+        // Add websites and social links
+        newCv.websitesAndSocialLinks = websitesAndSocialLinks;
+
+        // Add awards and achievements
+        if (awardsAndAchievements.length > 0) {
+            awardsAndAchievements.forEach(award => {
+                newCv.awardsAndAchievements.push(award);
+            });
+        }
+
+        // Save the new CV to the database
+        await newCv.save();
+
+        // Send success response with status 200 (created)
+        return res.status(200).json({
+            success: true,
+            message: 'CV Build Successfully',
+            data: newCv
+        });
+    } catch (error) {
+        // Handle server error
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+                                          /* online courses enq  */
+       // Api for enquery for online courses
+
+           const online_course_enq = async ( req , res)=> {
+                try {
+                           const course_id = req.params.course_id
+
+                           const { first_name , last_name , email , phone_no , message } = req.body
+
+                             // check for course_id
+                             if(!course_id)
+                             {
+                                return res.status(400).json({
+                                     success : false ,
+                                     message : 'course_id required'
+                                })
+                             }
+                         
+
+                             // check for course
+                             const course = await cms_online_courses_Model.findOne({
+                                   _id : course_id
+                             })
+
+                             if(!course)
+                             {
+                                return res.status(400).json({
+                                     success : false ,
+                                     message : 'No course Found'
+                                })
+                             }
+
+
+                        // check for required fields
+                           
+                        const requiredFields = [ 'first_name' , 'last_name' , 'email' , 'phone_no' , 'message']
+                        for(let field of requiredFields)
+                        {
+                              if(!req.body[field])
+                              {
+                                   return res.status(400).json({
+                                       success : false ,
+                                       message : `Required ${field.replace('_', ' ')}`
+                                   })
+                              }
+                        }
+
+                        // check for already  generate enq
+                            const enq_exist = await online_courses_enq_model.findOne({ email , course_id })
+                            if(enq_exist)
+                            {
+                                return res.status(400).json({
+                                     success : false ,
+                                     message : 'you already send the enquiry'
+                                })
+                            }
+
+                            
+                              // add new enquiry
+                                    const new_enq = new online_courses_enq_model({
+                                          first_name,
+                                          last_name,
+                                          email,
+                                          phone_no,
+                                          course_id,
+                                          message,
+                                          status : 1
+                                    })
+
+                                       await new_enq.save()
+                                       return res.status(200).json({
+                                           success : true,
+                                           message : 'Enquiry Generated Successfully'
+                                       })
+                        
+                } catch (error) {
+                     return res.status(500).json({
+                         success : false ,
+                         message : 'Server error',
+                         error_message : error.message
+                     })
+                }
+           }
+
+           
         
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
@@ -4194,11 +4542,16 @@ module.exports = {
     seenNotification, unseenNotificationCount , deleteJob , activejobs_by_client , Inactivejobs_by_client ,filterJob,
     getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts , deleteCandidate,
     cms_getJobs_posted_procedure_section1 , cms_get_need_any_job_section ,get_cms_post_your_job , cms_getjob_market_data,
-    addJobTitle , alljobTitle , deletejobTitle , psychometric_questions , getAll_psychometric_questions , export_candidate,
-    addQuestion , getquestions , getAllTest , deletepsychometrcTest , deletequestion_in_Test , getTest ,client_dashboardCount,
+    addJobTitle , alljobTitle , deletejobTitle ,  export_candidate , psychometric_questions , getAll_psychometric_questions ,
+    getquestions ,  deletepsychometrcTest , add_personality_test_question , getAll_psychometric_personal_ability_questions,
+    get_personal_ability_question , Delete_personal_ability_ques
+     ,client_dashboardCount,
     forgetPassOTP,  verifyOTP  ,  clientResetPass,  create_contactUS , getJob , addJob_Description , alljobDescription ,
     deleteJob_Description , getJd , fixit_finder , uploadResume , get_upload_section_candidates , 
     candidate_recruitment_process_for_uploaded_candidate , get_successfull_candidate , all_active_jobs_Count_with_title ,
     blog_section_comment , get_all__blog_section_comments , updateJob , download_jd , share_cv , save_candidate_profile_for_later ,
-    get_saved_candidate_profile
+    get_saved_candidate_profile , update_candidate_rating ,  get_female_candidate_for_client , get_male_candidate_for_client,
+    build_cv , get_all_candidate_for_client ,
+
+    online_course_enq
 } 

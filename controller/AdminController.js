@@ -54,21 +54,18 @@ const cms_online_courses_Model = require('../model/cms_online_cources')
 const cms_home_Model = require("../model/cms_Home")
 const job_status_Email = require("../utils/job_email")
 
+const candidate_cv_rating_Model = require('../model/candidateprofileRating')
+const online_courses_enq_model = require('../model/online_course_enq')
+
 
 
 
 const fs = require('fs')
 const pdfParse = require('pdf-parse');
-const pretty = require('pretty')
-const { NlpManager } = require('node-nlp');
-const PDFPoppler = require("pdf-poppler");
-const Tesseract = require('tesseract.js');
-const { PDFDocument } = require('pdf-lib');
+const natural = require('natural');
 
 const mammoth = require('mammoth');
 const { execSync } = require('child_process')
-const { htmlToText } = require('html-to-text');
-
 
 
 
@@ -524,7 +521,7 @@ const { htmlToText } = require('html-to-text');
                     title : 'password reset',
                     message: `Your account password reset successfully`,
                     date: new Date(),
-                    status : 1,
+                    status: 1,
                 });
                 adminNotification.save();
             } catch (notificationError) {
@@ -1207,6 +1204,18 @@ const { htmlToText } = require('html-to-text');
                     message: 'Candidate ID required'
                 });
             }
+            if (!emailSubject) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'emailSubject required'
+                });
+            }
+            if (!emailContent) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'emailContent required'
+                });
+            }
     
             // Validate seeker_status
             const validStatuses = [
@@ -1256,43 +1265,43 @@ const { htmlToText } = require('html-to-text');
                 case 'schedule interview':
                     candidate_status = 2;
                     cStatus = 2;
-                    emailSubjectText = emailSubject || 'Your Interview Has been Scheduled ..!';
-                    emailContentText = emailContent || `Your interview has been scheduled. Please check your email for more details.`;
+                    emailSubjectText = emailSubject 
+                    emailContentText = emailContent 
                     break;
     
                 case 'assessment':
-                    candidate_status = 3;
+                    candidate_status = 3
                     cStatus = 2;
-                    emailSubjectText =  emailSubject || 'Assessment Round..!';
-                    emailContentText = emailContent || `You are scheduled for an assessment round. Please check your email for more details.`;
+                    emailSubjectText =  emailSubject 
+                    emailContentText = emailContent 
                     break;
     
                 case 'HR_Discussion':
                     candidate_status = 4;
                     cStatus = 2;
-                    emailSubjectText =  emailSubject || 'HR Discussion Round..!';
-                    emailContentText = emailContent || `You are scheduled for an HR discussion round. Please check your email for more details.`;
+                    emailSubjectText =  emailSubject
+                    emailContentText = emailContent 
                     break;
     
                 case 'complete':
                     candidate_status = 5;
                     cStatus = 3;
-                    emailSubjectText = emailSubject || 'Process Completed..!';
-                    emailContentText = emailContent || `The recruitment process is now complete.`;
+                    emailSubjectText = emailSubject
+                    emailContentText = emailContent
                     break;
     
                 case 'shortlist':
                     candidate_status = 6;
                     cStatus = 2;
-                    emailSubjectText =  emailSubject || 'Congratulations! You have been Shortlisted..!';
-                    emailContentText = emailContent || `Congratulations! You have been shortlisted. Please check your email for more details.`;
+                    emailSubjectText =  emailSubject 
+                    emailContentText = emailContent
                     break;
     
                 case 'reject':
                     candidate_status = 7;
                     cStatus = 0;
-                    emailSubjectText = 'For Better Luck Next Time..!';
-                    emailContentText = emailContent || `Unfortunately, you were not selected this time. We wish you better luck in your future endeavors.`;
+                    emailSubjectText = emailSubject
+                    emailContentText = emailContent 
                     break;
     
                 default:
@@ -1327,7 +1336,6 @@ const { htmlToText } = require('html-to-text');
             });
         }
     };
-    
     
 
      // APi for get all candidates
@@ -1569,13 +1577,13 @@ const active_inactive_job = async (req, res) => {
         let statusMessage = '';
         switch (newStatus) {
             case 1:
-                statusMessage = 'open';
+                statusMessage = 'active';
                 break;
             case 2:
-                statusMessage = 'requirement in progress';
+                statusMessage = 'Job requirement fulfilled';
                 break;
             case 3:
-                statusMessage = 'close';
+                statusMessage = 'Inactive';
                 break;
             default:
                 statusMessage = 'Unknown Status';
@@ -4923,13 +4931,13 @@ const DeleteContactUS = async ( req ,res )=>{
     // Api for Overtime
     const Overtime = async (req, res) => {
         try {
-            let { Basic_pay, OT_Hours_weekday = 0 , OT_Hours_weekend = 0 } = req.body;
+            let { Basic_pay, OT_Hours_weekday = 0, OT_Hours_weekend = 0 } = req.body;
     
             // Check for required fields
             if (!Basic_pay) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Basic pay required'
+                    message: 'Basic pay is required'
                 });
             }
             if (OT_Hours_weekday) {
@@ -4940,29 +4948,30 @@ const DeleteContactUS = async ( req ,res )=>{
             }
     
             // Calculate Basic Pay per Day
-            
             const Basic_pay_per_day = Math.round(Basic_pay / 22);
-            const basic_pay_per_day_without_rounded = (Basic_pay / 22);
+            const basic_pay_per_day_without_rounded = Basic_pay / 22;
     
             // Calculate Pay per Hour
-            const Basic_pay_per_Hour = (Basic_pay_per_day / 8);
+            const Basic_pay_per_Hour = Basic_pay_per_day / 8;
             const Basic_pay_per_Hour_rounded = Math.round(Basic_pay_per_Hour);
-
-            
-
     
             // Calculate overtime computation on weekdays using the provided formula
-        let OT_computation_on_weekday;
-        let OT_computation_on_weekday_rounded;
-        if (OT_Hours_weekday > 4) {
-            OT_computation_on_weekday = (4 * Basic_pay_per_Hour * 1.5) + ((OT_Hours_weekday - 4) * Basic_pay_per_Hour * 2);
-            OT_computation_on_weekday_rounded = Math.round(OT_computation_on_weekday)
-        } else {
-            OT_computation_on_weekday = OT_Hours_weekday * Basic_pay_per_Hour * 1.5;
-            OT_computation_on_weekday_rounded = Math.round(OT_computation_on_weekday)
-        }
-
-             const Basic_pay_per_Hour_for_weekend = (basic_pay_per_day_without_rounded / 8)
+            let OT_computation_on_weekday;
+            let OT_computation_on_weekday_rounded;
+            let message = 'Overtime calculated successfully';
+    
+            if (OT_Hours_weekday > 4) {
+                // Compute only for the first 4 hours
+                OT_computation_on_weekday = 4 * Basic_pay_per_Hour * 1.5;
+                OT_computation_on_weekday_rounded = Math.round(OT_computation_on_weekday);
+    
+                // Notify that only 4 hours are computed
+                message = 'Only 4 hours of overtime on weekdays are computed. The rest, please check with your HR.';
+            } else {
+                OT_computation_on_weekday = OT_Hours_weekday * Basic_pay_per_Hour * 1.5;
+                OT_computation_on_weekday_rounded = Math.round(OT_computation_on_weekday);
+            }
+            const Basic_pay_per_Hour_for_weekend = (basic_pay_per_day_without_rounded / 8)
             // Calculate overtime computation on weekends
             const OT_computation_on_weekend =  Basic_pay_per_Hour_for_weekend * OT_Hours_weekend * 2;
            
@@ -4970,18 +4979,18 @@ const DeleteContactUS = async ( req ,res )=>{
             const total_overTime = Math.round(OT_computation_on_weekday + OT_computation_on_weekend);
                 // Function to add thousand separators
         const formatNumber = num => new Intl.NumberFormat('en-US').format(num);
-
+    
             // Return the calculated values
             return res.status(200).json({
                 success: true,
-                message: 'Calculation successful',
+                message,
                 data: {
-                    Basic_pay : `SLE ${formatNumber(Basic_pay)}`, 
-                    OT_Hours_weekday : OT_Hours_weekday, 
-                    OT_Hours_weekend  : OT_Hours_weekend ,
-                    Basic_pay_per_day: `SLE ${formatNumber(Basic_pay_per_day)}`,  
+                    Basic_pay: `SLE ${formatNumber(Basic_pay)}`,
+                    OT_Hours_weekday: OT_Hours_weekday,
+                    OT_Hours_weekend: OT_Hours_weekend,
+                    Basic_pay_per_day: `SLE ${formatNumber(Basic_pay_per_day)}`,
                     Basic_pay_per_Hour: `SLE ${formatNumber(Basic_pay_per_Hour_rounded)}`,
-                    OT_computation_on_weekday: `SLE ${formatNumber(OT_computation_on_weekday_rounded)}`,
+                    OT_computation_on_weekday: `SLE ${formatNumber(OT_computation_on_weekday)}`,
                     OT_computation_on_weekend: `SLE ${formatNumber(OT_computation_on_weekend)}`,
                     total_overTime: `SLE ${formatNumber(total_overTime)}`
                 }
@@ -4994,7 +5003,8 @@ const DeleteContactUS = async ( req ,res )=>{
                 error_message: error.message
             });
         }
-    };       
+    };
+          
     
 
     // Api for Leave allowence
@@ -6789,46 +6799,53 @@ const cms_labour_tool = async ( req , res )=> {
            const cms_online_cources = async( req , res )=> {
             try {
             
-                const { Heading, Description } = req.body;
+                const { Heading , Description , Detailed_description, price } = req.body;
                 
                 // Check for exist cms online courses
-                const exist_cms_online_courses = await cms_online_courses_Model.findOne({ });
+                const exist_cms_online_courses = await cms_online_courses_Model.findOne({ Heading });
         
                 if (exist_cms_online_courses) {
-                    // Update existing section
-                    exist_cms_online_courses.Heading = Heading;
-                    exist_cms_online_courses.Description = Description;            
-              
-                    await exist_cms_online_courses.save();
-        
-                    return res.status(200).json({
-                        success: true,
-                        message: 'Details updated successfully'
-                    });
-                } else {
-                    // Check for Heading
-                    if (!Heading) {
+                        return res.status(400).json({
+                              success : false ,
+                              message : 'Course already exist'
+                        })       
+                 
+                 
+                } 
+
+
+                   
+                   
+                      // Check for Detailed_description
+                    if (!Detailed_description) {
                         return res.status(400).json({
                             success: false,
-                            message: 'Heading is required'
+                            message: 'Detailed_description is required'
                         });
                     }
         
-                    // Check for Description
-                    if (!Description) {
+                    // Check for price
+                    if (!price) {
                         return res.status(400).json({
                             success: false,
-                            message: 'Description is required'
+                            message: 'price is required'
                         });
-                    }       
-                   
+                    }  
+                        
+                       let image = ''
+                       if(req.file)
+                       {
+                           image = req.file.filename
+                       }
         
                     // Add new Data
-                    const newData = new cms_online_courses_Model({
-                       
+                    const newData = new cms_online_courses_Model({                       
                        
                         Heading: Heading,
                         Description: Description,
+                        Detailed_description: Detailed_description,
+                        price: price,
+                        image : image
                       
                        
                     });
@@ -6837,9 +6854,9 @@ const cms_labour_tool = async ( req , res )=> {
         
                     return res.status(200).json({
                         success: true,
-                        message: 'New Details created successfully'
+                        message: 'New Course added successfully'
                     });
-                }
+                
         
             } catch (error) {
                    return res.status(500).json({
@@ -6854,7 +6871,7 @@ const cms_labour_tool = async ( req , res )=> {
     // Api for get cms online courses details
     const get_cms_online_courses_details = async ( req , res) => {
         try {
-               const getDetails = await cms_online_courses_Model.findOne({})
+               const getDetails = await cms_online_courses_Model.find({})
 
                if(!getDetails)
                {
@@ -6877,6 +6894,96 @@ const cms_labour_tool = async ( req , res )=> {
            })
         }
   }
+
+    // Api for update particular online course details
+
+     const update_online_course = async ( req , res )=> {
+            try {
+                     const course_id  = req.params.course_id
+                     const { Heading , Description , Detailed_description , price } = req.body
+
+                // check for course_id
+                if(!course_id)
+                {
+                      return res.status(400).json({
+                         success : false ,
+                         message : 'course Id required'
+                      })
+                }
+
+                // check for course
+                const course = await cms_online_courses_Model.findOne({ _id : course_id })
+                if(!course)
+                {
+                     return res.status(400).json
+                     ({
+                         success : false ,
+                         message : 'Course not found'
+                     })
+                }
+
+                     // check for details and update
+                         course.Heading = Heading  
+                         course.Description = Description  
+                         course.Detailed_description = Detailed_description  
+                         course.price = price
+                        
+                        if(req.file)
+                        {
+                            course.image = req.file.filename
+                        }
+
+                        await course.save()
+                        return res.status(200).json({
+                             success : true ,
+                             message : 'Course Details updated successfully'
+                        })
+            } catch (error) {
+                  return res.status(500).json({
+                     success : false ,
+                     message : 'Server error',
+                     error_message : error.message
+                  })
+            }
+     }
+
+// Api for delete particular online course
+          const delete_course = async ( req , res)=> {
+                try {
+                        const course_id  = req.params.course_id
+                           // check for course_id
+                if(!course_id)
+                    {
+                          return res.status(400).json({
+                             success : false ,
+                             message : 'course Id required'
+                          })
+                    }
+    
+                    // check for course
+                    const course = await cms_online_courses_Model.findOne({ _id : course_id })
+                    if(!course)
+                    {
+                         return res.status(400).json
+                         ({
+                             success : false ,
+                             message : 'Course not found'
+                         })
+                    }
+
+                    await course.deleteOne()
+
+                    return res.status(200).json({
+                           success : true ,
+                           message : 'course deleted successfully'
+                    })
+                        
+                } catch (error) {
+                     return res.status(500).json({
+                         success : false 
+                     })
+                }
+          }
 
 
   // Api for create and update Cms Home section
@@ -6965,297 +7072,145 @@ const cms_labour_tool = async ( req , res )=> {
       }
     
 
-      const convertPDFToImage = async (pdfPath, outputPath) => {
-        let file = pdfPath;
-        let opt = {
-            format: 'png',
-            out_dir: outputPath,
-            out_prefix: 'page',
-            page: null
-        };
-        
-        try {
-            await PDFPoppler.convert(file, opt);
-           
-        } catch (error) {
-            console.error("Error converting PDF:", error);
-            throw new Error('Error converting PDF');
-        }
-    };
-    
-    const performOCR = async (imagePaths) => {
-        try {
-            let allText = '';
-            for (const imagePath of imagePaths) {
-                const { data: { text } } = await Tesseract.recognize(imagePath, 'eng', {
-                    logger: info => console.log(info)
-                });
-                allText += text + '\n'; // Combine text from all images
-            }
-            return allText;
-        } catch (error) {
-            console.error('Error performing OCR:', error);
-            throw new Error('Error performing OCR');
-        }
-    };
+// Function to improve spacing and readability in text
+const improveTextFormatting = (text) => {
+    text = text.replace(/([.,!?;:])(?=\S)/g, '$1 ');
+    text = text.replace(/(\S)([.,!?;:])(\S)/g, '$1$2 $3');
+    text = text.replace(/([a-zA-Z])\.(?=\S)/g, '$1. ');
+    text = text.replace(/\s{2,}/g, ' ');
+    text = text.replace(/([A-Z][A-Z\s]+)(\n|$)/g, '\n\n$1\n');
+    return text.trim();
+};
 
-    const improveTextFormatting = (text) => {
-        // Add space after punctuation if it's not followed by a space
-        text = text.replace(/([.,!?;:])(?=\S)/g, '$1 ');
+// Function to parse PDF CV
+const parsePDF = async (filePath) => {
+    const dataBuffer = fs.readFileSync(filePath);
+    const data = await pdfParse(dataBuffer);
     
-        // Ensure space between a punctuation and the next word
-        text = text.replace(/(\S)([.,!?;:])(\S)/g, '$1$2 $3');
-    
-        // Add space after a period if it's not followed by a space
-        text = text.replace(/([a-zA-Z])\.(?=\S)/g, '$1. ');
-    
-        // Replace multiple spaces with a single space
-        text = text.replace(/\s{2,}/g, ' ');
-    
-        // Add line breaks between sections (e.g., addresses, education)
-        text = text.replace(/([A-Z][A-Z\s]+)(\n|$)/g, '\n\n$1\n');
-    
-        // Add extra line breaks for better readability
-        text = text.replace(/(\.\s+)(?=\S)/g, '$1\n\n');
-    
-        // Remove extra newlines and leading/trailing spaces
-        text = text.replace(/\n{3,}/g, '\n\n');
-        text = text.trim();
-    
-        return text;
-    };
+    let parsedText = data.text;
 
-    const calculateMatchRating = (cvText, jobDescription) => {
-        // Helper function to preprocess and tokenize text
-        const preprocessText = (text) => {
-            return text.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/);
-        };
-    
-        // Helper function to compute Jaccard similarity
-        const jaccardSimilarity = (setA, setB) => {
-            const intersection = new Set([...setA].filter(item => setB.has(item))).size;
-            const union = new Set([...setA, ...setB]).size;
-            return intersection / union;
-        };
-    
-        // Define criteria and their weights
-        const criteria = {
-            'education': 0.25,
-            'experience': 0.35,
-            'skills': 0.35,
-            'certifications': 0.15,
-            'other': 0.15
-        };
-    
-        // Define rating scale
-        const maxRating = 5;
-    
-        // Initialize scores
-        let criterionScores = {};
-        Object.keys(criteria).forEach(criterion => {
-            criterionScores[criterion] = 0;
+    parsedText = parsedText.replace(/(\.)(\s)/g, '$1\n\n');
+    parsedText = parsedText.replace(/(\.)(\n)/g, '$1\n\n');
+    parsedText = improveTextFormatting(parsedText);
+
+    return parsedText;
+};
+
+// Function to calculate the match percentage
+const calculateMatchPercentage = (cvText, jdText) => {
+    const tokenizer = new natural.WordTokenizer();
+    const cvTokens = tokenizer.tokenize(cvText.toLowerCase());
+    const jdTokens = tokenizer.tokenize(jdText.toLowerCase());
+
+    const cvWordFreq = new natural.TfIdf();
+    cvWordFreq.addDocument(cvTokens);
+
+    const jdWordFreq = new natural.TfIdf();
+    jdWordFreq.addDocument(jdTokens);
+
+    let matchCount = 0;
+
+    jdTokens.forEach((word) => {
+        if (cvWordFreq.tfidf(word, 0) > 0) {
+            matchCount++;
+        }
+    });
+
+    let matchPercentage = (matchCount / jdTokens.length) * 100;
+
+    if (matchPercentage < 35) {
+        matchPercentage += 10;
+    } else if (matchPercentage >= 35 && matchPercentage < 50) {
+        matchPercentage += 5;
+    }
+
+    return matchPercentage.toFixed(2);
+};
+
+const candidate_cv_rating = async (req, res) => {
+    try {
+        const candidate_id = req.params.candidate_id;
+
+        if (!candidate_id) {
+            return res.status(400).json({ success: false, message: 'Candidate ID required' });
+        }
+
+        const candidate = await appliedjobModel.findOne({ _id: candidate_id });
+        if (!candidate) {
+            return res.status(400).json({ success: false, message: 'Candidate not found' });
+        }
+
+        const candidate_cv = candidate.uploadResume;
+
+        if (!candidate_cv) {
+            return res.status(400).json({ success: false, message: 'Candidate CV not found' });
+        }
+
+        const check_Jd = await jobDescription_model.findOne({ jobTitle: candidate.job_Heading });
+        if (!check_Jd) {
+            return res.status(400).json({ success: false, message: 'No Job Description found' });
+        }
+
+        const job_description = check_Jd.job_Description || '';
+        const job_responsibility = check_Jd.Responsibilities || '';
+        let combine_jd = `${job_description} \n\n ${job_responsibility}`;
+        combine_jd = improveTextFormatting(combine_jd);
+
+        const candidateCvPath = path.join(__dirname, '..', 'uploads', candidate_cv);
+        if (!fs.existsSync(candidateCvPath)) {
+            return res.status(400).json({ success: false, message: 'Candidate CV file not found on server' });
+        }
+
+        // Parse the PDF CV
+        let cvText = await parsePDF(candidateCvPath);
+        cvText = improveTextFormatting(cvText);
+
+        // Calculate the match percentage
+        const matchPercentage = calculateMatchPercentage(cvText, combine_jd);
+
+        return res.status(200).json({
+            success: true,
+            matchPercentage: matchPercentage,
+            message: 'CV rating calculated successfully',
         });
-    
-        // Split job description and CV into lines
-        const jobDescriptionLines = jobDescription.split('\n').map(line => line.trim()).filter(line => line !== '');
-        const cvLines = cvText.split('\n').map(line => line.trim()).filter(line => line !== '');
-    
-        // Calculate score for each criterion
-        for (const [criterion, weight] of Object.entries(criteria)) {
-            // Filter lines containing the criterion
-            const jobCriterionLines = jobDescriptionLines.filter(line => line.toLowerCase().includes(criterion));
-            let bestMatch = 0;
-    
-            // Compute the best match score for this criterion
-            jobCriterionLines.forEach(jobLine => {
-                const jobTokens = new Set(preprocessText(jobLine));
-                cvLines.forEach(cvLine => {
-                    const cvTokens = new Set(preprocessText(cvLine));
-                    const similarity = jaccardSimilarity(jobTokens, cvTokens);
-                    if (similarity > bestMatch) {
-                        bestMatch = similarity;
-                    }
-                });
-            });
-    
-            // Scale best match to a rating out of maxRating (1 to 5)
-            const rating = Math.round(bestMatch * maxRating);
-            criterionScores[criterion] = rating;
-        }
-    
-        // Calculate the overall rating
-        let totalScore = 0;
-        for (const [criterion, weight] of Object.entries(criteria)) {
-            totalScore += criterionScores[criterion] * weight;
-        }
-    
-        // Return the overall rating and individual criterion ratings
-        return {
-            overallRating: totalScore.toFixed(2),
-            individualRatings: criterionScores
-        };
-    };
-    
- 
-    
-    
-  
-    
-    
-    
-    const convertToHTML = (text) => {
-        let htmlContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Job Description</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    line-height: 1.6;
-                    margin: 20px;
-                    padding: 0;
-                }
-                h1, h2, h3 {
-                    color: #333;
-                }
-                p {
-                    margin-bottom: 10px;
-                }
-                ul {
-                    margin-bottom: 10px;
-                    padding-left: 20px;
-                }
-                li {
-                    margin-bottom: 5px;
-                }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 20px;
-                }
-                table, th, td {
-                    border: 1px solid #ddd;
-                }
-                th, td {
-                    padding: 10px;
-                    text-align: left;
-                }
-                th {
-                    background-color: #f4f4f4;
-                }
-            </style>
-        </head>
-        <body>
-            <h1>Job Description</h1>
-            ${text}
-        </body>
-        </html>
-        `;
-    
-        // Convert double newlines into paragraphs
-        htmlContent = htmlContent.replace(/\n\n/g, '<p></p>');
-    
-        // Convert single newlines into line breaks
-        htmlContent = htmlContent.replace(/\n/g, '<br>');
-    
-        // Convert headings that are in all caps into <h2> tags
-        htmlContent = htmlContent.replace(/([A-Z][A-Z\s]+)(<br>|$)/g, '<h2>$1</h2>');
-    
-        // Convert numbered lists into <li> items within <ul> tags
-        htmlContent = htmlContent
-            .replace(/(\d+\.)\s+/g, '<li>')      // Replace number bullet with <li>
-            .replace(/<\/li>\s*(\d+\.)/g, '</li><li>'); // Close current <li> before starting new one
-    
-        // Wrap the entire list of <li> items in <ul> tags
-        if (htmlContent.includes('<li>')) {
-            htmlContent = htmlContent.replace(/<li>([\s\S]+?)<\/li>/g, '<ul><li>$1</li></ul>');
-        }
-    
-        return htmlContent;
-    };
-    
-    
-    const convertToPlainText = (html) => {
-        return htmlToText(html, {
-            wordwrap: 130
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message,
         });
-    };
-    const candidate_cv_rating = async (req, res) => {
-        try {
-            const candidate_id = req.params.candidate_id;
-    
-            if (!candidate_id) {
-                return res.status(400).json({ success: false, message: 'Candidate ID required' });
-            }
-    
-            const candidate = await appliedjobModel.findOne({ _id: candidate_id });
-            if (!candidate) {
-                return res.status(400).json({ success: false, message: 'Candidate not found' });
-            }
-    
-            const candidate_cv = candidate.uploadResume;
-    
-            if (!candidate_cv) {
-                return res.status(400).json({ success: false, message: 'Candidate CV not found' });
-            }
-    
-            const check_Jd = await jobDescription_model.findOne({ jobTitle: candidate.job_Heading });
-            if (!check_Jd) {
-                return res.status(400).json({ success: false, message: 'No Job Description found' });
-            }
-    
-            const job_description = check_Jd.job_Description || '';
-            const job_responsibility = check_Jd.Responsibilities || '';
-            let combine_jd = `${job_description} \n\n ${job_responsibility}`;
-    
-            const htmlCombineJd = convertToHTML(combine_jd);
-            const plainTextCombineJd = convertToPlainText(htmlCombineJd);
-    
-            const candidateCvPath = path.join(__dirname, '..', 'uploads', candidate_cv);
-            const imagesDir = path.join(__dirname, '..', 'images');
-            
-            if (!fs.existsSync(candidateCvPath)) {
-                return res.status(400).json({ success: false, message: 'Candidate CV file not found on server' });
-            }
-    
-            await convertPDFToImage(candidateCvPath, imagesDir);
-    
-            const imageFiles = fs.readdirSync(imagesDir).filter(file => file.startsWith('page') && file.endsWith('.png'));
-            const imagePaths = imageFiles.map(file => path.join(imagesDir, file));
-            
-            const cvText = await performOCR(imagePaths);
-            const improvedCvText = improveTextFormatting(cvText);
+    }
+};
 
-                  
-                   
-                    
+      
+       // Api for get all enq of courses
+       
+           const all_enq_of_courses = async( req , res )=> {
+                try {
+                         // check for all enq
+                         const all_enq = await online_courses_enq_model.find({ }).sort({ createdAt : -1}).lean()
+                         if(!all_enq)
+                         {
+                              return res.status(400).json({
+                                   success : false ,
+                                   message : 'No Enquiry Generated Yet'
+                              })
+                         }
 
-            const MatchRating = await calculateMatchRating (improvedCvText, plainTextCombineJd);
-    
-            imageFiles.forEach(file => fs.unlinkSync(path.join(imagesDir, file)));
-    
-            return res.status(200).json({
-                success: true,
-                MatchRating: MatchRating ,
-                message: 'CV rating calculated successfully',
-            });
-    
-        } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: 'Server error',
-                error_message: error.message,
-            });
-        }
-    };
-    
-    
-      
-      
-            
+                         return res.status(200).json({
+                             success : true ,
+                             message : 'All Enquiry courses',
+                             all_enq : all_enq
+                         })
+                } catch (error) {
+                      return res.status(500).json({
+                         success : false ,
+                         message : 'Server error',
+                         error_message : error.message
+                      })
+                }
+           }
                 
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
@@ -7282,6 +7237,9 @@ module.exports = {
      cms_get_started_today , get_started_todayDetails , cms_why_choose_us , getDetails_why_choose_us , cms_elite_talent_pool , get_cms_elite_talent_pool,
      cms_footer_content , get_cms_footer_content , cms_acadmic_credentials_verifier , get_acadmic_credentials_verifier , newsLetter , getAll_newsLetter,
      new_carrer_advice , all_carrer_details , delete_carrer_advice , generate_sampleFile , import_file , cms_labour_tool , get_cms_labour_tool_details,
-     cms_online_cources , get_cms_online_courses_details , cms_Home , get_cms_Home  , candidate_cv_rating
+     cms_online_cources , get_cms_online_courses_details , cms_Home , get_cms_Home  , candidate_cv_rating ,
+
+
+     update_online_course , delete_course  , all_enq_of_courses
      
 }

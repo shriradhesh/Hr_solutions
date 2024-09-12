@@ -1,4 +1,67 @@
-   
+const addPsychometricPersonalityTest = async (req, res) => {
+    try {
+        const { question, options, correctAnswerIndex } = req.body;
+
+        // Validate that the question is provided and is a non-empty string
+        if (!question || typeof question !== 'string') {
+            return res.status(400).json({
+                success: false,
+                message: 'Question is required and must be a non-empty string'
+            });
+        }
+
+        // Validate that options array is provided and contains exactly 5 valid strings
+        if (!Array.isArray(options) || options.length !== 5 || !options.every(opt => ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"].includes(opt))) {
+            return res.status(400).json({
+                success: false,
+                message: 'Options array must contain exactly 5 valid strings: "Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"'
+            });
+        }
+
+        // Validate that correctAnswerIndex is provided, is a number, and is within the range 0-4
+        if (typeof correctAnswerIndex !== 'number' || correctAnswerIndex < 0 || correctAnswerIndex > 4) {
+            return res.status(400).json({
+                success: false,
+                message: 'Correct answer index must be a number between 0 and 4'
+            });
+        }
+
+        // Check if the question already exists in the database
+        const existingQuestion = await PsychometricPersonalityTestModel.findOne({ question });
+        if (existingQuestion) {
+            return res.status(400).json({
+                success: false,
+                message: 'Question already exists'
+            });
+        }
+
+        // Create a new psychometric personality test question
+        const newPsychometricQuestion = new PsychometricPersonalityTestModel({
+            question,
+            options,
+            correctAnswerIndex
+        });
+
+        // Save the new question to the database
+        await newPsychometricQuestion.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Psychometric personality test question added successfully',
+            psychometric: newPsychometricQuestion
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+
+---------------------------------------------------------   
 
 
 
@@ -759,7 +822,111 @@ for stripe -
 
 
 
+=====================================================
 
+
+
+const CvBuilderModel = require('../models/CvBuilderModel');
+
+const buildCv = async (req, res) => {
+    try {
+        // Destructure the required fields from the request body
+        const {
+            firstName, lastName, city, country, zip, phoneNo, userEmail,
+            jobExperience, education, skills, jobTitleSummary, certificates, 
+            languagesKnown, websitesAndSocialLinks, awardsAndAchievements, templateType
+        } = req.body;
+
+        // Initialize a new CV document with the basic fields
+        let newCv = new CvBuilderModel({
+            firstName,
+            lastName,
+            city,
+            country,
+            zip,
+            phoneNo,
+            userEmail,
+            jobTitleSummary,
+            templateType,
+        });
+
+        // Adding job experience with the validation for isCurrentlyWorking
+        if (jobExperience && jobExperience.length > 0) {
+            jobExperience.forEach(exp => {
+                // If currently working, omit the endDate
+                if (exp.isCurrentlyWorking === 1) {
+                    exp.endDate = undefined;
+                }
+                newCv.jobExperience.push(exp);
+            });
+        }
+
+        // Adding education with the validation for isStillEnrolled
+        if (education && education.length > 0) {
+            education.forEach(edu => {
+                // If still enrolled, omit the end_Date
+                if (edu.graduationDate.isStillEnrolled === 1) {
+                    edu.graduationDate.end_Date = undefined;
+                }
+                newCv.Education.push(edu);
+            });
+        }
+
+        // Adding skills
+        if (skills && skills.length > 0) {
+            skills.forEach(skill => {
+                newCv.skills.push(skill);
+            });
+        }
+
+        // Adding certificates
+        if (certificates && certificates.length > 0) {
+            certificates.forEach(certificate => {
+                newCv.certificates.push(certificate);
+            });
+        }
+
+        // Adding languages known
+        if (languagesKnown && languagesKnown.length > 0) {
+            languagesKnown.forEach(language => {
+                newCv.languagesKnown.push(language);
+            });
+        }
+
+        // Adding social links (handling multiple)
+        if (websitesAndSocialLinks) {
+            newCv.websitesAndSocialLinks = websitesAndSocialLinks;
+        }
+
+        // Adding awards and achievements
+        if (awardsAndAchievements && awardsAndAchievements.length > 0) {
+            awardsAndAchievements.forEach(award => {
+                newCv.awardsAndAchievements.push(award);
+            });
+        }
+
+        // Save the new CV to the database
+        await newCv.save();
+
+        // Respond with success message
+        return res.status(201).json({
+            success: true,
+            message: 'CV created successfully',
+            data: newCv
+        });
+    } catch (error) {
+        // Handle any server errors
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+module.exports = { buildCv };
+
+https://github.com/shriradhesh
 
 
 

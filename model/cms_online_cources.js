@@ -7,6 +7,16 @@ const cms_online_cources_Schema = new mongoose.Schema({
 
       Description : {
           type : String
+      },
+      Detailed_description : {
+           type : String
+
+      },
+      price : {
+           type : String
+      },
+      image : {
+           type : String
       }
 
 

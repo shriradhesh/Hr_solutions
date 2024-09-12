@@ -73,8 +73,7 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
                                              /* ATS Section */
         // Api for get All_candidates
                      router.get('/getAll_candidates', Admin_and_staffController.getAll_candidates) 
-        // Api for candidate_cv_rating
-                     router.get('/candidate_cv_rating/:candidate_id',  Admin_and_staffController.candidate_cv_rating) 
+        
 
                                              /* Privacy & policy Section */
        
@@ -229,9 +228,10 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
                     router.get("/get_cms_labour_tool_details", Admin_and_staffController.get_cms_labour_tool_details)
 
         // Api for create and update cms_online_cources
-                router.post("/cms_online_cources", Admin_and_staffController.cms_online_cources)
+                router.post("/cms_online_courses", upload.single('image'), Admin_and_staffController.cms_online_cources)
         // Api for get_cms_online_courses_details
                  router.get("/get_cms_online_courses_details", Admin_and_staffController.get_cms_online_courses_details)
+        
         // Api for create and update cms_Home
                  router.post("/cms_Home", Admin_and_staffController.cms_Home)
         // Api for get_cms_Home
@@ -290,6 +290,15 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
         // Api for getJs
                 router.post("/getJs", Admin_and_staffController.getJs)
 
+        
+
+        // Api for update_online_course
+         router.put('/update_online_course/:course_id', upload.single('image') , Admin_and_staffController.update_online_course)
+        // Api for delete_course
+          router.delete('/delete_course/:course_id', Admin_and_staffController.delete_course)
+
+          // Api for get all_enq_of_courses
+          router.get('/all_enq_of_courses', Admin_and_staffController.all_enq_of_courses)
 
 module.exports = router
 

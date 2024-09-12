@@ -77,21 +77,24 @@ const jobSchema = new mongoose.Schema({
     company_Industry : {
         type : String
     },
+    location : {
+         type : String
+    },
     
     status : {
         type : Number,
         enum : [0 , 1, 2, 3],
         default : 1
     },
-    isPsychometricTest : {
-        type: Number,
-        enum : [0 ,1],
-        default: 0
-    },
-    psychometric_Test : {
-        type : String ,
+//     isPsychometricTest : {
+//         type: Number,
+//         enum : [0 ,1],
+//         default: 0
+//     },
+//     psychometric_Test : {
+//         type : String ,
        
-  },
+//   },
 
   fav_status : {
        type : Number,

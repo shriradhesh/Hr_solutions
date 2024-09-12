@@ -61,18 +61,23 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
                         router.post('/psychometric_questions', userController.psychometric_questions)
         // Api for getquestions
                         router.get('/getquestions/:psychometric_questions_Id', userController.getquestions)
-        // Api for addQuestion
-                        router.post('/addQuestion/:psychometric_questions_Id', userController.addQuestion)
+       
          // Api for getAll_psychometric_questions
                         router.post('/getAll_psychometric_questions', userController.getAll_psychometric_questions)
-        // Api for getAllTest
-                        router.get('/getAllTest', userController.getAllTest)
+        
         // Api for deletepsychometrcTest
                         router.delete('/deletepsychometrcTest/:psychometric_id',userController.deletepsychometrcTest )
-        // Api for deletequestion_in_Test
-                        router.delete('/deletequestion_in_Test/:testId/:questionId', userController.deletequestion_in_Test)
-        // Api for get particlar Test
-                         router.get('/getTest/:test_id', userController.getTest)  
+        
+         // Api for add_personality_test_question
+                         router.post('/add_personality_test_question', userController.add_personality_test_question)
+        // Api for getAll_psychometric_personal_ability_questions
+                         router.get('/getAll_psychometric_personal_ability_questions', userController.getAll_psychometric_personal_ability_questions)
+         // Api for get_personal_ability_question
+                          router.get('/get_personal_ability_question/:questions_Id' , userController.get_personal_ability_question)
+        // Api for Delete_personal_ability_ques
+                          router.delete('/Delete_personal_ability_ques/:question_Id', userController.Delete_personal_ability_ques)
+       
+      
 
                                        /* POST job section */
         // Api for postJob
@@ -129,7 +134,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          // Api for getServices page Details
                  router.get('/getServices_of_smart_start', userController.getServices_of_smart_start)
 
-                                        /* CMS */
+                                             /* CMS */
         // Api for dashboard_counts
                  router.get('/dashboard_counts', userController.dashboard_counts)
         // Api for cms_getJobs_posted_procedure_section1
@@ -154,7 +159,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          // Api for create_contactUS
                 router.post('/create_contactUS', userController.create_contactUS)
 
-                                        /* upload Resume */
+                                            /* upload Resume */
 
          // Api for uploadResume
                  router.post('/uploadResume', upload.single('uploadResume') , userController.uploadResume)
@@ -181,6 +186,23 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
                  router.post('/save_candidate_profile_for_later/:candidate_id', userController.save_candidate_profile_for_later)
         // Api for get_saved_candidate_profile
                  router.get('/get_saved_candidate_profile/:client_id' , userController.get_saved_candidate_profile)
+
+                 // Api for update_candidate_rating
+                 router.post('/update_candidate_rating/:candidate_id', userController.update_candidate_rating)
+                // Api for all female candidate profile for client
+                router.get('/get_female_candidate_for_client/:client_id', userController.get_female_candidate_for_client)
+              // Api for get_male_candidate_for_client
+                 router.get('/get_male_candidate_for_client/:client_id', userController.get_male_candidate_for_client)
+
+        // Api for build_cv
+              router.post('/build_cv', upload.single('profileImage'), userController.build_cv)
+
+        // Api for get_all_candidate_for_client
+              router.get('/get_all_candidate_for_client/:client_id', userController.get_all_candidate_for_client)
+
+         // Api for online_course_enq
+             router.post('/online_course_enq/:course_id', userController.online_course_enq)
+
 
       
                  

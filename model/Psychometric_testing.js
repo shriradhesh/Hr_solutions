@@ -1,28 +1,20 @@
-
 const mongoose = require('mongoose');
 
-const PsychometricSchema = new mongoose.Schema({
-    job_title : {
-        type : String
-    },
+const QuestionSchema = new mongoose.Schema({
+    question: {
+        type: String,
     
+    },
+    options: [{
+        type: String,
+    
+    }],
+    correctAnswerIndex: {
+        type: Number,
+        
+    }
+}, { timestamps: true });
 
-    questions: [{
-        question: {
-            type: String,
-            required: true
-        },
-        options: [{
-            type: String,
-            required: true
-        }],
-        correctAnswerIndex: {
-            type: Number,
-            required: true
-        }
-    }]
-}, {timestamps : true });
+const PsychometricModel = mongoose.model('Psychometric', QuestionSchema);
 
-const PsychometricModel = mongoose.model('Psychometric', PsychometricSchema);
-
-module.exports = PsychometricModel
+module.exports = PsychometricModel;
