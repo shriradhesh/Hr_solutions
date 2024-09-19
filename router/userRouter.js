@@ -205,8 +205,10 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
 
 
       
-                 
-
+        // Api 
+        router.delete('/delete_all_notification_of_user', userController.delete_all_notification_of_user)
+        // Api 
+        router.get('/export_client_jobs_candidate/:client_id' , userController.export_client_jobs_candidate)
 
 
 

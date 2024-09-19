@@ -228,7 +228,7 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
                     router.get("/get_cms_labour_tool_details", Admin_and_staffController.get_cms_labour_tool_details)
 
         // Api for create and update cms_online_cources
-                router.post("/cms_online_courses", upload.single('image'), Admin_and_staffController.cms_online_cources)
+                router.post("/cms_online_courses", upload.any(), Admin_and_staffController.cms_online_cources)
         // Api for get_cms_online_courses_details
                  router.get("/get_cms_online_courses_details", Admin_and_staffController.get_cms_online_courses_details)
         
@@ -293,13 +293,30 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
         
 
         // Api for update_online_course
-         router.put('/update_online_course/:course_id', upload.single('image') , Admin_and_staffController.update_online_course)
+      
+        router.put(
+                '/update_online_course/:course_id',upload.any(),Admin_and_staffController.update_online_course
+            );
+            
         // Api for delete_course
           router.delete('/delete_course/:course_id', Admin_and_staffController.delete_course)
 
           // Api for get all_enq_of_courses
           router.get('/all_enq_of_courses', Admin_and_staffController.all_enq_of_courses)
 
+                                               /* Online course Quiz */
+         router.post('/course_quiz_test', Admin_and_staffController.course_quiz_test)
+         // Api for get_quiz_test_of_course
+         router.get('/get_quiz_test_of_course/:test_id', Admin_and_staffController.get_quiz_test_of_course)
+         //Api for all_quiz_test
+         router.get('/all_quiz_test', Admin_and_staffController.all_quiz_test)
+         // Api for addQuestion_in_test
+         router.post('/addQuestion_in_test/:test_id', Admin_and_staffController.addQuestion_in_test)
+         // Api for delete_question_in_test
+         router.delete('/delete_question_in_test/:test_id/:questionId', Admin_and_staffController.delete_question_in_test)
+         // Api for delete
+         router.delete('/delete_test/:test_id', Admin_and_staffController.delete_test)
+         
 module.exports = router
 
 

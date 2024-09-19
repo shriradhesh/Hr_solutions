@@ -22,7 +22,8 @@ const online_courses_enq_schema = new mongoose.Schema({
         },
         course_id : {
                type : String
-        }
+        },
+       
 }, { timestamps : true })
 
 const online_courses_enq_model = mongoose.model('online_courses_enq', online_courses_enq_schema)

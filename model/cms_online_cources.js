@@ -17,7 +17,13 @@ const cms_online_cources_Schema = new mongoose.Schema({
       },
       image : {
            type : String
-      }
+      },
+      presentation : {
+          type : String
+   },
+   video : {
+          type : String
+   },
 
 
 } , { timestamps : true })
