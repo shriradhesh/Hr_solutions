@@ -4,6 +4,17 @@ const online_course_quiz_Schema = new mongoose.Schema({
                    type : mongoose.Schema.Types.ObjectId,
                    ref : 'cms_online_courses_Model'
             },
+            topic_id : {
+                 type : mongoose.Schema.Types.ObjectId,
+                   ref : 'cms_online_courses_Model'
+            },
+
+               course_name : {
+                    type : String
+               },
+                    topic_name  : {
+                         type : String
+                    },
 
             questions_Bank : [{
                           question : {

@@ -57,27 +57,26 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
                         router.get('/download_jd/:jd_id' , userController.download_jd)
 
                                            /* psychomatric testing section */
-        // Api for add psychometric_questions
-                        router.post('/psychometric_questions', userController.psychometric_questions)
-        // Api for getquestions
-                        router.get('/getquestions/:psychometric_questions_Id', userController.getquestions)
        
-         // Api for getAll_psychometric_questions
-                        router.post('/getAll_psychometric_questions', userController.getAll_psychometric_questions)
-        
-        // Api for deletepsychometrcTest
-                        router.delete('/deletepsychometrcTest/:psychometric_id',userController.deletepsychometrcTest )
-        
-         // Api for add_personality_test_question
-                         router.post('/add_personality_test_question', userController.add_personality_test_question)
-        // Api for getAll_psychometric_personal_ability_questions
-                         router.get('/getAll_psychometric_personal_ability_questions', userController.getAll_psychometric_personal_ability_questions)
-         // Api for get_personal_ability_question
-                          router.get('/get_personal_ability_question/:questions_Id' , userController.get_personal_ability_question)
-        // Api for Delete_personal_ability_ques
-                          router.delete('/Delete_personal_ability_ques/:question_Id', userController.Delete_personal_ability_ques)
-       
-      
+
+        // Api for add category
+                        router.post('/add_test_Category', userController.add_test_Category)
+        // Api for getAll_psychometric_Category\
+                        router.get('/getAll_psychometric_Category', userController.getAll_psychometric_Category)
+        // Api for Delete_category
+                        router.delete('/Delete_category/:category_id', userController.Delete_category)
+        // Api for psychometric_test
+                        router.post('/psychometric_test/:client_id', upload.single('file'), userController.psychometric_test)
+        // Api for get_test
+                        router.get('/get_test/:test_id', userController.get_test)
+        // Api for getAll_psychometric_test_of_client
+                        router.get('/getAll_psychometric_test_of_client/:client_id', userController.getAll_psychometric_test_of_client)
+        // Api for add_question_in_test
+                        router.post('/add_question_in_test/:test_id', upload.single('question_image'),userController.add_question_in_test )
+        // Api for delete_question_in_test
+                        router.delete('/delete_question_in_psychometric_test/:test_id/:questionId', userController.delete_question_in_psychometric_test )
+         // Api for deletepsychometrcTest
+                        router.delete('/deletepsychometrcTest/:psychometric_id', userController.deletepsychometrcTest)
 
                                        /* POST job section */
         // Api for postJob
@@ -200,8 +199,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
         // Api for get_all_candidate_for_client
               router.get('/get_all_candidate_for_client/:client_id', userController.get_all_candidate_for_client)
 
-         // Api for online_course_enq
-             router.post('/online_course_enq/:course_id', userController.online_course_enq)
+     
 
 
       
@@ -209,6 +207,20 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
         router.delete('/delete_all_notification_of_user', userController.delete_all_notification_of_user)
         // Api 
         router.get('/export_client_jobs_candidate/:client_id' , userController.export_client_jobs_candidate)
+
+                                                    /* Courses USer Enroll */
+         // Api for courses_user_enroll
+         router.post('/courses_user_enroll', userController.courses_user_enroll)
+         // Api for all_enrolled_user
+         router.get('/all_enrolled_user', userController.all_enrolled_user)
+         // Api for enrolled_user_login
+         router.post('/enrolled_user_login',  userController.enrolled_user_login)
+         // Api for enroll_course
+         router.post('/enroll_course/:user_id', userController.enroll_course)
+         // Api for update_course_status
+         router.post('/update_course_status/:user_id/:course_id', userController.update_course_status)
+         // Api for get_my_enrolled_courses
+         router.get('/get_my_enrolled_courses/:user_id', userController.get_my_enrolled_courses)
 
 
 

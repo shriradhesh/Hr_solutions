@@ -1,20 +1,42 @@
 const mongoose = require('mongoose');
 
-const QuestionSchema = new mongoose.Schema({
-    question: {
-        type: String,
-    
+const Psychometric_test_Schema = new mongoose.Schema({
+    client_id : {
+             type : mongoose.Schema.Types.ObjectId,
+             ref : 'empModel'
     },
-    options: [{
-        type: String,
-    
-    }],
-    correctAnswerIndex: {
-        type: Number,
-        
-    }
+    category_id : {
+        type : mongoose.Schema.Types.ObjectId,
+        ref : 'psychometric_test_Category_Model'
+ },
+    category_name : {
+           type : String
+    },
+
+ questions_Bank : [{
+               question : {
+                    type : String
+               },
+               question_image : {
+                    type : String 
+               },
+               options: [{
+                   type: String,
+                   
+               }],
+               correct_answer_index : {
+                    type : Number ,
+                    enum : [ 0 , 1 , 2 , 3 ]
+               }
+ }],
+
+ status : {
+        type : Number,
+        enum : [ 1 , 0],
+        default : 1
+ }
 }, { timestamps: true });
 
-const PsychometricModel = mongoose.model('Psychometric', QuestionSchema);
+const Psychometric_test_Model = mongoose.model('Psychometric', Psychometric_test_Schema);
 
-module.exports = PsychometricModel;
+module.exports = Psychometric_test_Model;

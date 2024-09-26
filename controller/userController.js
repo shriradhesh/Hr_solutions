@@ -16,7 +16,7 @@ const cms_need_any_job_section_Model = require('../model/cms_need_any_job_sectio
 const cms_postjobModel = require('../model/cms_post_your_job')
 const cms_jobMarketData = require('../model/cms_job_market_data')
 const jobTitleModel = require('../model/jobTitle')
-const PsychometricModel = require('../model/Psychometric_testing')
+const Psychometric_test_Model = require('../model/Psychometric_testing')
 const ExcelJs = require("exceljs");
 const otpModel = require('../model/otpModel')
 const sendEmails = require('../utils/sendEmails')
@@ -29,13 +29,13 @@ const { countDocuments } = require('../model/Admin_and_staffs')
 const blog_section_comment_Model = require('../model/blog_detail_comment')
 const path = require('path')
 const fixit_finder_model = require('../model/fixit_finder_model')
-const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
+const { PDFDocument, rgb, StandardFonts, asNumber } = require('pdf-lib');
 const save_candidate_profile = require('../model/save_candidate_profile_for_later')
-const Psychometric_Personality_test_Model = require('../model/psyhometric_personality_test')
+const psychometric_test_Category_Model = require('../model/psychometric_test_Category')
 const CvBuilderModel = require('../model/cv_builder')
-const online_courses_enq_model = require('../model/online_course_enq')
+const courses_user_enroll_Model = require('../model/courses_enroll_user')
 
-require('dotenv').config(); // Load environment variables from .env file
+require('dotenv').config(); 
 const nodemailer = require('nodemailer');
 const validator = require('validator'); 
 const fs = require('fs')
@@ -869,20 +869,75 @@ const deleteJob_Description = async (req, res) => {
   };
 
                                            /* Psychometric Testing Section   */
- // Api for add psychometric  questions
+ // Api for add psychometric  TEST
      
- const psychometric_questions = async (req, res) => {
+ const psychometric_test = async (req, res) => {
     try {
-        const { question, options, correctAnswerIndex } = req.body;
+        let client_id = req.params.client_id
+        let { category_id , question,  correctAnswerIndex } = req.body;
+        let options = req.body.options
 
+              //check for client id 
+              if(!client_id)
+              {
+                return res.status(400).json({
+                     success : false ,
+                     message : 'Client Id Required'
+                })
+              }
+
+              // check for client
+              let client = await employeeModel.findOne({ _id : client_id })
+              if(!client)
+              {
+                return res.status(400).json({
+                     success : false ,
+                     message : 'Client not Found'
+                })
+              }
+
+              // check for category
+              let category = await psychometric_test_Category_Model.findOne({ _id : category_id })
+              if(!category)
+              {
+                return res.status(400).json({
+                     success : false ,
+                     message : 'category not exist'
+                })
+              }
+
+                // check for test already exist for client
+                     let exist_test = await Psychometric_test_Model.findOne({ client_id , category_id })
+                      if(exist_test)
+                      {
+                        return res.status(400).json({
+                             success : false ,
+                             message : 'Test Already Exist'
+                        })
+                      }
+
+                      let question_image = ''
+                      if(req.file)
+                      {
+                        question_image = req.file.filename
+                      }
+                        
         // Check if question is provided and is a non-empty string
         if (!question) {
             return res.status(400).json({
                 success: false,
                 message: 'Question is required'
             });
+        } 
+         
+        try {
+            options = JSON.parse(options); 
+        } catch (parseError) {
+            return res.status(400).json({
+                success: false,
+                message: 'Options must be a valid JSON array'
+            });
         }
-
         // Check if options array is provided and is not empty
         if (!Array.isArray(options) || options.length === 0) {
             return res.status(400).json({
@@ -892,36 +947,30 @@ const deleteJob_Description = async (req, res) => {
         }
 
         // Check if correctAnswerIndex is provided and is a number
-        if (typeof correctAnswerIndex !== 'number') {
-            return res.status(400).json({
-                success: false,
-                message: 'Correct answer index must be a number'
-            });
-        }
-
-        // Check for already existing question
-        const check_que = await PsychometricModel.findOne({ question });
-        if (check_que) {
-            return res.status(400).json({
-                success: false,
-                message: 'Question already exists'
-            });
-        }
+        if (correctAnswerIndex) {
+            correctAnswerIndex = parseInt(correctAnswerIndex)
+        }    
 
         // Create a new psychometric question
-        const newPsychometric = new PsychometricModel({
+        let newPsychometric = new Psychometric_test_Model({
+            client_id,
+            category_id,
+            category_name : category.category_name,
+            questions_Bank : [{
             question,
+            question_image : question_image,
             options,
-            correctAnswerIndex
-        });
+            correct_answer_index : correctAnswerIndex 
+        }]
+     });
 
         // Save the new question
         await newPsychometric.save();
 
         res.status(200).json({
             success: true,
-            message: 'Psychometric question added successfully',
-            psychometric: newPsychometric
+            message: 'Psychometric test added successfully',
+            
         });
     } catch (error) {
         console.error(error);
@@ -934,37 +983,38 @@ const deleteJob_Description = async (req, res) => {
 };
 
 
-// Api for get Detials of psychometric_questions
-     const getquestions = async( req , res )=>{
+// Api for get Detials of psychometric_Test
+     const get_test = async( req , res )=>{
         try {
-            const { psychometric_questions_Id } = req.params;
+            const { test_id } = req.params;
     
             // Check for psychometric_questions_Id
-            if (!psychometric_questions_Id) {
+            if (!test_id) {
                 return res.status(400).json({
                     success: false,
-                    message: 'psychometric_questions_Id is required'
+                    message: 'psychometric_test_id is required'
                 });
             }
     
             // Fetch details from the database
-            const questionDetails = await PsychometricModel.findById(psychometric_questions_Id);
+            const psy_test = await Psychometric_test_Model.findById(test_id);
     
-            if (!questionDetails) {
+            if (!psy_test) {
                 return res.status(404).json({
                     success: false,
-                    message: 'No details found'
+                    message: 'No test found'
                 });
             }
     
             // Respond with the question details
             return res.status(200).json({
                 success: true,
-                message: 'Question details',
-                question: {
-                    question: questionDetails.question,
-                    options: questionDetails.options,
-                    correctAnswerIndex: questionDetails.correctAnswerIndex
+                message: 'Test details',
+                test_details : {
+                         category_name : psy_test.category_name,
+                         status : psy_test.status,
+                         questions_Bank : psy_test.questions_Bank
+                        
                 }
             });
     
@@ -982,30 +1032,49 @@ const deleteJob_Description = async (req, res) => {
 
 // get all psychometric_questions options for particular 
 
-const getAll_psychometric_questions = async(req , res)=>{
+const getAll_psychometric_test_of_client = async(req , res)=>{
        try {
-           
-             // check for all psychometric_questions
+              const client_id = req.params.client_id
+              // check for client Id
+              if(!client_id)
+              {
+                return res.status(400).json({
+                     success : false ,
+                     message : 'Client id Required'
+                })
+              }
 
-             const checkpsychometric_Q = await PsychometricModel.find({                        
+              // check for client
+              const client = await employeeModel({ _id : client_id })
+              if(!client)
+              {
+                return res.status(400).json({
+                     sucess : false ,
+                     message : 'Client not found'
+                })
+              }
+
+             // check for all psychometric_Test
+
+             const checkpsychometric_T = await Psychometric_test_Model.find({  client_id                   
              })
 
-             if(!checkpsychometric_Q)
+             if(!checkpsychometric_T)
              {
                 return res.status(400).json({
                      success : false ,
-                     message : `no psychometric Questions Found`
+                     message : `no psychometric Test Found for the client`
                 })
              }
 
              // sort data
 
-             const sorteddata = checkpsychometric_Q.sort(( a , b ) => b.createdAt - a.createdAt )
+             const sorteddata = checkpsychometric_T.sort(( a , b ) => b.createdAt - a.createdAt )
 
              return res.status(200).json({
                  success : true ,
-                 message : `psychometric questions`,
-                 Questions : sorteddata
+                 message : `psychometric Test of client`,
+                 Test : sorteddata
                            
              })
        } catch (error) {
@@ -1018,6 +1087,143 @@ const getAll_psychometric_questions = async(req , res)=>{
 }
 
 
+// Api for add question in test
+           const add_question_in_test = async( req , res) => {
+                   try {
+
+                          let test_id = req.params.test_id
+                          let { question , options , correct_answer_index } = req.body
+                      
+
+                    // check for test_id
+                    if(!test_id)
+                    {
+                        return res.status(400).json({
+                             success : false ,
+                             message : 'Test Id Required'
+                        })
+                    }
+
+                    // check for test
+                    const test = await Psychometric_test_Model.findOne({ _id : test_id })
+                    if(!test)
+                    {
+                        return res.status(400).json({
+                             success : false ,
+                             message : 'Test Not found'
+                        })
+                    }
+
+                    // check for question already exist
+                      const duplicate_question = test.questions_Bank.find(
+                        (ques) => ques.question === question
+                      )
+
+                      if(duplicate_question)
+                      {
+                          return res.status(400).json({
+                             success : false ,
+                             message : 'Question already exist in the test'
+                          })
+                      }
+                        
+                        try {
+                            options = JSON.parse(options); 
+                        } catch (parseError) {
+                            return res.status(400).json({
+                                success: false,
+                                message: 'Options must be a valid JSON array'
+                            });
+                        }
+
+                          let question_image = ''
+                        if(req.file)
+                        {
+                            question_image = req.file.filename
+                        }
+                         test.questions_Bank.push({
+                                question , 
+                                question_image : question_image || '',
+                                options,
+                                correct_answer_index
+                         })
+
+                         await test.save()
+                         return res.status(200).json({
+                             success : true ,
+                             message : 'Question added successfully'
+                         })
+
+                   } catch (error) {
+                       return res.status(500).json({
+                            success : false ,
+                            message : 'Server error',
+                            error_message : error.message
+                       })
+                   }
+           }
+
+            // Api for delete Question in test
+    const delete_question_in_psychometric_test = async (req, res) => {
+        const { test_id, questionId } = req.params;
+    
+        try {
+
+             // check for test_id 
+             if(!test_id)
+             {
+                return res.status(400).json({
+                     success : false ,
+                     message : 'test_id Required'
+                })
+             }
+             // check for test_id 
+             if(!questionId)
+             {
+                return res.status(400).json({
+                     success : false ,
+                     message : 'questionId Required'
+                })
+             }
+            // Check for test existence
+            const exist_test = await Psychometric_test_Model.findById(test_id);
+            if (!exist_test) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Test does not exist',
+                });
+            }
+    
+            // Check for question existence in the test
+            const questionIndex = exist_test.questions_Bank.findIndex(
+                (question) => question._id.toString() === questionId
+            );
+    
+            if (questionIndex === -1) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Question not found',
+                });
+            }
+    
+            // Remove question from the question bank
+            exist_test.questions_Bank.splice(questionIndex, 1);
+    
+            // Save updated test data
+            await exist_test.save();
+    
+            return res.status(200).json({
+                success: true,
+                message: 'Question deleted successfully',
+            });
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message,
+            });
+        }
+    };
        // Api for delete psychometric_test
 
                     const deletepsychometrcTest = async( req , res)=>{
@@ -1033,7 +1239,7 @@ const getAll_psychometric_questions = async(req , res)=>{
                             }
 
                             // check for psychometric_test
-                            const pt = await PsychometricModel.findOne({
+                            const pt = await Psychometric_test_Model.findOne({
                                     _id : psychometric_id
                             })
 
@@ -1063,56 +1269,38 @@ const getAll_psychometric_questions = async(req , res)=>{
   
 // Api for add personality test question for psychometric section
 
-const add_personality_test_question = async ( req , res ) => {
+const add_test_Category = async ( req , res ) => {
 try {
-    const { question, options, correctAnswerIndex } = req.body;
+    const { category_name } = req.body;
 
-    // Validate that the question is provided and is a non-empty string
-    if (!question || typeof question !== 'string') {
+    // Validate that the category_name is provided 
+    if (!category_name) {
         return res.status(400).json({
             success: false,
-            message: 'Question is required '
+            message: 'category_name is required '
+        });
+    }
+      
+    // Check if the category_name already exists in the database
+    const existcategory_name = await psychometric_test_Category_Model.findOne({ category_name });
+    if (existcategory_name) {
+        return res.status(400).json({
+            success: false,
+            message: `category , ${category_name} already exists`
         });
     }
 
-    // Validate that options array is provided and contains exactly 5 valid strings
-    if (!Array.isArray(options) || options.length !== 5 || !options.every(opt => ["Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"].includes(opt))) {
-        return res.status(400).json({
-            success: false,
-            message: 'Options array required and must contain exactly 5 valid strings: "Strongly Agree", "Agree", "Neutral", "Disagree", "Strongly Disagree"'
-        });
-    }
-
-    // Validate that correctAnswerIndex is provided, is a number, and is within the range 0-4
-    if (typeof correctAnswerIndex !== 'number' || correctAnswerIndex < 0 || correctAnswerIndex > 4) {
-        return res.status(400).json({
-            success: false,
-            message: 'Correct answer index must be a number between 0 and 4'
-        });
-    }
-
-    // Check if the question already exists in the database
-    const existingQuestion = await Psychometric_Personality_test_Model.findOne({ question });
-    if (existingQuestion) {
-        return res.status(400).json({
-            success: false,
-            message: 'Question already exists'
-        });
-    }
-
-    // Create a new psychometric personality test question
-    const newPsychometricQuestion = new Psychometric_Personality_test_Model({
-        question,
-        options,
-        correctAnswerIndex
+    // Create a new category_name
+    const newcategory_name = new psychometric_test_Category_Model({
+        category_name
     });
 
-    // Save the new question to the database
-    await newPsychometricQuestion.save();
+    // Save the new newcategory_name to the database
+    await newcategory_name.save();
 
     return res.status(200).json({
         success: true,
-        message: 'Psychometric personality test question added successfully',
+        message: 'Category name added successfully',
         
     });
 } catch (error) {
@@ -1126,30 +1314,33 @@ try {
 }
 
 // Api for Get all psychometric personal Ability Questions
-const getAll_psychometric_personal_ability_questions = async(req , res)=>{
+const getAll_psychometric_Category = async(req , res)=>{
 try {
     
-      // check for all psychometric_questions
+      // check for all category
 
-      const checkpsychometric_Q = await Psychometric_Personality_test_Model.find({                        
+      const check_Category = await psychometric_test_Category_Model.find({                        
       })
 
-      if(!checkpsychometric_Q)
+      if(!check_Category)
       {
          return res.status(400).json({
               success : false ,
-              message : `no Questions Found for Personal Ability Test`
+              message : `no check_Category Found for Psychometric Test`
          })
       }
 
       // sort data
 
-      const sorteddata = checkpsychometric_Q.sort(( a , b ) => b.createdAt - a.createdAt )
+      const sorteddata = check_Category.sort(( a , b ) => b.createdAt - a.createdAt )
 
       return res.status(200).json({
           success : true ,
-          message : `Personal Ability Test questions`,
-          Questions : sorteddata
+          message : `All Categories for personality Test`,
+          Category : sorteddata.map((m)=> ({
+                 category_id : m._id,
+                 category_name : m.category_name
+          }))
                     
       })
 } catch (error) {
@@ -1161,77 +1352,34 @@ try {
 }
 }
          
-// Api for get perticular personal Ability test question
 
- const get_personal_ability_question = async ( req , res )=> {
-    try {
-        const { questions_Id } = req.params;
-
-        // Check for questions_Id
-        if (!questions_Id) {
-            return res.status(400).json({
-                success: false,
-                message: 'questions_Id is required'
-            });
-        }
-
-        // Fetch details from the database
-        const questionDetails = await Psychometric_Personality_test_Model.findOne({ _id : questions_Id });
-
-        if (!questionDetails) {
-            return res.status(400).json({
-                success: false,
-                message: 'No details found'
-            });
-        }
-
-        // Respond with the question details
-        return res.status(200).json({
-            success: true,
-            message: 'Question details',
-            question: {
-                question: questionDetails.question,
-                options: questionDetails.options,
-                correctAnswerIndex: questionDetails.correctAnswerIndex
-            }
-        });
-
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error_message: error.message
-        });
-    }
- }
-
- // Api for delete personal Ability Question
-   const Delete_personal_ability_ques = async ( req , res )=> {
+ // Api for delete Category
+   const Delete_category = async ( req , res )=> {
        try {
-              const question_Id = req.params.question_Id
-              // check for question_Id
-            if(!question_Id)
+              const category_id = req.params.category_id
+              // check for category_id
+            if(!category_id)
             {
                  return res.status(400).json({
                         success : false ,
-                        message : 'Question Id required'
+                        message : 'category Id required'
                  })
             }
             
-          //check for question
-            const question = await Psychometric_Personality_test_Model.findOne({ _id : question_Id })
-            if(!question)
+          //check for category
+            const category = await psychometric_test_Category_Model.findOne({ _id : category_id })
+            if(!category)
             {
                     return res.status(400).json({
                          success : false ,
-                         message : 'No Question found'
+                         message : 'No category found'
                     })
             }
 
-              await question.deleteOne()
+              await category.deleteOne()
                return res.status(200).json({
                   success : true ,
-                  message : 'Question Deleted Successfully'
+                  message : 'category Deleted Successfully'
                })
        } catch (error) {
            return res.status(500).json({
@@ -4467,91 +4615,439 @@ const build_cv = async (req, res) => {
     }
 };
 
-                                               /* online courses enq  */
-       // Api for enquery for online courses
+                                               /* online courses USER  */
+       // Api for User Enroll
 
-           const online_course_enq = async ( req , res)=> {
-                try {
-                           const course_id = req.params.course_id
-
-                           const { first_name , last_name , email , phone_no , message } = req.body
-
-                             // check for course_id
-                             if(!course_id)
-                             {
-                                return res.status(400).json({
-                                     success : false ,
-                                     message : 'course_id required'
-                                })
-                             }
-                         
-
-                             // check for course
-                             const course = await cms_online_courses_Model.findOne({
-                                   _id : course_id
-                             })
-
-                             if(!course)
-                             {
-                                return res.status(400).json({
-                                     success : false ,
-                                     message : 'No course Found'
-                                })
-                             }
-
-
-                        // check for required fields
+           const courses_user_enroll = async ( req , res)=> {
+                     try {
+                            const { first_name , last_name , email , password ,  phone_no } = req.body
                            
-                        const requiredFields = [ 'first_name' , 'last_name' , 'email' , 'phone_no' , 'message']
-                        for(let field of requiredFields)
-                        {
-                              if(!req.body[field])
-                              {
-                                   return res.status(400).json({
-                                       success : false ,
-                                       message : `Required ${field.replace('_', ' ')}`
-                                   })
-                              }
-                        }
-
-                        // check for already  generate enq
-                            const enq_exist = await online_courses_enq_model.findOne({ email , course_id })
-                            if(enq_exist)
-                            {
-                                return res.status(400).json({
-                                     success : false ,
-                                     message : 'you already send the enquiry'
-                                })
-                            }
-
-                            
-                              // add new enquiry
-                                    const new_enq = new online_courses_enq_model({
-                                          first_name,
-                                          last_name,
-                                          email,
-                                          phone_no,
-                                          course_id,
-                                          message,
-                                          status : 1
+                             const requiredFields = ['first_name' , 'last_name' , 'email' , 'password' , 'phone_no']
+                             for(let field of requiredFields)
+                             {
+                                   if(!req.body[field])
+                                   {
+                                    return res.status(400).json({
+                                         success : false ,
+                                         message : `Required ${field.replace('_' , ' ')}`
                                     })
+                                   }
+                             }
 
-                                       await new_enq.save()
-                                       return res.status(200).json({
-                                           success : true,
-                                           message : 'Enquiry Generated Successfully'
-                                       })
-                        
-                } catch (error) {
-                     return res.status(500).json({
-                         success : false ,
-                         message : 'Server error',
-                         error_message : error.message
-                     })
-                }
+                              const hashedPassword = await bcrypt.hash(password , 10)
+
+                              // check for already exist user
+
+                              const exist_user = await courses_user_enroll_Model.findOne({ email })
+                                if(exist_user)
+                                {
+                                    return res.status(400).json({
+                                         success : false ,
+                                         message : 'You Already Enrolled ...!'
+                                    })
+                                }
+
+
+                              // add new user
+                                const new_enroll_user = new courses_user_enroll_Model({
+                                       first_name ,
+                                       last_name ,
+                                       email ,
+                                       password : hashedPassword,
+                                       phone_no ,
+                                       status : 1,
+                                       courses : []
+                                })
+
+                                   await new_enroll_user.save()
+
+                                   return res.status(200).json({
+                                         success : true ,
+                                         message : 'Enrolled Successfully ..!'
+                                   })
+                     } catch (error) {
+                         return res.status(500).json({
+                             success : false ,
+                             message : 'Server error',
+                             error_message :  error.message
+                         })
+                     }
+                         
            }
 
-      
+
+           // Api for get all Enrolled User
+              const all_enrolled_user = async( req , res )=> {
+                    try {
+                            // check for all user
+                            const enrolled_user = await courses_user_enroll_Model.find({ }).sort({ createdAt : -1 }).lean()
+                             if(!enrolled_user)
+                             {
+                                return res.status(400).json({
+                                     success : false ,
+                                     message : 'No User Enrolled yet'
+                                })
+                             }
+
+                             return res.status(200).json({
+                                 success : true ,
+                                 message : 'Enrolled User',
+                                 enrolled_user : enrolled_user
+                             })
+                    } catch (error) {
+                          return res.status(500).json({
+                                success : false ,
+                                message : 'Server error',
+                                error_message : error.message
+                          })
+                    }
+              }
+
+
+              // Api for enrolled_user_login
+
+              const enrolled_user_login = async (req, res) => {
+                try {
+                    const { email, password } = req.body;
+            
+                    // Validate the required fields
+                    if (!email) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Email is required'
+                        });
+                    }
+            
+                    if (!password) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Password is required'
+                        });
+                    }
+            
+                    // Check for enrolled user
+                    const enrolled_user = await courses_user_enroll_Model.findOne({ email });
+                    if (!enrolled_user) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Enrolled user not found'
+                        });
+                    }
+            
+                    // Compare password
+                    const passwordMatch = await bcrypt.compare(password, enrolled_user.password); 
+                    if (!passwordMatch) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Password Incorrect'
+                        });
+                    }
+            
+                    // Successful login response
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Enrolled user logged in successfully',
+                        enrolled_user
+                    });
+            
+                } catch (error) {
+                    // Error handling
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Server error',
+                        error_message: error.message
+                    });
+                }
+            };
+            
+
+            // Api for enroll course
+            const enroll_course = async (req, res) => {
+                try {
+                    const user_id = req.params.user_id; 
+                    const { course_id } = req.body; 
+            
+                    // Check if course_id is provided
+                    if (!course_id) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Course Id is required'
+                        });
+                    }
+            
+                    // Check if user_id is provided
+                    if (!user_id) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'User Id is required'
+                        });
+                    }
+            
+                    // Check for the existence of the course
+                    const course = await cms_online_courses_Model.findById(course_id);
+                    if (!course) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Course does not exist'
+                        });
+                    }
+            
+                    // Check if the user is already enrolled in the course
+                    const existingEnrollment = await courses_user_enroll_Model.findOne({
+                        _id: user_id, 
+                        'courses.course_id': course_id 
+                    });
+            
+                    if (existingEnrollment) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'User already enrolled in this course'
+                        });
+                    }
+            
+                    // Check if the user exists
+                    const enroll_user = await courses_user_enroll_Model.findById(user_id);
+                    if (!enroll_user) {
+                        return res.status(404).json({
+                            success: false,
+                            message: 'User Not Found'
+                        });
+                    }
+            
+                    // Enroll the user in the course by adding the course 
+                    enroll_user.courses.push({
+                        course_id: course_id,
+                        enroll_Date: new Date(),
+                        course_status: 'Pending'
+                    });
+
+                      const emailContent = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Enrollment Successful</title>
+</head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4;">
+
+    <div style="max-width: 600px; margin: 40px auto; background-color: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+        
+        <!-- Header Section -->
+        <div style="background-color: #2E86C1; color: #fff; padding: 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px;">Enrollment Successful!</h1>
+        </div>
+        
+        <!-- Content Section -->
+        <div style="padding: 20px;">
+            <p style="font-size: 16px; color: #333;">Dear <strong>${enroll_user.first_name} ${enroll_user.last_name} </strong>,</p>
+            
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                We are happy to inform you that you have successfully enrolled in <strong>${course.Heading}</strong>.
+            </p>
+            
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                Our team will contact you shortly with more details. Thank you for choosing our service, and we look forward to supporting your learning journey!
+            </p>
+
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                If you have any questions, feel free to reach out to us at 
+                <a href="mailto:info@smartstart.sl" style="color: #2E86C1; text-decoration: none;">Support Team</a>.
+            </p>
+            
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                Thank you once again!
+            </p>
+        </div>
+
+        <!-- Footer Section -->
+        <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e8e8e8;">
+            <p style="font-size: 14px; color: #666; margin: 0;">
+                Best regards,<br><strong> Smart Start SL Ltd</strong>
+            </p>
+        </div>
+    </div>
+
+</body>
+</html>
+`       
+     await  sendEmails(enroll_user.email, "Enrollment Successful", emailContent);
+                   
+                    await enroll_user.save();
+            
+                    return res.status(201).json({
+                        success: true,
+                        message: 'User successfully enrolled in the course'
+                    });
+                } catch (error) {
+                    return res.status(500).json({
+                        success: false,
+                        message: 'Server error',
+                        error_message: error.message
+                    });
+                }
+            };
+            
+
+// Api for update the status of the course
+const update_course_status = async (req, res) => {
+    try {
+        const { user_id, course_id } = req.params;
+
+        // Check if course_id is provided
+        if (!course_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Course Id is required'
+            });
+        }
+
+        const course = await cms_online_courses_Model.findById(course_id);
+        if (!course) {
+            return res.status(400).json({
+                success: false,
+                message: 'Course does not exist'
+            });
+        }
+
+        // Check if user_id is provided
+        if (!user_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'User Id is required'
+            });
+        }
+
+        // Check if the user is enrolled in the course
+        const enrollment = await courses_user_enroll_Model.findOne({
+            _id: user_id,
+            'courses.course_id' : course_id
+        });
+
+        if (!enrollment) {
+            return res.status(400).json({
+                success: false,
+                message: 'Enrollment not found for the given user and course'
+            });
+        }
+
+        // Update the course status to 'Accepted'
+        const updatedEnrollment = await courses_user_enroll_Model.findOneAndUpdate(
+            {
+                _id: user_id,
+                'courses.course_id': course_id
+            },
+            {
+                $set: {
+                    'courses.$.status': 'Accepted' 
+                }
+            },
+            { new: true } 
+        );
+                const emailContent = `<!DOCTYPE html>
+<html>
+<head>
+    <title>Course Enrollment Accepted</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0;">
+    <div style="max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); overflow: hidden;">
+        
+        <!-- Header Section -->
+        <div style="background-color: #2E86C1; padding: 20px; text-align: center;">
+            <h1 style="margin: 0; color: #ffffff; font-size: 24px;">Course Enrollment Accepted</h1>
+        </div>
+        
+        <!-- Body Content -->
+        <div style="padding: 20px;">
+            <p style="font-size: 16px; color: #333;">Dear <strong>${enrollment.full_name} ${enrollment.last_name} </strong>,</p>
+            
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                We are excited to inform you that your enrollment status for the course <strong>${course.Heading}</strong> has been successfully  <strong>Accepted</strong>.
+            </p>
+            
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                Our team will reach out to you soon with further details regarding the next steps. We appreciate your trust in our services and are looking forward to supporting your learning journey.
+            </p>
+
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                Should you have any questions, feel free to contact us at 
+                <a href="mailto:info@smartstart.sl" style="color: #2E86C1; text-decoration: none;">Support Email</a>.
+            </p>
+            
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">
+                Thank you for choosing us!
+            </p>
+        </div>
+        
+        <!-- Footer Section -->
+        <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-top: 1px solid #e8e8e8;">
+            <p style="font-size: 14px; color: #666; margin: 0;">
+                Best regards,<br><strong>Smart Start SL Ltd</strong>
+            </p>
+        </div
+`
+    await sendEmails(enrollment.email , 'Course Enrollment Accepted' , emailContent)
+        return res.status(200).json({
+            success: true,
+            message: 'Course Enrollment Accepted',
+           
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+         // Api for get_my_courses 
+         const get_my_enrolled_courses = async( req , res )=> {
+               try {
+                     const { user_id } = req.params
+                    // Check if user_id is provided
+                    if (!user_id) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'User Id is required'
+                        });
+                    }
+
+                    // check for user 
+                    const user = await courses_user_enroll_Model.findOne({ _id : user_id })
+                    if(!user)
+                    {
+                        return res.status(400).json({
+                             success : false ,
+                             message : 'User not Found'
+                        })
+                    }
+
+                    // Get enrolled courses and retrieve course details
+
+        const enrolled_courses = await Promise.all(
+            user.courses.map(async (course) => {
+                const courseDetails = await cms_online_courses_Model.findById(course.course_id);
+                return {
+                    course_id: course.course_id,
+                    course_name: courseDetails ? courseDetails.Heading : 'Course not found',
+                    enroll_Date: course.enroll_Date,
+                    course_status: course.status
+                };
+            })
+        );
+              // Return the response with enrolled courses
+                    return res.status(200).json({
+                        success: true,
+                        message: 'My Enrolled Courses',
+                        enrolled_courses
+                    });
+               } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+               }
+         }
+
            const delete_all_notification_of_user = async (req, res) => {
             try {
               // Delete all notifications from empNotificationModel
@@ -4701,10 +5197,7 @@ module.exports = {
     seenNotification, unseenNotificationCount , deleteJob , activejobs_by_client , Inactivejobs_by_client ,filterJob,
     getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts , deleteCandidate,
     cms_getJobs_posted_procedure_section1 , cms_get_need_any_job_section ,get_cms_post_your_job , cms_getjob_market_data,
-    addJobTitle , alljobTitle , deletejobTitle ,  export_candidate , psychometric_questions , getAll_psychometric_questions ,
-    getquestions ,  deletepsychometrcTest , add_personality_test_question , getAll_psychometric_personal_ability_questions,
-    get_personal_ability_question , Delete_personal_ability_ques
-     ,client_dashboardCount,
+    addJobTitle , alljobTitle , deletejobTitle ,  export_candidate , client_dashboardCount,
     forgetPassOTP,  verifyOTP  ,  clientResetPass,  create_contactUS , getJob , addJob_Description , alljobDescription ,
     deleteJob_Description , getJd , fixit_finder , uploadResume , get_upload_section_candidates , 
     candidate_recruitment_process_for_uploaded_candidate , get_successfull_candidate , all_active_jobs_Count_with_title ,
@@ -4712,5 +5205,16 @@ module.exports = {
     get_saved_candidate_profile , update_candidate_rating ,  get_female_candidate_for_client , get_male_candidate_for_client,
     build_cv , get_all_candidate_for_client ,
 
-    online_course_enq      , delete_all_notification_of_user , export_client_jobs_candidate
+   delete_all_notification_of_user , export_client_jobs_candidate,
+
+
+    // Psychometric
+    add_test_Category , getAll_psychometric_Category , Delete_category ,
+
+    psychometric_test , getAll_psychometric_test_of_client ,
+    get_test ,add_question_in_test,  delete_question_in_psychometric_test ,  deletepsychometrcTest   ,
+
+    courses_user_enroll , all_enrolled_user , enrolled_user_login , enroll_course , update_course_status ,
+    get_my_enrolled_courses
+
 } 

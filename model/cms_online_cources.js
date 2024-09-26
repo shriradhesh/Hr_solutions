@@ -18,12 +18,38 @@ const cms_online_cources_Schema = new mongoose.Schema({
       image : {
            type : String
       },
-      presentation : {
-          type : String
-   },
-   video : {
-          type : String
-   },
+
+        topic : [{
+                         topic_name  : {
+                              type : String
+                         },
+
+                         topic_description : {
+                              type : String
+                         },
+
+                         presentation : {
+                              type : String
+                         },
+
+                         video : {
+                                   type : String
+                         },
+                        
+                         topic_status : {
+                              type : Number,
+                              enum : [1 ,0],
+                              default : 0
+                         },
+
+
+        }],
+        
+     status : {
+             type : Number,
+             enum : [ 0 , 1 ],
+             default : 1
+     }
 
 
 } , { timestamps : true })
