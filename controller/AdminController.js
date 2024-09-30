@@ -57,6 +57,7 @@ const job_status_Email = require("../utils/job_email")
 const candidate_cv_rating_Model = require('../model/candidateprofileRating')
 const online_courses_enq_model = require('../model/courses_enroll_user')
 const online_course_quiz_Model = require('../model/online_courses_quiz')
+const courses_user_enroll_Model = require('../model/courses_enroll_user')
 
 
 
@@ -6864,27 +6865,54 @@ const cms_labour_tool = async ( req , res )=> {
     // Api for get cms online courses details
     const get_cms_online_courses_details = async ( req , res) => {
         try {
-               const getDetails = await cms_online_courses_Model.find({})
-
-               if(!getDetails)
-               {
-                 return res.status(400).json({
-                      success : false ,
-                      message : 'Details not found'
-                 })
-               }
-
-               return res.status(200).json({
-                  success : true ,
-                  message : 'cms online courses details',
-                  Details : getDetails
-               })
+            // Fetch all courses
+            const getDetails = await cms_online_courses_Model.find({});
+    
+            if (!getDetails || getDetails.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Details not found'
+                });
+            }
+    
+            // Use Promise.all to fetch enrolled users count for each course in parallel
+            const courseDetailsWithEnrollment = await Promise.all(getDetails.map(async (course) => {
+                const usersEnrolled = await courses_user_enroll_Model.find({
+                    'courses.course_id': course._id
+                });
+    
+                // Return course details with enrolled users count
+                return {
+                    _id: course._id,
+                    Heading : course.Heading, 
+                    Description: course.Description,
+                    Detailed_description : course.Description,
+                    Detailed_description : course.Description,
+                    price : course.price,
+                    image : course.image,
+                    topic : course.topic,
+                    status : course.status,
+                    enrolled_users_count: usersEnrolled.length,
+                    enrolled_users: usersEnrolled.map(user => ({
+                        first_name: user.first_name,
+                        last_name: user.last_name,
+                        email: user.email,
+                        phone_no: user.phone_no
+                    }))
+                };
+            }));
+    
+            return res.status(200).json({
+                success: true,
+                message: 'CMS online courses details with enrollment info',
+                courses: courseDetailsWithEnrollment
+            });
         } catch (error) {
-           return res.status(500).json({
-              success : false ,
-              message : 'server error',
-              error_message : error.message
-           })
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
         }
   }
 

@@ -41,6 +41,7 @@ const validator = require('validator');
 const fs = require('fs')
 const parse5 = require('parse5');
 const cms_online_courses_Model = require('../model/cms_online_cources')
+const online_course_quiz_Model = require('../model/online_courses_quiz')
 
 
 
@@ -4733,7 +4734,10 @@ const build_cv = async (req, res) => {
                             message: 'Enrolled user not found'
                         });
                     }
-            
+             
+                         // Check if the stored password is in plain text
+           
+                    if (enrolled_user.password && enrolled_user.password.startsWith("$2b$")) {
                     // Compare password
                     const passwordMatch = await bcrypt.compare(password, enrolled_user.password); 
                     if (!passwordMatch) {
@@ -4742,7 +4746,16 @@ const build_cv = async (req, res) => {
                             message: 'Password Incorrect'
                         });
                     }
-            
+                }
+                  else
+                  {
+                    const saltRounds = 10;
+                    const hashedPassword = await bcrypt.hash(password, saltRounds);
+        
+                    // Update the stored password in the database
+                    enrolled_user.password = hashedPassword;               
+                    await enrolled_user.save();
+                  }
                     // Successful login response
                     return res.status(200).json({
                         success: true,
@@ -5028,6 +5041,11 @@ const update_course_status = async (req, res) => {
                 return {
                     course_id: course.course_id,
                     course_name: courseDetails ? courseDetails.Heading : 'Course not found',
+                    course_Description : courseDetails ? courseDetails.Description : 'Course Description not Found',
+                    course_Detailed_Description : courseDetails ? courseDetails.Detailed_description : 'Course Detailed_description not Found',
+                    course_Price : courseDetails ? courseDetails.price : 'Course Price not Found',
+                    course_Image : courseDetails ? courseDetails.image : 'Course Image not Found',
+                    cours_Topic : courseDetails ? courseDetails.topic  : 'course Topic not Found',
                     enroll_Date: course.enroll_Date,
                     course_status: course.status
                 };
@@ -5047,6 +5065,100 @@ const update_course_status = async (req, res) => {
                 });
                }
          }
+
+
+
+    // Api for ger all enrolled user for a course
+    const get_enrolled_users_count = async (req, res) => {
+        try {
+            const { course_id } = req.params;
+    
+            // Check if course_id is provided
+            if (!course_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Course Id is required'
+                });
+            }
+    
+            // Find all users who have enrolled in the specified course
+            const usersEnrolled = await courses_user_enroll_Model.find({
+                'courses.course_id': course_id
+            });
+    
+            
+            // Return the response with the count of enrolled users
+            return res.status(200).json({
+                success: true,
+                message: `Enrolled User`,
+                enrolled_users_count: usersEnrolled.length,
+                enrolled_user : usersEnrolled.map((m)=> ({
+                            first_name  : m.first_name,
+                            last_name  :  m.last_name,
+                            email : m.email,
+                            phone_no : m.phone_no
+                }))
+            });
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
+        }
+    };
+
+
+    // Api for get particular topic Quiz
+                  const topic_quiz = async( req , res)=> {
+                        try {
+                              const topic_id = req.params.topic_id
+                              // check for topic id
+                              if(!topic_id)
+                              {
+                                return res.status(400).json({
+                                     success : false ,
+                                     message : 'Topic Id Required'
+                                })
+                              }
+
+                              const topic_q = await online_course_quiz_Model.find({ topic_id }).sort({ createdAt : -1}).lean()
+
+                              if(!topic_q)
+                              {
+                                return res.status(400).json({
+                                     success : false ,
+                                     message : 'No Quiz Found for the Topic'
+                                })
+                              }
+
+                              return res.status(200).json({
+                                 success : true ,
+                                 message : 'Quiz of Topic',
+                                 Topic_quiz : topic_q.map((m)=> ({
+                                      topic_name : m.topic_name,
+                                     topic_id : m.topic_id,
+                                     quiz_id : m._id,
+                                     topic_quiz : m.questions_Bank
+
+
+                                 }))
+                              })
+
+
+                        } catch (error) {
+                              return res.status(500).json({
+                                  success : false ,
+                                  message : 'Server error',
+                                  error_message : error.message
+
+                              })
+                        }
+                  }
+
+
+
+    
 
            const delete_all_notification_of_user = async (req, res) => {
             try {
@@ -5215,6 +5327,6 @@ module.exports = {
     get_test ,add_question_in_test,  delete_question_in_psychometric_test ,  deletepsychometrcTest   ,
 
     courses_user_enroll , all_enrolled_user , enrolled_user_login , enroll_course , update_course_status ,
-    get_my_enrolled_courses
-
+    get_my_enrolled_courses , get_enrolled_users_count , topic_quiz
+ 
 } 

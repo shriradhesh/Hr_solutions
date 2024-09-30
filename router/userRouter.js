@@ -222,6 +222,10 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          // Api for get_my_enrolled_courses
          router.get('/get_my_enrolled_courses/:user_id', userController.get_my_enrolled_courses)
 
+          // Api for get_enrolled_users_count
+          router.get('/get_enrolled_users_count/:course_id' , userController.get_enrolled_users_count)
+          // Api for topic_quiz
+          router.get('/topic_quiz/:topic_id', userController.topic_quiz)
 
 
 module.exports = router
