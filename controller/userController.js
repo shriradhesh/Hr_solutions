@@ -42,6 +42,7 @@ const fs = require('fs')
 const parse5 = require('parse5');
 const cms_online_courses_Model = require('../model/cms_online_cources')
 const online_course_quiz_Model = require('../model/online_courses_quiz')
+const user_enrolled_course_toic_manage_Model = require('../model/user_enrolled_topic_manage')
 
 
 
@@ -2121,6 +2122,8 @@ try {
                     })
                   }
           }
+
+    
     
           // Api to export candidate with there jobseeker_status
 
@@ -4884,8 +4887,23 @@ const build_cv = async (req, res) => {
      await  sendEmails(enroll_user.email, "Enrollment Successful", emailContent);
                    
                     await enroll_user.save();
+
+                    // manage topic in other table
+                    course.topic = course.topic.map((item, index) => {
+                        return {
+                            ...item,
+                            topic_status: index === 0 ? 1 : 0
+                        };
+                    });
+                    const manage_topic = new user_enrolled_course_toic_manage_Model({
+                        enroll_user_id : enroll_user._id,
+                        course_name : course.Heading,
+                        course_id : course._id,
+                        topic : course.topic
+                    })
+                        await manage_topic.save()
             
-                    return res.status(201).json({
+                    return res.status(200).json({
                         success: true,
                         message: 'User successfully enrolled in the course'
                     });
@@ -5012,59 +5030,73 @@ const update_course_status = async (req, res) => {
 };
 
          // Api for get_my_courses 
-         const get_my_enrolled_courses = async( req , res )=> {
-               try {
-                     const { user_id } = req.params
-                    // Check if user_id is provided
-                    if (!user_id) {
-                        return res.status(400).json({
-                            success: false,
-                            message: 'User Id is required'
-                        });
-                    }
-
-                    // check for user 
-                    const user = await courses_user_enroll_Model.findOne({ _id : user_id })
-                    if(!user)
-                    {
-                        return res.status(400).json({
-                             success : false ,
-                             message : 'User not Found'
-                        })
-                    }
-
-                    // Get enrolled courses and retrieve course details
-
-        const enrolled_courses = await Promise.all(
-            user.courses.map(async (course) => {
-                const courseDetails = await cms_online_courses_Model.findById(course.course_id);
-                return {
+         const get_my_enrolled_courses = async (req, res) => {
+            try {
+              const { user_id } = req.params;
+          
+              // Check if user_id is provided
+              if (!user_id) {
+                return res.status(400).json({
+                  success: false,
+                  message: 'User Id is required',
+                });
+              }
+          
+              // Check for user enrollment
+              const user = await courses_user_enroll_Model.findOne({ _id: user_id });
+              if (!user) {
+                return res.status(400).json({
+                  success: false,
+                  message: 'User not Found',
+                });
+              }
+          
+              // Get enrolled courses and retrieve course details
+              const enrolled_courses = await Promise.all(
+                user.courses.map(async (course) => {
+                  const courseDetails = await cms_online_courses_Model.findById(course.course_id);
+          
+                  // Fetch topics from user_enrolled_course_topic_manage_Model using user_id and course_id
+                  const userCourseTopic = await user_enrolled_course_toic_manage_Model.findOne({
+                    enroll_user_id: user_id,
+                    course_id: course.course_id,
+                  });
+          
+              
+          
+                  // Extract the topics if found
+                  const courseTopics = userCourseTopic ? userCourseTopic.topic : 'Course Topics not found';
+          
+                  return {
                     course_id: course.course_id,
                     course_name: courseDetails ? courseDetails.Heading : 'Course not found',
-                    course_Description : courseDetails ? courseDetails.Description : 'Course Description not Found',
-                    course_Detailed_Description : courseDetails ? courseDetails.Detailed_description : 'Course Detailed_description not Found',
-                    course_Price : courseDetails ? courseDetails.price : 'Course Price not Found',
-                    course_Image : courseDetails ? courseDetails.image : 'Course Image not Found',
-                    cours_Topic : courseDetails ? courseDetails.topic  : 'course Topic not Found',
+                    course_Description: courseDetails ? courseDetails.Description : 'Course Description not Found',
+                    course_Detailed_Description: courseDetails ? courseDetails.Detailed_description : 'Course Detailed Description not Found',
+                    course_Price: courseDetails ? courseDetails.price : 'Course Price not Found',
+                    course_Image: courseDetails ? courseDetails.image : 'Course Image not Found',
+                    cours_Topic: courseTopics || 'course topic not found',
                     enroll_Date: course.enroll_Date,
-                    course_status: course.status
-                };
-            })
-        );
+                    course_status: course.status,
+                  };
+                })
+              );
+          
               // Return the response with enrolled courses
-                    return res.status(200).json({
-                        success: true,
-                        message: 'My Enrolled Courses',
-                        enrolled_courses
-                    });
-               } catch (error) {
-                return res.status(500).json({
-                    success: false,
-                    message: 'Server error',
-                    error_message: error.message
-                });
-               }
-         }
+              return res.status(200).json({
+                success: true,
+                message: 'My Enrolled Courses',
+                enrolled_courses,
+              });
+            } catch (error) {
+              return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message,
+              });
+            }
+          };
+          
+          
 
 
 
@@ -5219,7 +5251,7 @@ const update_course_status = async (req, res) => {
                     message: 'No jobs found for this client'
                 });
             }
-    
+
             // Get total candidates applied (with gender filter)
             const totalCandidates = await appliedjobModel.find({
                 jobId: { $in: totalJobs.map(job => job.jobId) },
@@ -5299,7 +5331,70 @@ const update_course_status = async (req, res) => {
         }
     };
     
-    
+
+    // Api for updatee the course topic status
+       
+    const update_topic_status = async (req, res) => {
+        try {
+          const user_id = req.params.user_id;
+          const topic_id = req.params.topic_id;
+      
+          // check for required fields
+          if (!user_id) {
+            return res.status(400).json({
+              success: false,
+              message: 'User ID is required',
+            });
+          }
+      
+          if (!topic_id) {
+            return res.status(400).json({
+              success: false,
+              message: 'Topic ID is required',
+            });
+          }
+      
+          // Find the user-enrolled course with the matching topic
+          const enrolledCourse = await user_enrolled_course_toic_manage_Model.findOne({
+            enroll_user_id: user_id,
+            'topic': {
+              $elemMatch: { _id: topic_id },
+            },
+          });
+      
+          // Check if the topic exists in the user's enrolled course
+          if (!enrolledCourse) {
+            return res.status(400).json({
+              success: false,
+              message: `Enrolled course'topic not found`,
+            });
+          }
+               
+          const updatedTopic = await user_enrolled_course_toic_manage_Model.updateOne(
+            {
+              enroll_user_id: user_id,
+              'topic._id': topic_id,
+            },
+            {
+              $set: { 'topic.$.topic_status': 1 }, 
+            }
+          );
+      
+          return res.status(200).json({
+            success: true,
+            message: 'Topic Activated for user',
+          });
+      
+        } catch (error) {
+          return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message,
+          });
+        }
+      };
+      
+      
     
     
         
@@ -5327,6 +5422,7 @@ module.exports = {
     get_test ,add_question_in_test,  delete_question_in_psychometric_test ,  deletepsychometrcTest   ,
 
     courses_user_enroll , all_enrolled_user , enrolled_user_login , enroll_course , update_course_status ,
-    get_my_enrolled_courses , get_enrolled_users_count , topic_quiz
+    get_my_enrolled_courses , get_enrolled_users_count , topic_quiz ,
+    update_topic_status
  
 } 
