@@ -21,13 +21,12 @@ const online_course_quiz_Schema = new mongoose.Schema({
                                type : String
                           },
                           options: [{
-                              type: String,
+                              option_name : String,
                               
                           }],
-                          correct_answer_index : {
-                               type : Number ,
-                               enum : [ 0 , 1 , 2 , 3 ]
-                          }
+                          correct_answer : {
+                               type : String
+                                      }
             }],
 
             status : {

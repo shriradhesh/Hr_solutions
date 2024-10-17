@@ -55,11 +55,11 @@ const cms_home_Model = require("../model/cms_Home")
 const job_status_Email = require("../utils/job_email")
 
 const candidate_cv_rating_Model = require('../model/candidateprofileRating')
-const online_courses_enq_model = require('../model/courses_enroll_user')
+
 const online_course_quiz_Model = require('../model/online_courses_quiz')
 const courses_user_enroll_Model = require('../model/courses_enroll_user')
-
-
+const user_enrolled_course_toic_quiz_manage_Model = require('../model/topic_quiz_manage')
+const user_enrolled_course_toic_manage_Model = require('../model/user_enrolled_topic_manage')
 
 
 const fs = require('fs')
@@ -68,6 +68,7 @@ const natural = require('natural');
 
 const mammoth = require('mammoth');
 const { execSync } = require('child_process')
+const course_transaction_model = require('../model/transaction')
 
 
 
@@ -1199,8 +1200,8 @@ const { execSync } = require('child_process')
             const candidateId = req.params.candidateId;
             const { seeker_status, emailSubject, emailContent } = req.body;
     
-            // Check for candidateId
-            if (!candidateId) {
+             // Check for candidateId
+             if (!candidateId) {
                 return res.status(400).json({
                     success: false,
                     message: 'Candidate ID required'
@@ -4942,12 +4943,6 @@ const DeleteContactUS = async ( req ,res )=>{
                     message: 'Basic pay is required'
                 });
             }
-            if (OT_Hours_weekday) {
-                OT_Hours_weekday = OT_Hours_weekday
-            }
-            if (OT_Hours_weekend) {
-                OT_Hours_weekend = OT_Hours_weekend
-            }
     
             // Calculate Basic Pay per Day
             const Basic_pay_per_day = Math.round(Basic_pay / 22);
@@ -4960,7 +4955,7 @@ const DeleteContactUS = async ( req ,res )=>{
             // Calculate overtime computation on weekdays using the provided formula
             let OT_computation_on_weekday;
             let OT_computation_on_weekday_rounded;
-            let message = 'Overtime calculated successfully' 
+            let message = 'Overtime calculated successfully';
     
             if (OT_Hours_weekday > 4) {
                 // Compute only for the first 4 hours
@@ -4969,22 +4964,26 @@ const DeleteContactUS = async ( req ,res )=>{
     
                 // Notify that only 4 hours are computed
                 message = `Attention :
-                  Please note that our overtime computation guide limits the maximum allowable overtime to 4 hours per month (Monday to Friday) for weekdays. 
-                  However, overtime on weekends and holidays is not subject to this limit and can be recorded without restriction. 
-                  Any attempts to record more than the allowable amount for weekdays will not be processed.
-                   For further details or to ensure compliance, please refer to the guidelines in this overtime guide or consult the Employment Act of 2023.`;
-            } else {
+                Please note that our overtime computation guide limits the maximum allowable overtime to 4 hours per month (Monday to Friday) for weekdays. 
+                However, overtime on weekends and holidays is not subject to this limit and can be recorded without restriction. 
+                Any attempts to record more than the allowable amount for weekdays will not be processed.
+                 For further details or to ensure compliance, please refer to the guidelines in this overtime guide or consult the Employment Act of 2023.`;
+         } else {
                 OT_computation_on_weekday = OT_Hours_weekday * Basic_pay_per_Hour * 1.5;
                 OT_computation_on_weekday_rounded = Math.round(OT_computation_on_weekday);
             }
-            const Basic_pay_per_Hour_for_weekend = (basic_pay_per_day_without_rounded / 8)
+    
+            // Calculate Pay per Hour for weekends
+            const Basic_pay_per_Hour_for_weekend = basic_pay_per_day_without_rounded / 8;
+    
             // Calculate overtime computation on weekends
-            const OT_computation_on_weekend =  Basic_pay_per_Hour_for_weekend * OT_Hours_weekend * 2;
-           
+            const OT_computation_on_weekend = Basic_pay_per_Hour_for_weekend * OT_Hours_weekend * 2;
+    
             // Calculate total overtime
-            const total_overTime = Math.round(OT_computation_on_weekday + OT_computation_on_weekend);
-                // Function to add thousand separators
-        const formatNumber = num => new Intl.NumberFormat('en-US').format(num);
+            const total_overtime = Math.round(OT_computation_on_weekday_rounded + OT_computation_on_weekend);
+    
+            // Function to add thousand separators
+            const formatNumber = num => new Intl.NumberFormat('en-US').format(num);
     
             // Return the calculated values
             return res.status(200).json({
@@ -4996,9 +4995,9 @@ const DeleteContactUS = async ( req ,res )=>{
                     OT_Hours_weekend: OT_Hours_weekend,
                     Basic_pay_per_day: `SLE ${formatNumber(Basic_pay_per_day)}`,
                     Basic_pay_per_Hour: `SLE ${formatNumber(Basic_pay_per_Hour_rounded)}`,
-                    OT_computation_on_weekday: `SLE ${formatNumber(OT_computation_on_weekday)}`,
+                    OT_computation_on_weekday: `SLE ${formatNumber(OT_computation_on_weekday_rounded)}`,
                     OT_computation_on_weekend: `SLE ${formatNumber(OT_computation_on_weekend)}`,
-                    total_overTime: `SLE ${formatNumber(total_overTime)}`
+                    total_overTime: `SLE ${formatNumber(total_overtime)}`
                 }
             });
     
@@ -5010,7 +5009,7 @@ const DeleteContactUS = async ( req ,res )=>{
             });
         }
     };
-          
+           
     
 
     // Api for Leave allowence
@@ -6802,64 +6801,65 @@ const cms_labour_tool = async ( req , res )=> {
 
      // Api for create and update cms online courses
 
-     const cms_online_cources = async (req, res) => {
-        try {
-            const { Heading, Description, Detailed_description , price } = req.body;
-    
-            // Check if a course with the same heading exists
-            const exist_cms_online_courses = await cms_online_courses_Model.findOne({ Heading });
-            if (exist_cms_online_courses) {
-                return res.status(400).json({
+           const cms_online_cources = async( req , res )=> {
+            try {
+                const { Heading, Description, Detailed_description, price } = req.body;
+        
+                // Check if a course with the same heading exists
+                const exist_cms_online_courses = await cms_online_courses_Model.findOne({ Heading });
+                if (exist_cms_online_courses) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Course already exists',
+                    });
+                }
+        
+                // Check for Detailed_description
+                if (!Detailed_description) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Detailed description is required',
+                    });
+                }
+        
+                // Check for price
+                if (!price) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Price is required',
+                    });
+                }
+        
+                // Initialize variables for image and presentation
+                let image = req.file.filename
+              
+        
+              
+                // Add new data
+                const newData = new cms_online_courses_Model({
+                    Heading,
+                    Description,
+                    Detailed_description,
+                    price,
+                    image,
+                    topic : []
+                  
+                });
+        
+                await newData.save();
+        
+                return res.status(200).json({
+                    success: true,
+                    message: 'New course added successfully',
+                });
+            } catch (error) {
+                return res.status(500).json({
                     success: false,
-                    message: 'Course already exists',
+                    message: 'Server error',
+                    error_message: error.message,
                 });
             }
-    
-            // Check for Detailed_description
-            if (!Detailed_description) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Detailed description is required',
-                });
-            }
-    
-            // Check for price
-            if (!price) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'Price is required',
-                });
-            }
-       
-
-              const  image = req.file.filename
-
-            // Add new data
-            const newData = new cms_online_courses_Model({
-                Heading,
-                Description,
-                Detailed_description,
-                price,
-                image,
-                topic : []
-                
-            });
-    
-            await newData.save();
-    
-            return res.status(200).json({
-                success: true,
-                message: 'New course added successfully',
-            });
-        } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: 'Server error',
-                error_message: error.message,
-            });
-        }
-    };
-    
+           }
               
 
     // Api for get cms online courses details
@@ -6894,10 +6894,12 @@ const cms_labour_tool = async ( req , res )=> {
                     status : course.status,
                     enrolled_users_count: usersEnrolled.length,
                     enrolled_users: usersEnrolled.map(user => ({
+                        user_id :user._id,
                         first_name: user.first_name,
                         last_name: user.last_name,
                         email: user.email,
-                        phone_no: user.phone_no
+                        phone_no: user.phone_no,
+                        gender : user.gender
                     }))
                 };
             }));
@@ -6915,49 +6917,161 @@ const cms_labour_tool = async ( req , res )=> {
             });
         }
   }
+   // Api for update particular online course details
 
-    // Api for update particular online course details
+   const update_online_course = async ( req , res )=> {
+    try {
+        const course_id = req.params.course_id;
+        const { Heading, Description, Detailed_description, price } = req.body;
 
-    const update_online_course = async (req, res) => {
+        // Check for course_id
+        if (!course_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Course ID required',
+            });
+        }
+
+        // Check for course existence
+        const course = await cms_online_courses_Model.findOne({ _id: course_id });
+        if (!course) {
+            return res.status(400).json({
+                success: false,
+                message: 'Course not found',
+            });
+        }
+
+        // Update fields if provided in the request
+        if (Heading) course.Heading = Heading;
+        if (Description) course.Description = Description;
+        if (Detailed_description) course.Detailed_description = Detailed_description;
+        if (price) course.price = price;
+    
+
+        
+        if(req.file)
+            {
+             course.image = req.file.filename
+            }
+
+        // Save the updated course
+        await course.save();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Course details updated successfully',
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message,
+        });
+    }
+}
+   
+       // Api to add topics and there details in the course
+       const add_topics = async (req, res) => {
         try {
             const course_id = req.params.course_id;
-            const { Heading, Description, Detailed_description, price } = req.body;
+            const { topic_name, topic_description } = req.body;
     
-            // Check for course_id
+            // Validate course_id
             if (!course_id) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Course ID required',
+                    message: 'Course ID is required',
                 });
             }
     
-            // Check for course existence
+            // Find the course by ID
             const course = await cms_online_courses_Model.findOne({ _id: course_id });
             if (!course) {
-                return res.status(400).json({
+                return res.status(404).json({
                     success: false,
                     message: 'Course not found',
                 });
             }
     
-            // Update fields if provided in the request
-            if (Heading) course.Heading = Heading;
-            if (Description) course.Description = Description;
-            if (Detailed_description) course.Detailed_description = Detailed_description;
-            if (price) course.price = price;
-           
+            // Check for required fields
+            const requiredFields = ['topic_name', 'topic_description'];
+            for (let field of requiredFields) {
+                if (!req.body[field]) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `${field.replace('_', ' ')} is required`,
+                    });
+                }
+            }
+
+                                // Check if the topic already exists in the course
+                    const existingTopic = course.topic.find(topic => topic.topic_name === topic_name);
+                    if (existingTopic) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'Topic with the same name already exists',
+                        });
+                    }
+                
+            // Handle file uploads
+            const filePaths = [];
+            const allowedFileTypes = [
+                // Images
+                'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'svg', 'webp',
+            
+                // Documents
+                'ppt', 'pdf', 'doc', 'docx', 'xlsx', 'odt', 'rtf', 'txt', 'csv', 'epub',
+            
+                // Videos
+                'mp4', 'avi', 'mov', 'wmv', 'mkv', 'flv', '3gp',
+            
+                // Audio
+                'mp3', 'wav', 'aac', 'ogg',
+            
+                // Compressed Files
+                'zip', 'rar', '7z', 'tar.gz',
+            
+                // Others
+                'json', 'xml', 'html', 'sql'
+            ];
+            
     
-               if(req.file)
-               {
-                course.image = req.file.filename
-               }
+            // Function to get the file extension
+            const getFileExtension = (filename) => {
+                return filename.split('.').pop().toLowerCase();
+            };
+    
+            // Check if files are provided
+            if (req.files && req.files.length > 0) {
+                for (let file of req.files) {
+                    const extension = getFileExtension(file.originalname);
+                    if (allowedFileTypes.includes(extension)) {
+                        filePaths.push(file.filename); // Store the filename or path
+                    } else {
+                        return res.status(400).json({
+                            success: false,
+                            message: `Invalid file type: ${extension}. Allowed types are: ${allowedFileTypes.join(', ')}`
+                        });
+                    }
+                }
+            }
+    
+            // Create new topic object
+            const newTopic = {
+                topic_name,
+                topic_description,               
+                files: filePaths 
+            };
+    
+            // Add new topic to the course
+            course.topic.push(newTopic);
     
             // Save the updated course
             await course.save();
     
             return res.status(200).json({
                 success: true,
-                message: 'Course details updated successfully',
+                message: 'Topic added successfully in Course'
             });
         } catch (error) {
             return res.status(500).json({
@@ -6967,82 +7081,309 @@ const cms_labour_tool = async ( req , res )=> {
             });
         }
     };
-
-    
-
-       // Api to add topics and there details in the course
-       const add_topics = async (req, res) => {
-        try {
-          const course_id = req.params.course_id;
-          const { topic_name, topic_description, video } = req.body;
       
-          // Validate course_id
-          if (!course_id) {
+
+  // Api for update particular topic 
+  const edit_topic = async (req, res) => {
+    try {
+        const course_id = req.params.course_id;
+        const topic_id = req.params.topic_id;
+        const { topic_name , topic_description } = req.body;
+
+        // Validate course_id and topic_id
+        if (!course_id) {
             return res.status(400).json({
-              success: false,
-              message: 'Course Id is required',
-            });
-          }
-      
-          // Find the course by ID
-          const course = await cms_online_courses_Model.findOne({ _id: course_id });
-          if (!course) {
-            return res.status(404).json({
-              success: false,
-              message: 'Course not found',
-            });
-          }
-          
-          // Check for required fields
-          const requiredFields = ['topic_name', 'topic_description'];
-          for (let field of requiredFields) {
-            if (!req.body[field]) {
-              return res.status(400).json({
                 success: false,
-                message: `${field.replace('_', ' ')} is required`,
-              });
+                message: 'Course id Required',
+            });
+        }
+
+        if (!topic_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Topic id Required',
+            });
+        }
+
+        // Find the course by ID
+        const course = await cms_online_courses_Model.findOne({ _id: course_id });
+        if (!course) {
+            return res.status(400).json({
+                success: false,
+                message: 'Course not found',
+            });
+        }
+
+        // Find the topic by ID
+        const topic = course.topic.id(topic_id);
+        if (!topic) {
+            return res.status(400).json({
+                success: false,
+                message: 'Topic not found',
+            });
+        }
+
+        // Check for required fields
+        const requiredFields = ['topic_name', 'topic_description'];
+        for (let field of requiredFields) {
+            if (!req.body[field]) {
+                return res.status(400).json({
+                    success: false,
+                    message: `${field.replace('_', ' ')} is required`,
+                });
             }
-          }
-      
-          // Initialize variables for files
-          let presentation = ''
+        }   
+       
+        // Handle new file uploads
+        const filePaths = [];
+        const allowedFileTypes = [
+            // Images
+            'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'svg', 'webp',
         
-          if(req.file)
+            // Documents
+            'ppt', 'pdf', 'doc', 'docx', 'xlsx', 'odt', 'rtf', 'txt', 'csv', 'epub',
+        
+            // Videos
+            'mp4', 'avi', 'mov', 'wmv', 'mkv', 'flv', '3gp',
+        
+            // Audio
+            'mp3', 'wav', 'aac', 'ogg',
+        
+            // Compressed Files
+            'zip', 'rar', '7z', 'tar.gz',
+        
+            // Others
+            'json', 'xml', 'html', 'sql'
+        ];
+        
+
+        // Function to get the file extension
+        const getFileExtension = (filename) => {
+            return filename.split('.').pop().toLowerCase();
+        };
+
+        // Check if new files are provided
+        if (req.files && req.files.length > 0) {
+            for (let file of req.files) {
+                const extension = getFileExtension(file.originalname);
+                if (allowedFileTypes.includes(extension)) {
+                    filePaths.push(file.filename); 
+                } else {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Invalid file type: ${extension}. Allowed types are: ${allowedFileTypes.join(', ')}`
+                    });
+                }
+            }
+        }
+
+        // Update the topic fields
+        topic.topic_name = topic_name;
+        topic.topic_description = topic_description;       
+        topic.files.push(...filePaths); 
+
+        // Save the updated course
+        await course.save();
+
+        // Update the same topic in user_enrolled_course_toic_quiz_manage_Model
+        const updateResult = await user_enrolled_course_toic_manage_Model.updateMany(
             {
-                presentation = req.file.filename
-            } 
-      
-         
-      
-          // Create new topic object
-          const newTopic = {
-            topic_name,
-            topic_description,        
-            presentation,
-            video,
-          };
-      
-          // Add new topic to the course
-          course.topic.push(newTopic);
-      
-          // Save the updated course
-          await course.save();
-      
-          return res.status(201).json({
-            success: true,
-            message: 'Topic added successfully in Course',
+                course_id: course_id,
+                'topic._id': topic_id  
+            },
+            {
+                $set: {
+                    'topic.$.topic_name': topic_name,
+                    'topic.$.topic_description': topic_description,
+                    ...(filePaths.length > 0 && { 'topic.$.files': filePaths })
+                }
+            }
+        );
+        
            
-          });
-        } catch (error) {
-          return res.status(500).json({
+
+        return res.status(200).json({
+            success: true,
+            message: 'Topic updated successfully',
+          
+        });
+    } catch (error) {
+        return res.status(500).json({
             success: false,
             message: 'Server error',
             error_message: error.message,
-          });
+        });
+    }
+};
+
+
+       // Api for get all topics of course
+       const all_topics_of_course = async (req, res) => {
+        try {
+            const course_id = req.params.course_id;
+            if (!course_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Course Id Required'
+                });
+            }
+    
+            // Check for the course
+            const course = await cms_online_courses_Model.findOne({ _id: course_id });
+            if (!course) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Course not found'
+                });
+            }
+    
+            // Extract topics from the course
+            const topics = course.topic;
+            const topicsWithQuizzes = [];
+    
+            // Check for quizzes for each topic
+            for (const topic of topics) {
+                const quiz = await online_course_quiz_Model.findOne({ topic_id: topic._id });
+                // Create a new object for the topic with quizExists key
+                const topicWithQuiz = {
+                    ...topic.toObject(), // Convert Mongoose document to plain object
+                    quizExists: quiz ? 1 : 0 // Add quiz existence status
+                };
+                topicsWithQuizzes.push(topicWithQuiz);
+            }
+    
+            return res.status(200).json({
+                success: true,
+                message: 'All Topics of the Course',
+                all_topics: topicsWithQuizzes // Array of topics with quiz existence status
+            });
+    
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message
+            });
         }
-      };
-      
-           // Api for delete particlar topic from the course
+    } 
+      // Api for update particular question
+      const update_question_of_quiz = async (req, res) => {
+        const { test_id, questionId } = req.params;
+        const { question, options, correct_answer } = req.body;
+    
+        try {
+            // Check for test_id
+            if (!test_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'test_id is required',
+                });
+            }
+    
+            // Check for questionId
+            if (!questionId) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'questionId is required',
+                });
+            }
+    
+            // Check for test existence
+            const exist_test = await online_course_quiz_Model.findById(test_id);
+            if (!exist_test) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Test does not exist',
+                });
+            }
+    
+            // Find the question by ID in the test
+            const questionIndex = exist_test.questions_Bank.findIndex(
+                (q) => q._id.toString() === questionId
+            );
+    
+            if (questionIndex === -1) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Question not found',
+                });
+            }
+    
+           
+    
+            // Check if options array has at least 2 options
+            if (!Array.isArray(options) || options.length < 2) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Options must be an array with at least 2 options',
+                });
+            }
+    
+            // Check for duplicate option names (case insensitive)
+            const optionNames = options.map(option => option.option_name.toLowerCase());
+            const hasDuplicates = optionNames.some((item, index) => optionNames.indexOf(item) !== index);
+            if (hasDuplicates) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Options must not contain duplicate names',
+                });
+            }
+    
+            // Check if the correct answer matches one of the options
+            const validCorrectAnswer = options.find(option => option.option_name === correct_answer);
+            if (!validCorrectAnswer) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Correct answer must be one of the provided options',
+                });
+            }
+    
+            // Check for duplicate question in the test (excluding the current question being updated)
+            const duplicate_question = exist_test.questions_Bank.find(
+                (q, index) => q.question === question && index !== questionIndex
+            );
+            if (duplicate_question) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'A similar question already exists in the test',
+                });
+            }
+    
+            // Update the question in the questions_Bank array
+            exist_test.questions_Bank[questionIndex] = {
+                question,
+                options,
+                correct_answer,
+            };
+    
+            // Save the updated test
+            await exist_test.save();
+    
+            // Update question in the user_enrolled_course_topic_quiz_manage_Model as well
+            await user_enrolled_course_toic_quiz_manage_Model.updateMany(
+                { topic_id: exist_test.topic_id, "questions_Bank._id": questionId },
+                {
+                    $set: {
+                        "questions_Bank.$.question": question,
+                        "questions_Bank.$.options": options,
+                        "questions_Bank.$.correct_answer": correct_answer,
+                    },
+                }
+            );
+    
+            return res.status(200).json({
+                success: true,
+                message: 'Question updated successfully',
+            });
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message,
+            });
+        }
+    };
+    // Api for delete particlar topic from the course
 
                const delete_course_topic = async ( req , res)=> {
                   try {
@@ -7088,7 +7429,18 @@ const cms_labour_tool = async ( req , res )=> {
 
                           course.topic.splice(topics, 1);
                           await course.save()
-
+                          await user_enrolled_course_toic_manage_Model.updateMany(
+                            {
+                                course_id: course_id,
+                                'topic._id': topic_id
+                            },
+                            {
+                                $pull: {
+                                    topic: { _id: topic_id }
+                                }
+                            }
+                        );
+                        
                           return res.status(200).json({
                              success : true ,
                              message : 'Topic Deleted successfully'
@@ -7104,82 +7456,43 @@ const cms_labour_tool = async ( req , res )=> {
                }
 
 
-    // Api for get all topics of course
-    const all_topics_of_course = async ( req , res )=> {
-           try {
-                   const course_id = req.params.course_id
-                   if(!course_id)
-                    {
-                       return res.status(400).json({
-                            success : false ,
-                            message : 'Course Id Required'
-                       })
-                    }
+ // Api for delete particular online course
+ const delete_course = async ( req , res)=> {
+    try {
+            const course_id  = req.params.course_id
+               // check for course_id
+    if(!course_id)
+        {
+              return res.status(400).json({
+                 success : false ,
+                 message : 'course Id required'
+              })
+        }
 
-                     // check for course
-                     const course = await cms_online_courses_Model.findOne({ _id : course_id })
-                     if(!course)
-                     {
-                        return res.status(400).json({
-                             success : false ,
-                             message : 'Course not found'
-                        })
-                     }
-
-                     return res.status(200).json({
-                         success : true ,
-                         message : 'ALL Topics of course',
-                         all_topics : course.topic
-                     })
-                   
-
-           } catch (error) {
-            return res.status(500).json({
-                success : false ,
-                message : 'Server error',
-                error_message : error.message
+        // check for course
+        const course = await cms_online_courses_Model.findOne({ _id : course_id })
+        if(!course)
+        {
+             return res.status(400).json
+             ({
+                 success : false ,
+                 message : 'Course not found'
              })
-           }
+        }
+
+        await course.deleteOne()
+
+        return res.status(200).json({
+               success : true ,
+               message : 'course deleted successfully'
+        })
+            
+    } catch (error) {
+         return res.status(500).json({
+             success : false 
+         })
     }
-// Api for delete particular online course
-          const delete_course = async ( req , res)=> {
-                try {
-                        const course_id  = req.params.course_id
-                           // check for course_id
-                if(!course_id)
-                    {
-                          return res.status(400).json({
-                             success : false ,
-                             message : 'course Id required'
-                          })
-                    }
-    
-                    // check for course
-                    const course = await cms_online_courses_Model.findOne({ _id : course_id })
-                    if(!course)
-                    {
-                         return res.status(400).json
-                         ({
-                             success : false ,
-                             message : 'Course not found'
-                         })
-                    }
-
-                    await course.deleteOne()
-
-                    return res.status(200).json({
-                           success : true ,
-                           message : 'course deleted successfully'
-                    })
-                        
-                } catch (error) {
-                     return res.status(500).json({
-                         success : false 
-                     })
-                }
-          }
-
-
+}
   // Api for create and update Cms Home section
 
          const cms_Home = async( req , res )=> {
@@ -7377,134 +7690,144 @@ const candidate_cv_rating = async (req, res) => {
     }
 };
 
-      
-       // Api for get all enq of courses
+
+   // Api for get all enq of courses
        
-           const all_enq_of_courses = async( req , res )=> {
-                try {
-                         // check for all enq
-                         const all_enq = await online_courses_enq_model.find({ }).sort({ createdAt : -1}).lean()
-                         if(!all_enq)
-                         {
-                              return res.status(400).json({
-                                   success : false ,
-                                   message : 'No Enquiry Generated Yet'
-                              })
-                         }
+   const all_enq_of_courses = async( req , res )=> {
+    try {
+             // check for all enq
+             const all_enq = await online_courses_enq_model.find({ }).sort({ createdAt : -1}).lean()
+             if(!all_enq)
+             {
+                  return res.status(400).json({
+                       success : false ,
+                       message : 'No Enquiry Generated Yet'
+                  })
+             }
 
-                         return res.status(200).json({
-                             success : true ,
-                             message : 'All Enquiry courses',
-                             all_enq : all_enq
-                         })
-                } catch (error) {
-                      return res.status(500).json({
-                         success : false ,
-                         message : 'Server error',
-                         error_message : error.message
-                      })
-                }
-           }
+             return res.status(200).json({
+                 success : true ,
+                 message : 'All Enquiry courses',
+                 all_enq : all_enq
+             })
+    } catch (error) {
+          return res.status(500).json({
+             success : false ,
+             message : 'Server error',
+             error_message : error.message
+          })
+    }
+}
 
 
+    
                                                            /* Online Courses Quiz section */
 
+   
     // Api for create quiz test for course
     const course_quiz_test = async (req, res) => {
         try {
-          const { course_id } = req.params;
-          const { topic_id, question, options, correct_answer_index } = req.body;
-      
-          // Validate course_id
-          if (!course_id) {
-            return res.status(400).json({
+            const { course_id } = req.params;
+            const { topic_id, question, options, correct_answer } = req.body;
+        
+            // Validate course_id
+            if (!course_id) {
+              return res.status(400).json({
+                success: false,
+                message: "Course ID is required",
+              });
+            }
+        
+            // Fetch the course by course_id
+            const course = await cms_online_courses_Model.findById(course_id);
+            if (!course) {
+              return res.status(404).json({
+                success: false,
+                message: "Course not found",
+              });
+            }
+        
+            // Find the course topic
+            const course_topic = course.topic.find((top) => top._id.toString() === topic_id);
+            if (!course_topic) {
+              return res.status(404).json({
+                success: false,
+                message: "Topic not found",
+              });
+            }
+        
+            // Check if the test already exists
+            const exist_test = await online_course_quiz_Model.findOne({ course_id, topic_id });
+            if (exist_test) {
+              return res.status(400).json({
+                success: false,
+                message: "Test already exists",
+              });
+            }
+        
+            // Validate question
+            if (!question || typeof question !== "string" || question.trim() === "") {
+              return res.status(400).json({
+                success: false,
+                message: "Question is required and must be a non-empty string",
+              });
+            }
+        
+            // Validate options array
+            if (!Array.isArray(options) || options.length < 2) {
+              return res.status(400).json({
+                success: false,
+                message: "Options array is required and must contain at least 2 options",
+              });
+            }
+        
+            // Ensure each option is an object with option_name
+            for (const option of options) {
+              if (!option.option_name || typeof option.option_name !== 'string' || option.option_name.trim() === "") {
+                return res.status(400).json({
+                  success: false,
+                  message: "Each option must have a valid option_name",
+                });
+              }
+            }
+        
+            // Validate correct_answer by comparing it with option_name (case-insensitive and trimmed)
+            const isCorrectAnswerValid = options.some(option => 
+              option.option_name.trim().toLowerCase() === correct_answer.trim().toLowerCase()
+            );
+        
+            if (!isCorrectAnswerValid) {
+              return res.status(400).json({
+                success: false,
+                message: "Correct answer must be one of the options",
+              });
+            }
+        
+            // Create a new quiz test for the course
+            const new_quiz_test = new online_course_quiz_Model({
+              course_id,
+              topic_id,
+              course_name: course.Heading,
+              topic_name: course_topic.topic_name,
+              questions_Bank: [{ question, options, correct_answer }],
+            });
+        
+            // Save the new quiz test
+            await new_quiz_test.save();
+        
+            return res.status(200).json({
+              success: true,
+              message: "New Quiz Test created successfully",
+              test_id: new_quiz_test._id,
+            });
+          } catch (error) {
+            // Catch and respond with server error
+            return res.status(500).json({
               success: false,
-              message: "Course ID is required",
+              message: "Server Error",
+              error_message: error.message,
             });
           }
-      
-          // Fetch the course by course_id
-          const course = await cms_online_courses_Model.findById(course_id);
-          if (!course) {
-            return res.status(404).json({
-              success: false,
-              message: "Course not found",
-            });
-          }
-      
-          // Find the course topic
-          const course_topic = course.topic.find((top) => top._id.toString() === topic_id);
-          if (!course_topic) {
-            return res.status(404).json({
-              success: false,
-              message: "Topic not found",
-            });
-          }
-
-          // check for already exist test
-          const exist_test = await online_course_quiz_Model.findOne({ course_id , topic_id
-           })
-           if(exist_test)
-           {
-               return res.status(400).json({
-                   success : false ,
-                   message : 'Test already exist'
-               })
-           }
-      
-          // Validate question
-          if (!question || typeof question !== "string" || question.trim() === "") {
-            return res.status(400).json({
-              success: false,
-              message: "Question is required and must be a non-empty string",
-            });
-          }
-      
-          // Validate options array
-          if (!Array.isArray(options) || options.length < 2) {
-            return res.status(400).json({
-              success: false,
-              message: "Options array is required and must contain at least 2 options",
-            });
-          }
-      
-          // Validate correct_answer_index
-          if (
-            typeof correct_answer_index !== "number" ||
-            correct_answer_index < 0 ||
-            correct_answer_index >= options.length
-          ) {
-            return res.status(400).json({
-              success: false,
-              message: "Correct answer index must be a valid number within the range of options",
-            });
-          }
-      
-          // Create a new quiz test for the course
-          const new_quiz_test = new online_course_quiz_Model({
-            course_id,
-            topic_id,
-            course_name: course.Heading,
-            topic_name: course_topic.topic_name,
-            questions_Bank: [{ question, options, correct_answer_index }],
-          });
-      
-          // Save the new quiz test
-          await new_quiz_test.save();
-      
-          return res.status(201).json({
-            success: true,
-            message: "New Quiz Test created successfully",
-            test_id: new_quiz_test._id,
-          });
-        } catch (error) {
-          // Catch and respond with server error
-          return res.status(500).json({
-            success: false,
-            message: "Server Error",
-            error_message: error.message,
-          });
-        }
       };
       
 
@@ -7613,63 +7936,107 @@ const candidate_cv_rating = async (req, res) => {
 
   // Api for add Question in particular test
       const addQuestion_in_Quiz_test = async ( req , res )=> {
-           try {
-                 const test_id = req.params.test_id
-                 const {question , options , correct_answer_index } = req.body
-
-                 // check for test_id 
-                 if(!test_id)
-                 {
-                    return res.status(400).json({
-                         success : false ,
-                         message : 'Test Id Required'
-                    })
-                 }
-
-                 // check for test
-                 
-                 const test = await online_course_quiz_Model.findOne({ _id : test_id })
-                 if(!test)
-                 {
-                    return res.status(400).json({
-                         success : false ,
-                         message : 'Test Not Found'
-                    })
-                 }        
-                  
-                 // check for question already exist
-                 const duplicate_question = test.questions_Bank.find(
-                    (questionObj) => questionObj.question === question
-                 )
-
-                 if(duplicate_question)
-                 {
-                      return res.status(400).json({
-                          success : false ,
-                          message : 'Question already exist in the test'
-                      })
-                 }
-                 
-
-                 test.questions_Bank.push({
-                        question,
-                        options,
-                        correct_answer_index
-                 })
-
-                 await test.save()
-
-                 return res.status(200).json({
-                       success : true ,
-                       message : 'Question Added successfully'
-                 })
-           } catch (error) {
-              return res.status(500).json({
-                 success : false ,
-                 message : 'Server error',
-                 error_message : error.message
-              })
-           }
+        try {
+            const test_id = req.params.test_id;
+            const { question, options, correct_answer } = req.body;
+    
+            // Check for test_id
+            if (!test_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Test Id is required',
+                });
+            }
+    
+            // Find the test by ID
+            const test = await online_course_quiz_Model.findOne({ _id: test_id });
+            if (!test) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Test not found',
+                });
+            }
+    
+            // Validate question input
+            if (!question || !options || !correct_answer) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Question, options, and correct answer are required',
+                });
+            }
+    
+            // Check if options array has at least 2 options
+            if (!Array.isArray(options) || options.length < 2) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Options must be an array and should have at least 2 options',
+                });
+            }
+                
+            // Check for duplicate option_names (case insensitive)
+            const optionNames = options.map(option => option.option_name.toLowerCase());
+            const hasDuplicates = optionNames.some((item, index) => optionNames.indexOf(item) !== index);
+    
+            if (hasDuplicates) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Options must not contain duplicate names',
+                });
+            }
+            // Check if the correct answer matches one of the options
+            const validCorrectAnswer = options.find(
+                (option) => option.option_name === correct_answer
+            );
+    
+            if (!validCorrectAnswer) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Correct answer must be one of the provided options',
+                });
+            }
+    
+            // Check for duplicate question
+            const duplicate_question = test.questions_Bank.find(
+                (questionObj) => questionObj.question === question
+            );
+    
+            if (duplicate_question) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Question already exists in the test',
+                });
+            }
+    
+            // Add new question to questions_Bank
+            test.questions_Bank.push({
+                question,
+                options,
+                correct_answer,
+            });
+    
+    
+            // Save the updated test with new question
+            await test.save();
+    
+            // Update user_enrolled_course_toic_quiz_manage_Model
+            await user_enrolled_course_toic_quiz_manage_Model.updateMany(
+                { topic_id: test.topic_id },
+                { $push: { questions_Bank: { question, options, correct_answer } } }
+            );
+    
+            
+    
+            return res.status(200).json({
+                success: true,
+                message: 'Question added successfully',
+            });
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message,
+            });
+        }
       }
   
     // Api for delete Question in test
@@ -7677,23 +8044,22 @@ const candidate_cv_rating = async (req, res) => {
         const { test_id, questionId } = req.params;
     
         try {
-
-             // check for test_id 
-             if(!test_id)
-             {
+            // Check for test_id
+            if (!test_id) {
                 return res.status(400).json({
-                     success : false ,
-                     message : 'test_id Required'
-                })
-             }
-             // check for test_id 
-             if(!questionId)
-             {
+                    success: false,
+                    message: 'test_id Required'
+                });
+            }
+            
+            // Check for questionId
+            if (!questionId) {
                 return res.status(400).json({
-                     success : false ,
-                     message : 'questionId Required'
-                })
-             }
+                    success: false,
+                    message: 'questionId Required'
+                });
+            }
+    
             // Check for test existence
             const exist_test = await online_course_quiz_Model.findById(test_id);
             if (!exist_test) {
@@ -7720,6 +8086,12 @@ const candidate_cv_rating = async (req, res) => {
     
             // Save updated test data
             await exist_test.save();
+
+             // Remove the question from user_enrolled_course_toic_quiz_manage_Model
+        await user_enrolled_course_toic_quiz_manage_Model.updateMany(
+            { topic_id: exist_test.topic_id },
+            { $pull: { questions_Bank: { _id: questionId } } }
+        );
     
             return res.status(200).json({
                 success: true,
@@ -7772,6 +8144,41 @@ const candidate_cv_rating = async (req, res) => {
                })
            }
       }
+      
+
+                                                             /* Transaction section */
+
+        // Api for get all courses Transaction
+
+           const get_transaction = async ( req , res )=> {
+                 try {
+                        
+                         // check for all transaction 
+                         const all_transaction = await course_transaction_model.find({ }).sort({ createdAt :  -1 }).lean()
+                         if(!all_transaction)
+                         {
+                            return res.status(400).json({
+                                  success : false ,
+                                  message : 'No Transaction Done yet ..!'
+                            })
+                         }
+
+                         return res.status(200).json({
+                               success : true ,
+                               message : 'ALL transaction',
+                               all_transaction : all_transaction
+                         })
+
+                         
+                 } catch (error) {
+                      return res.status(500).json({
+                            success : false ,
+                            message : 'Server error',
+                            error_message : error.message
+                      })
+                 }
+           }
+            
                 
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
@@ -7799,15 +8206,13 @@ module.exports = {
      cms_footer_content , get_cms_footer_content , cms_acadmic_credentials_verifier , get_acadmic_credentials_verifier , newsLetter , getAll_newsLetter,
      new_carrer_advice , all_carrer_details , delete_carrer_advice , generate_sampleFile , import_file , cms_labour_tool , get_cms_labour_tool_details,
      cms_online_cources , get_cms_online_courses_details , cms_Home , get_cms_Home  , candidate_cv_rating ,
+     update_online_course , delete_course , all_enq_of_courses ,
 
-
-     update_online_course , delete_course  , all_enq_of_courses ,
-     
-     
+       
      course_quiz_test , get_quiz_test_of_course, course_quiz ,
       delete_question_in_test , delete_test, addQuestion_in_Quiz_test ,
-
-     add_topics , delete_course_topic  ,all_topics_of_course
+     add_topics , delete_course_topic , all_topics_of_course , edit_topic , update_question_of_quiz,
+     get_transaction
 
      
 }

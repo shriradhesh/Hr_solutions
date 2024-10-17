@@ -12,6 +12,10 @@ const courses_user_enroll_Schema = new mongoose.Schema({
         password : {
                type : String
         },
+        gender : {
+              type : String,
+              enum : ['Female' , 'Male' , 'Other']
+        },
 
 
         phone_no : {
@@ -34,7 +38,7 @@ const courses_user_enroll_Schema = new mongoose.Schema({
                         status : {
                               type : String,
                               enum : ['Pending' , 'Accepted'],
-                              default : 'Pending'
+                              default : 'Accepted'
                         }
           }]
         

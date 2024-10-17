@@ -25,17 +25,13 @@ const user_enrolled_course_toic_manage_Schema = new mongoose.Schema({
                  type : String
             },
 
-            presentation : {
-                 type : String
-            },
-
-            video : {
-                      type : String
-            },
+           files : {
+                  type : [String]
+           },
            
             topic_status : {
                  type : Number,
-                 enum : [1 ,0],
+                 enum : [1 ,0 , 2],
                  default : 0
             },
 

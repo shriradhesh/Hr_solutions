@@ -56,11 +56,12 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
           // Api for download_jd
                         router.get('/download_jd/:jd_id' , userController.download_jd)
 
+   
                                            /* psychomatric testing section */
        
 
         // Api for add category
-                        router.post('/add_test_Category', userController.add_test_Category)
+        router.post('/add_test_Category', userController.add_test_Category)
         // Api for getAll_psychometric_Category\
                         router.get('/getAll_psychometric_Category', userController.getAll_psychometric_Category)
         // Api for Delete_category
@@ -133,7 +134,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          // Api for getServices page Details
                  router.get('/getServices_of_smart_start', userController.getServices_of_smart_start)
 
-                                             /* CMS */
+                                        /* CMS */
         // Api for dashboard_counts
                  router.get('/dashboard_counts', userController.dashboard_counts)
         // Api for cms_getJobs_posted_procedure_section1
@@ -158,7 +159,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          // Api for create_contactUS
                 router.post('/create_contactUS', userController.create_contactUS)
 
-                                            /* upload Resume */
+                                        /* upload Resume */
 
          // Api for uploadResume
                  router.post('/uploadResume', upload.single('uploadResume') , userController.uploadResume)
@@ -188,23 +189,20 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
 
                  // Api for update_candidate_rating
                  router.post('/update_candidate_rating/:candidate_id', userController.update_candidate_rating)
-                // Api for all female candidate profile for client
-                router.get('/get_female_candidate_for_client/:client_id', userController.get_female_candidate_for_client)
-              // Api for get_male_candidate_for_client
-                 router.get('/get_male_candidate_for_client/:client_id', userController.get_male_candidate_for_client)
 
-        // Api for build_cv
-              router.post('/build_cv', upload.single('profileImage'), userController.build_cv)
-
-        // Api for get_all_candidate_for_client
-              router.get('/get_all_candidate_for_client/:client_id', userController.get_all_candidate_for_client)
+  // Api for all female candidate profile for client
+  router.get('/get_female_candidate_for_client/:client_id', userController.get_female_candidate_for_client)
+  // Api for get_male_candidate_for_client
+     router.get('/get_male_candidate_for_client/:client_id', userController.get_male_candidate_for_client)
 
      
+        // Api for build_cv
+        router.post('/build_cv', upload.single('profileImage'), userController.build_cv)
 
+// Api for get_all_candidate_for_client
+       router.get('/get_all_candidate_for_client/:client_id', userController.get_all_candidate_for_client)
 
-      
-        // Api 
-        router.delete('/delete_all_notification_of_user', userController.delete_all_notification_of_user)
+ 
         // Api 
         router.get('/export_client_jobs_candidate/:client_id' , userController.export_client_jobs_candidate)
 
@@ -221,13 +219,24 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          router.post('/update_course_status/:user_id/:course_id', userController.update_course_status)
          // Api for get_my_enrolled_courses
          router.get('/get_my_enrolled_courses/:user_id', userController.get_my_enrolled_courses)
+         // Api for get_enrolled_users_count
+         router.get('/get_enrolled_users_count/:course_id' , userController.get_enrolled_users_count)
+         // Api for topic_quiz
+         router.get('/topic_quiz/:topic_id', userController.topic_quiz)
+         // Api for update_topic_status
+         router.post('/update_topic_status/:user_id/:topic_id' , userController.update_topic_status)
 
-          // Api for get_enrolled_users_count
-          router.get('/get_enrolled_users_count/:course_id' , userController.get_enrolled_users_count)
-          // Api for topic_quiz
-          router.get('/topic_quiz/:topic_id', userController.topic_quiz)
-          // Api for update_topic_status
-          router.post('/update_topic_status/:user_id/:topic_id' , userController.update_topic_status)
+                  // Api for enroll_user_course_topic_quiz
+          router.get('/enroll_user_course_topic_quiz/:enroll_user_id/:topic_id', userController.enroll_user_course_topic_quiz )
+
+ // Api for save_user_quiz_record_of_course_topic
+ router.post('/save_user_quiz_record_of_course_topic/:enroll_user_id/:course_id', userController.save_user_quiz_record_of_course_topic)
+ 
+          // Api for get_particular_enrolled_course_details
+          router.get('/get_particular_enrolled_course_details/:user_id/:course_id' , userController.get_particular_enrolled_course_details)
+
+         // Api for get_enrolled_user_detail
+         router.get('/get_enrolled_user_detail/:enroll_user_id', userController.get_enrolled_user_detail)
 
 
 module.exports = router

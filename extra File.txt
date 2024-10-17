@@ -1,3 +1,7 @@
+
+
+
+
 const addPsychometricPersonalityTest = async (req, res) => {
     try {
         const { question, options, correctAnswerIndex } = req.body;

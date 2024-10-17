@@ -6,6 +6,12 @@ const cors = require('cors')
 const bodyParser = require('body-parser')
 const adminRouter = require('./router/adminRouter')
 const userRouter = require('./router/userRouter')
+const axios = require('axios')
+const course_transaction_model = require('./model/transaction')
+
+
+
+
 
 // database configuration
 const db = require('./config/db')
@@ -31,9 +37,177 @@ app.use((req, res, next) => {
 app.use('/api', adminRouter)
 app.use('/api', userRouter)
 
-app.post('/', (req ,res)=>{
+app.get('/', (req ,res)=>{
         res.send('Hello from HR Solutions Server')
 })
+app.get('/cancle', (req ,res)=>{
+        res.send('Hello ')
+})
+
+
+
+
+                                               /*   Monime Payment Integration */
+
+        const PAYMENT_BASE_URL = 'https://api.monime.space/v1';
+        const { Access_Token , Space_ID  } = process.env;
+        const { v4: uuidv4 } = require('uuid');
+        const crypto = require('crypto');
+const { log } = require('console')
+         // Function to generate a random number
+         function generateRandomNumber(length) {
+          let result = '';
+          const characters = '0123456789';
+          const charactersLength = characters.length;
+
+          for (let i = 0; i < length; i++) {
+              result += characters.charAt(Math.floor(Math.random() * charactersLength));
+          }
+
+          return result;
+      }
+
+
+      const randomNumber = generateRandomNumber(5);
+      const randomNumber1 = generateRandomNumber(6);
+      const randomNumber2 = generateRandomNumber(15);
+      const check_out_session_id = `scs-${randomNumber}`;
+      const clientReference = `customer-${randomNumber1}`  
+
+        app.get('/api/create_checkOut_session' , async ( req , res )=> {
+                
+                   var {  cancelUrl , receiptUrl , total_amount  } = req.query
+                
+                    //    const callbackUrlState = crypto.randomBytes(16).toString('hex')  
+                   const callbackUrlState = `${randomNumber2}`                  
+                 
+                  cancelUrl = `${cancelUrl}?sid=${check_out_session_id}$state=${callbackUrlState}`
+                  receiptUrl = `${receiptUrl}?sid=${check_out_session_id}$state=${callbackUrlState}`
+             
+                     const amountValue = total_amount * 100
+
+                        try {
+                          // Prepare the request payload
+                          const payload = {
+                              clientReference,
+                              callbackUrlState,
+                              bulk: {
+                                  amount: {
+                                      currency: 'SLE',
+                                      value: amountValue
+                                  }
+                              },
+                              cancelUrl,
+                              receiptUrl
+                          };
+                  
+                          // Make the API request
+                          const response = await axios.post(`${PAYMENT_BASE_URL}/checkout-sessions`, payload, {
+                              headers: {
+                                  Authorization: `Bearer ${Access_Token}`,
+                                  'X-Monime-Space-Id': Space_ID,
+                                  'X-Idempotency-Key': `${clientReference}-${Date.now()}`
+                              }
+                          });
+                  
+                        const payment_response = response.data.result;
+            
+                              
+                            const booking_id = `BKID${randomNumber}`;
+                      
+                        
+                                const transaction = new course_transaction_model({
+                                    booking_id : booking_id ,
+                                    course_id :  '',
+                                    enroll_user_id : '',
+                                    amount : total_amount,
+                                    payment_status : payment_response.status.state,
+                                    session_id : payment_response.id,
+                                    kind : payment_response.kind,
+                                    payment_time : payment_response.status.stateTime,
+                                    payment_info : {
+                                            state : payment_response.paymentInfo.state,
+                                            method : payment_response.paymentInfo.method,
+                                            financialAccount : payment_response.paymentInfo.financialAccount
+                                    },
+                                    currency : payment_response.totalAmount.currency
+            
+                                })  
+                            
+                                await transaction.save()
+                              
+                                
+                          res.status(200).json({
+                              success : true ,                            
+                              checkoutUrl : payment_response.checkoutUrl,
+                              status : payment_response.status.state,
+                              cancelUrl : payment_response.cancelUrl,
+                              session_id : payment_response.id,
+                              receiptUrl : payment_response.receiptUrl,
+                            
+                          })
+                        
+
+                              } catch (error) {
+                                  res.status(500).json({
+                                      success : false ,
+                                      message : 'Server Error',
+                                      error_message : error.message
+                                                  })
+                              }
+                            })
+
+
+
+        // Api for check status of payment
+        app.get('/api/payment_status/:sessionId', async (req, res) => {
+            const sessionId = req.params.sessionId;
+            const url = `https://api.monime.space/v1/checkout-sessions/${sessionId}`;
+            
+            try {
+              // Fetch the checkout session details from Monime API
+              const response = await axios.get(url, {
+                headers: {
+                  'Authorization': `Bearer ${Access_Token}`,
+                  'X-Monime-Space-Id': Space_ID
+                }
+              });
+                      
+                        
+              // Ensure the response contains the checkoutSession object
+              const sessionData = response.data.result;
+              
+              if (!sessionData) {
+                return res.status(400).json({
+                  success: false,
+                  message: 'Checkout session not found.'
+                });
+              }
+          
+              // Extract session and payment status information
+              const sessionStatus = sessionData.status ? sessionData.status.state : 'Unknown';
+              const paymentStatus = sessionData.paymentInfo ? sessionData.paymentInfo.state : 'Unknown';
+              const totalAmount = sessionData.totalAmount ? sessionData.totalAmount.value : 'Unknown';
+          
+              // Return a single response with session and payment status
+              res.json({
+                success: true,
+                sessionId: sessionId,
+                sessionStatus: sessionStatus,  
+                paymentStatus: paymentStatus,  
+                amount: totalAmount,
+                message: `Session is ${sessionStatus} and payment is ${paymentStatus}`
+              });
+            } catch (error) {
+              // Handle errors
+              res.status(500).json({
+                success: false,
+                message: 'Failed to fetch session or payment status',
+                error: error.message
+              });
+            }
+          });
+
 
 app.listen(Port , ()=>{
        console.log(`Server is Running on PORT : ${Port}`);

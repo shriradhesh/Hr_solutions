@@ -73,7 +73,8 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
                                              /* ATS Section */
         // Api for get All_candidates
                      router.get('/getAll_candidates', Admin_and_staffController.getAll_candidates) 
-        
+        // Api for candidate_cv_rating
+                     router.get('/candidate_cv_rating/:candidate_id',  Admin_and_staffController.candidate_cv_rating) 
 
                                              /* Privacy & policy Section */
        
@@ -228,10 +229,9 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
                     router.get("/get_cms_labour_tool_details", Admin_and_staffController.get_cms_labour_tool_details)
 
         // Api for create and update cms_online_cources
-                router.post("/cms_online_courses", upload.single('image'), Admin_and_staffController.cms_online_cources)
+        router.post("/cms_online_courses", upload.single('image'), Admin_and_staffController.cms_online_cources)
         // Api for get_cms_online_courses_details
                  router.get("/get_cms_online_courses_details", Admin_and_staffController.get_cms_online_courses_details)
-        
         // Api for create and update cms_Home
                  router.post("/cms_Home", Admin_and_staffController.cms_Home)
         // Api for get_cms_Home
@@ -290,42 +290,52 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
         // Api for getJs
                 router.post("/getJs", Admin_and_staffController.getJs)
 
-        
 
+                
         // Api for update_online_course
       
         router.put(
                 '/update_online_course/:course_id',upload.single('image'),Admin_and_staffController.update_online_course
             );
-            
-        // Api for delete_course
-          router.delete('/delete_course/:course_id', Admin_and_staffController.delete_course)
+         // Api for delete_course
+           router.delete('/delete_course/:course_id', Admin_and_staffController.delete_course)
 
-          // Api for get all_enq_of_courses
+           // Api for get all_enq_of_courses
           router.get('/all_enq_of_courses', Admin_and_staffController.all_enq_of_courses)
 
-                                               /* Online course Quiz */
-         router.post('/course_quiz_test/:course_id', Admin_and_staffController.course_quiz_test)
-         // Api for get_quiz_test_of_course
-         router.get('/get_quiz_test_of_course/:test_id', Admin_and_staffController.get_quiz_test_of_course)
+
+                                                 /* Online course Quiz */
+                                              
+        router.post('/course_quiz_test/:course_id', Admin_and_staffController.course_quiz_test)
+        // Api for get_quiz_test_of_course
+        router.get('/get_quiz_test_of_course/:test_id', Admin_and_staffController.get_quiz_test_of_course)
         // Api for course_quiz
-          router.get('/course_quiz/:course_id', Admin_and_staffController.course_quiz)
+                router.get('/course_quiz/:course_id', Admin_and_staffController.course_quiz)
         // Api for addQuestion_in_Quiz_test
-          router.post('/addQuestion_in_Quiz_test/:test_id', Admin_and_staffController.addQuestion_in_Quiz_test)
+                router.post('/addQuestion_in_Quiz_test/:test_id', Admin_and_staffController.addQuestion_in_Quiz_test)
 
-         // Api for delete_question_in_test
-         router.delete('/delete_question_in_test/:test_id/:questionId', Admin_and_staffController.delete_question_in_test)
-         // Api for delete
-         router.delete('/delete_test/:test_id', Admin_and_staffController.delete_test)
-         
+        // Api for delete_question_in_test
+        router.delete('/delete_question_in_test/:test_id/:questionId', Admin_and_staffController.delete_question_in_test)
+        // Api for delete
+        router.delete('/delete_test/:test_id', Admin_and_staffController.delete_test)
+        
 
-         // Api for add_topics
-         router.post('/add_topics/:course_id', upload.single('presentation') , Admin_and_staffController.add_topics)
-         // Api for delete_course_topic
-         router.delete('/delete_course_topic/:course_id/:topic_id', Admin_and_staffController.delete_course_topic)
-         // Api for all_topics_of_course
+           // Api for add_topics
+           router.post('/add_topics/:course_id', upload.array('files') , Admin_and_staffController.add_topics)
+          // Api for delete_course_topic
+          router.delete('/delete_course_topic/:course_id/:topic_id', Admin_and_staffController.delete_course_topic)
+               // Api for all_topics_of_course
          router.get('/all_topics_of_course/:course_id', Admin_and_staffController.all_topics_of_course)
+
+         router.put('/edit_topic/:course_id/:topic_id', upload.array('files') , Admin_and_staffController.edit_topic)
          
+ // Api for update_question_of_quiz
+ router.post('/update_question_of_quiz/:test_id/:questionId' , Admin_and_staffController.update_question_of_quiz )
+
+      //Api for get_transaction
+         router.get('/get_transaction', Admin_and_staffController.get_transaction)
+
+
 module.exports = router
 
 
