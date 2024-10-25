@@ -238,5 +238,11 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          // Api for get_enrolled_user_detail
          router.get('/get_enrolled_user_detail/:enroll_user_id', userController.get_enrolled_user_detail)
 
+         // Api for generate_avg_score_of_enroll_user
+         router.get('/generate_avg_score_of_enroll_user/:user_id/:course_id', userController.generate_avg_score_of_enroll_user)
+
+         // Api for download_certificate
+         router.get('/download_certificate/:user_id/:course_id', userController.download_certificate)
+
 
 module.exports = router

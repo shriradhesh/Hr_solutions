@@ -8179,6 +8179,67 @@ const candidate_cv_rating = async (req, res) => {
                  }
            }
             
+
+// Api for get all courses
+const get_all_courses_details = async (req, res) => {
+    try {
+        // Fetch all courses
+        const getDetails = await cms_online_courses_Model.find({});
+
+        if (!getDetails || getDetails.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Details not found'
+            });
+        }
+
+        const user_id = req.query.user_id; 
+        // Use Promise.all to fetch enrolled users count for each course in parallel
+        const courseDetailsWithEnrollment = await Promise.all(getDetails.map(async (course) => {
+            const usersEnrolled = await courses_user_enroll_Model.find({
+                'courses.course_id': course._id
+            });
+
+            const course_quiz = await online_course_quiz_Model.find({
+                course_id : course._id
+   
+            })
+        
+            // Check if the given user is enrolled in this course
+            const isUserEnrolled = usersEnrolled.some(user => user._id.toString() === user_id);
+
+            // Return course details with enrolled users count and user enrollment status
+            return {
+                _id: course._id,
+                Heading: course.Heading,
+                Description: course.Description,
+                Detailed_description: course.Detailed_description,
+                price: course.price,
+                image: course.image,
+                topic: course.topic,
+                status: course.status,
+              //  enrolled_users_count: usersEnrolled.length,
+                is_user_enroll: isUserEnrolled ? 1 : 0 ,
+                number_of_quiz : course_quiz.length
+            };
+        }));
+
+        return res.status(200).json({
+            success: true,
+            message: 'CMS online courses details with enrollment info',
+            courses: courseDetailsWithEnrollment
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message
+        });
+    }
+};
+
+
+
                 
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
@@ -8212,7 +8273,7 @@ module.exports = {
      course_quiz_test , get_quiz_test_of_course, course_quiz ,
       delete_question_in_test , delete_test, addQuestion_in_Quiz_test ,
      add_topics , delete_course_topic , all_topics_of_course , edit_topic , update_question_of_quiz,
-     get_transaction
+     get_transaction , get_all_courses_details , 
 
      
 }

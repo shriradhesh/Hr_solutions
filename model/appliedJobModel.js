@@ -87,11 +87,13 @@ const appliedJobSchema = mongoose.Schema({
          enum : [0 ,1],
          default : 0     
     },
-    candidate_rating : {
-         type : Number,
-        //  enum : [1,2,3,4,5],
-         default : 1
+    candidate_rating: {
+        type: Number,  // Allows both integer and decimal values
+        min: 1,        // Minimum rating
+        max: 5,        // Maximum rating
+        default: 1     // Default rating
     }
+    
 
 }, { timestamps: true });
 

@@ -335,6 +335,9 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
       //Api for get_transaction
          router.get('/get_transaction', Admin_and_staffController.get_transaction)
 
+   // Api for get_all_courses_details
+   router.get('/get_all_courses_details', Admin_and_staffController.get_all_courses_details)
+
 
 module.exports = router
 

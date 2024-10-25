@@ -12,6 +12,14 @@ const course_transaction = new mongoose.Schema({
     enroll_user_id: {
         type : String
     },
+    course_name : {
+          type : String,
+          default : ''
+    },
+    user_name : {
+           type : String,
+           default : ''
+    },
     amount: {
         type: Number
     },

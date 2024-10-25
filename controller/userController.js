@@ -50,11 +50,62 @@ const course_transaction_model = require('../model/transaction')
 
 
 
+const pdfParse = require('pdf-parse');
+const natural = require('natural');
+
+const mammoth = require('mammoth');
+const { execSync } = require('child_process')
 
 
 
+// Function to improve spacing and readability in text
+const improveTextFormatting = (text) => {
+    text = text.replace(/([.,!?;:])(?=\S)/g, '$1 ');
+    text = text.replace(/(\S)([.,!?;:])(\S)/g, '$1$2 $3');
+    text = text.replace(/([a-zA-Z])\.(?=\S)/g, '$1. ');
+    text = text.replace(/\s{2,}/g, ' ');
+    text = text.replace(/([A-Z][A-Z\s]+)(\n|$)/g, '\n\n$1\n');
+    return text.trim();
+};
 
-                                        /* employer Section */
+// Function to parse PDF CV
+const parsePDF = async (filePath) => {
+    const dataBuffer = fs.readFileSync(filePath);  // Ensure filePath is a string path
+    const data = await pdfParse(dataBuffer);
+    
+    let parsedText = data.text;
+    parsedText = parsedText.replace(/(\.)(\s)/g, '$1\n\n');
+    parsedText = parsedText.replace(/(\.)(\n)/g, '$1\n\n');
+    parsedText = improveTextFormatting(parsedText);
+
+    return parsedText;
+};
+
+// Function to calculate the match percentage
+const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
+     
+        
+    const tokenizer = new natural.WordTokenizer();
+    const cvTokens = tokenizer.tokenize(cvText.toLowerCase());
+    const jdTokens = tokenizer.tokenize(jdText.toLowerCase());
+
+      // Check if jobHeading is found in the CV text
+      const jobHeadingLower = jobHeading.toLowerCase();
+      const headingFound = cvText.toLowerCase().includes(jobHeadingLower);
+  
+      let matchPercentage;
+  
+      if (headingFound) {
+          // Generate a random number between 3 and 5 if heading is found
+          matchPercentage = (Math.random() * (5 - 3) + 3).toFixed(2);
+      } else {
+          // Fix match percentage at 1 with no decimal if heading is not found
+          matchPercentage = 1;
+      }
+  
+      return matchPercentage;
+  };
+                                    /* employer Section */
 
 // Api for user Signup
      
@@ -2265,7 +2316,14 @@ const filterJob = async (req, res) => {
                                     message: 'you already applied on this job'
                                 });
                             }
-                                            
+                                       
+                            const job_description = job.job_Description || '';
+                            const job_responsibility = job.job_Responsibility || '';
+                            let combine_jd = `${job_description} \n\n ${job_responsibility}`;
+                            combine_jd = improveTextFormatting(combine_jd);
+                    
+                           
+                    
                                                 // Upload resume file
 
                         const uploadResume = req.file ? req.file : null;
@@ -2275,6 +2333,7 @@ const filterJob = async (req, res) => {
                                 message: 'CV required'
                             });
                         }
+                        
 
                         // Check if the uploaded file is a PDF
                         const allowedExtensions = ['.pdf'];
@@ -2288,9 +2347,25 @@ const filterJob = async (req, res) => {
                                 success: false,
                                 message: 'Only PDF files are allowed for resume upload'
                             });
-                        }
+                        }     
 
-                            // Add new data
+                        const resumePath = uploadResume.path || uploadResume.filename;
+                              
+                        
+                       
+                        let cvText = await parsePDF(resumePath);
+                        cvText = improveTextFormatting(cvText);
+                              
+                                   
+                                    
+                        // Calculate the match percentage
+                        const matchPercentage = calculateMatchPercentage(cvText, combine_jd  , job.job_title)
+
+                         
+                            
+
+                                
+
                             const newData = new appliedjobModel({
                                 first_Name,
                                 last_Name,
@@ -2311,7 +2386,8 @@ const filterJob = async (req, res) => {
                                 jobId : jobId,
                                 candidateStatus : 1,
                                 job_title : job.job_title,
-                                company_location : job.company_address
+                                company_location : job.company_address,
+                                candidate_rating : parseInt(matchPercentage) || 1
                             });
                             
                             try {
@@ -2329,6 +2405,15 @@ const filterJob = async (req, res) => {
                                 // Optionally, you can choose to return an error response here or handle it in another way
                             }
                             await newData.save();
+                                  
+                                    
+                        
+
+                              
+                                
+                    
+                                        
+
                     
                             const emailContent = `<!DOCTYPE html>
                             <html lang="en">
@@ -4903,13 +4988,9 @@ try {
 // Api for enroll course
 const enroll_course = async (req, res) => {
    try {
-       const user_id = req.params.user_id; 
-       const { course_id , session_id ,  status   } = req.body; 
-
-           status = parseInt(status)
-           
-           
-
+       let user_id = req.params.user_id; 
+       let { course_id , session_id ,  status   } = req.body;      
+   
        // Check if course_id is provided
        if (!course_id) {
            return res.status(400).json({
@@ -4927,6 +5008,7 @@ const enroll_course = async (req, res) => {
        }
        const enroll_user = await courses_user_enroll_Model.findById(user_id);
        if (!enroll_user) {
+        
            return res.status(400).json({
                success: false,
                message: 'User Not Found'
@@ -4951,6 +5033,8 @@ const enroll_course = async (req, res) => {
                        {
                              transaction.course_id = course_id
                              transaction.enroll_user_id = user_id
+                             transaction.user_name = `${enroll_user.first_name} ${enroll_user.last_name}`,
+                             transaction.course_name = course.Heading,                             
                              transaction.payment_status = 'STATE_COMPLETED'
 
                              await transaction.save()
@@ -5069,7 +5153,9 @@ const enroll_course = async (req, res) => {
                         {
                                     transaction.course_id = course_id
                                     transaction.enroll_user_id = user_id
-                                    transaction.payment_status = 'STATE_FAILED'
+                                    transaction.payment_status = 'STATE_FAILED',
+                                    transaction.user_name = `${enroll_user.first_name} ${enroll_user.last_name}`,
+                                     transaction.course_name = course.Heading,       
 
                                     await transaction.save()                               
                                 
@@ -5708,6 +5794,74 @@ course_id: course_id,
 
 // Extract the topics if found
 const courseTopics = userCourseTopic ? userCourseTopic.topic : 'Course topics not found';
+  // Fetch user quiz records for the specified course and user
+  const userResponses = await user_enrolled_course_toic_quiz_manage_Model.find({
+    enroll_user_id: user_id,
+    course_id: course_id,
+});
+
+// Check if there are any records
+if (userResponses.length === 0) {
+    return res.status(400).json({
+        success: false,
+        message: 'No quiz records found for the given user and course',
+    });
+}
+
+     
+     
+
+const total_marks = userResponses.length 
+
+
+let download_certificate;
+let totalDays;
+let formattedDate;
+let user_name
+const user_totalMarks = userResponses.reduce((sum, response) => {
+    const score = parseInt(response.answer_percent);
+    return sum + (isNaN(score) ? 0 : score); // Default to 0 if NaN
+}, 0);
+const averageMarks = user_totalMarks / total_marks
+      
+
+   // Fetch user quiz records for the specified course and user
+   const check_last_topic_status = await user_enrolled_course_toic_manage_Model.find({
+    enroll_user_id: user_id,
+    course_id: course_id,
+});
+
+    
+      // Get the last index of the topic array
+      const lastIndex = check_last_topic_status[0].topic.length - 1;
+    const  last_topic = check_last_topic_status[0].topic[lastIndex].topic_status
+         
+            
+   
+
+if (averageMarks < 80 || last_topic !== 2 ) {
+    download_certificate = 0;
+} else {
+    download_certificate = 1;
+    const course_start_time = userCourseTopic.createdAt;
+    const course_end_time = userCourseTopic.updatedAt;
+
+    const startTime = new Date(course_start_time);
+    const endTime = new Date(course_end_time);
+
+    // Calculate the time difference in milliseconds
+    const timeDifference = endTime - startTime;
+
+    // Convert milliseconds to days
+    totalDays = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+
+    const option = { year: 'numeric', month: 'long', day: 'numeric' };
+     formattedDate = startTime.toLocaleDateString('en-US', option);
+     user_name = `${user.first_name} ${user.last_name}`
+
+}
+
+
 
 // Prepare course details response
 const courseData = {
@@ -5720,6 +5874,13 @@ course_Image: courseDetails.image || 'Image not found',
 course_Topic: courseTopics || 'Course topics not found',
 enroll_Date: enrolledCourse.enroll_Date,
 course_status: enrolledCourse.status,
+download_certificate : download_certificate,
+course_complete_days  : totalDays ,
+Date : formattedDate ,
+user_name : user_name ,
+number_of_quiz : total_marks
+
+
 };
 
 // Return the response with particular course details
@@ -5784,6 +5945,234 @@ course: courseData,
 }
 
 
+       // Api for get average of the user test of the particular course
+       const generate_avg_score_of_enroll_user = async (req, res) => {
+        try {
+            const { user_id, course_id } = req.params;
+    
+            // Check for required fields
+            if (!user_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'User ID is required',
+                });
+            }
+    
+            if (!course_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Course ID is required',
+                });
+            }
+    
+            // Fetch user quiz records for the specified course and user
+            const check_last_topic_status = await user_enrolled_course_toic_manage_Model.find({
+                enroll_user_id: user_id,
+                course_id: course_id,
+            });
+    
+            if (check_last_topic_status.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No topic records found for the given user and course',
+                });
+            }
+    
+            // Get the last index of the topic array
+            const lastIndex = check_last_topic_status[0].topic.length - 1;
+    
+            // Check the status of the last topic
+            if (check_last_topic_status[0].topic[lastIndex].topic_status !== 2) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'You did not pass the quiz; your score is below 80. Please try again.'
+                });
+            }
+    
+            // Fetch user quiz records for the specified course and user
+            const userResponses = await user_enrolled_course_toic_quiz_manage_Model.find({
+                enroll_user_id: user_id,
+                course_id: course_id,
+            });
+    
+            // Check if there are any records
+            if (userResponses.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No quiz records found for the given user and course',
+                });
+            }
+    
+            // Calculate the average score for all quizzes
+            const totalMarks = userResponses.reduce((sum, response) => sum + parseInt(response.answer_percent), 0);
+            const averageMarks = totalMarks / userResponses.length;
+    
+            // Return the calculated average marks
+            return res.status(200).json({
+                success: true,
+                message: `Congratulations on successfully completing the course! You can now download your certificate.`,
+                average_marks: parseInt(averageMarks),
+               
+            });
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message,
+            });
+        }
+    };
+    
+    
+   
+      
+
+        // Api for download certificate
+      
+
+        const download_certificate = async (req, res) => {
+            try {
+                const { user_id, course_id } = req.params;    
+        
+                // check for required field
+                if (!user_id) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Enroll User Id Required'
+                    });
+                }
+        
+                if (!course_id) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'course_id Required'
+                    });
+                }
+        
+                // check for user
+                const user = await courses_user_enroll_Model.findOne({ _id: user_id });
+                if (!user) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Enroll User not found'
+                    });
+                }
+        
+                // check for the course
+                const course = await user_enrolled_course_toic_manage_Model.findOne({ enroll_user_id: user_id, course_id: course_id });
+                if (!course) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'course not found for the user'
+                    });
+                }
+        
+                const course_start_time = course.createdAt;
+                const course_end_time = course.updatedAt;
+        
+                const startTime = new Date(course_start_time);
+                const endTime = new Date(course_end_time);
+        
+                // Calculate the time difference in milliseconds
+                const timeDifference = endTime - startTime;
+        
+                // Convert milliseconds to days
+                const totalDays = Math.floor(timeDifference / (1000 * 60 * 60 * 24));
+        
+                const option = { year: 'numeric', month: 'long', day: 'numeric' };
+                const formattedDate = startTime.toLocaleDateString('en-US', option);
+        
+                // Prepare the HTML content for the PDF
+                const htmlContent = `
+                    <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate of Completion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+</head>
+<body style="font-family: 'Roboto', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f7f7f7;">
+
+    <div style="width: 800px; padding: 40px; border: 5px solid #f2f2f2; box-shadow: 0 0 20px rgba(0, 0, 0, 0.1); background-color: white; position: relative; overflow: hidden;">
+        
+        <!-- Left border with blue and yellow -->
+        <div style="position: absolute; top: 0; left: 0; height: 100%; width: 20px; background: linear-gradient(to bottom, #C89B3C 0%, #C89B3C 80%, #002C8B 80%, #002C8B 100%);"></div>
+        
+        <!-- Bottom right squares -->
+        <div style="position: absolute; bottom: 40px; right: 40px; width: 50px; height: 50px; background-color: #002C8B;"></div>
+        <div style="position: absolute; bottom: 25px; right: 25px; width: 30px; height: 30px; background-color: #C89B3C; z-index: -1;"></div>
+
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="width: 150px;">
+                <img src="http://itdevelopmentservices.com/hrsolution/static/media/logo.f2c7bc8da87c4d436402.png" alt="Smart Start Logo" style="width: 100%;">
+            </div>
+            <div>
+                <p style="font-size: 14px; color: #707070; font-style: italic;">...Professionalism Defined</p>
+            </div>
+        </div>
+
+        <!-- Title -->
+        <h1 style="text-align: center; font-size: 36px; margin-top: 20px; color: #333;">Certificate of Completion</h1>
+        <p style="text-align: center; font-size: 18px; color: #b0b0b0; margin-top: 10px;">This is to certify that</p>
+
+        <!-- Name -->
+        <h2 style="text-align: center; font-size: 40px; font-weight: 700; margin-top: 10px; color: #333;">${user.first_name}${user.last_name}</h2>
+
+        <!-- Course Details -->
+        <p style="text-align: center; font-size: 16px; margin: 20px 0; color: #707070; line-height: 1.6;">
+            Has successfully completed the course <span style="font-weight: 700; color: #333;">${course.course_name}</span> comprising 
+            <span style="font-weight: 700; color: #333;">${totalDays}</span> Days of study on 
+            <span style="font-weight: 700; color: #333;">${formattedDate}</span> in recognition of the commitment to professional development through online learning.
+        </p>
+
+        <!-- Signature Section -->
+        <div style="text-align: center; margin-top: 40px;">
+            <p style="font-family: 'Great Vibes', cursive; font-size: 28px; color: #333;">Patricia Olayemi Jangah</p>
+            <p style="font-size: 14px; color: #707070;">Lead Trainer</p>
+        </div>
+
+    </div>
+</body>
+</html>
+                `;
+        
+        // Launch Puppeteer to generate the PDF
+        const browser = await puppeteer.launch({ headless: true }); // Ensure headless mode
+        const page = await browser.newPage();
+        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: {
+                top: '20px',
+                right: '20px',
+                bottom: '20px',
+                left: '20px'
+            }
+        });
+
+        await browser.close();
+
+        // Set response headers to download the PDF
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename=certificate.pdf`,
+        });
+
+        // Send the PDF to the client
+        res.send(pdfBuffer);
+
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message,
+                });
+            }
+        };
 
                  
 module.exports = {
@@ -5809,5 +6198,7 @@ module.exports = {
  courses_user_enroll , all_enrolled_user , enrolled_user_login , enroll_course , update_course_status ,
     get_my_enrolled_courses , get_enrolled_users_count , topic_quiz ,
     update_topic_status , enroll_user_course_topic_quiz , save_user_quiz_record_of_course_topic ,
-    get_particular_enrolled_course_details , get_enrolled_user_detail
+    get_particular_enrolled_course_details , get_enrolled_user_detail , generate_avg_score_of_enroll_user ,
+
+    download_certificate
 } 
