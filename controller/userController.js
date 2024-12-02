@@ -55,7 +55,8 @@ const natural = require('natural');
 
 const mammoth = require('mammoth');
 const { execSync } = require('child_process')
-
+const { Document, Packer, Paragraph, TextRun } = require('docx');
+const { convert } = require('html-to-text');         
 
 
 // Function to improve spacing and readability in text
@@ -839,6 +840,7 @@ const deletejobTitle = async (req, res) => {
                 jobTitle: jobT.jobTitle,
                 job_Description : jobT.job_Description,
                 Responsibilities : jobT.Responsibilities,
+                jd_download_count : jobT.jd_download_count,
                 _id : jobT._id
             }));
             
@@ -935,6 +937,7 @@ const deleteJob_Description = async (req, res) => {
                 const empId = req.params.empId;
                 const {
                     job_title,
+                    sub_job_title ,
                     job_Description,
                     job_Responsibility,
                     job_type,
@@ -1026,6 +1029,7 @@ const deleteJob_Description = async (req, res) => {
                     emp_Id: empId,
                     jobId : finalString,
                     job_title,
+                    sub_job_title,
                     job_Description,
                     job_Responsibility : job_Responsibility || null,
                     job_type,
@@ -1152,6 +1156,7 @@ const deleteJob_Description = async (req, res) => {
                     return {
                         jobId: job.jobId,
                         job_title: job.job_title,
+                        sub_job_title : job.sub_job_title,
                         company_name: job.company_name,
                         Number_of_emp_needed: job.Number_of_emp_needed,
                         job_type: job.job_type,
@@ -1795,117 +1800,102 @@ const deleteJob_Description = async (req, res) => {
 
         const getAll_Jobs = async (req, res) => {
             try {
-                const job_status = req.query.job_status
-                const filter = {}
-                if(job_status)
-                    {
-                        filter.status = job_status;
-                    }
-                // Fetch all jobs
-                const allJobs = await jobModel.find({ ...filter });
-                
-                // If no jobs found, return error response
+                // Extract job status filter from query
+                const job_status = req.query.job_status;
+                const filter = {};
+                if (job_status) {
+                    filter.status = job_status;
+                }
+        
+                // Fetch jobs based on filter
+                const allJobs = await jobModel.find({ ...filter }).sort({ createdAt: -1 }); // Sort by latest createdAt
+        
                 if (allJobs.length === 0) {
-                    return res.status(400).json({
+                    return res.status(404).json({
                         success: false,
-                        message: 'No jobs found'
+                        message: 'No jobs found',
                     });
                 }
-                            // Map job data to desired fromat and count
-                            const jobTitle_Count = new Map()
-                // Map job data to desired format
-                const jobsData = await Promise.all(allJobs.map(async (job) => {
-                    // Calculate salary range string
-                    const salary_pay = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
-                
-                    // Check if job has expired
-                    const today = new Date();
-                    const endDate = new Date(job.endDate);
-                
-                    // if (endDate < today) {
-                    //     // Job has expired, send notification
-                    //     try {
-                    //         await empNotificationModel.create({
-                    //             empId: job.emp_Id,
-                    //             message: `Your posted job "${job.job_title}" for company "${job.company_name}" has expired`,
-                    //             date: today,
-                    //             status: 1,
-                    //         });
-                    //     } catch (notificationError) {
-                    //         console.error('Error creating notification:', notificationError);
-                    //     }
-                    // }
-                            // Normalize job title for counting
-                            const normalized_title = job.job_title.trim().toLowerCase()
-                            jobTitle_Count.set(normalized_title , (jobTitle_Count.get(normalized_title) || 0) + 1)
-                    // Find candidate details for the job
-                    const candidateDetails = await appliedjobModel.find({
-                        jobId: job.jobId
-                    });
         
-                    // Count male and female candidates
-                    const maleCandidateCount = candidateDetails.filter(candidate => candidate.gender === 'Male').length;
-                    const femaleCandidateCount = candidateDetails.filter(candidate => candidate.gender === 'Female').length;
-                
-                    // Return formatted job data with candidate counts
-                    return {
-                        jobId: job.jobId,
-                        job_title: job.job_title,
-                        company_name: job.company_name,
-                        Number_of_emp_needed: job.Number_of_emp_needed,
-                        job_type: job.job_type,
-                        job_schedule: job.job_schedule,
-                        salary_pay: salary_pay,
-                        job_Description: job.job_Description,
-                        job_Responsibility : job.job_Responsibility || null,
-                        company_address: job.company_address,
-                        employee_email: job.employee_email,
-                        requirement_timeline: job.requirement_timeline,
-                        startDate: job.startDate,
-                        endDate: job.endDate,
-                        phone_no: job.phone_no,
-                        key_qualification: job.key_qualification,
-                        Experience: job.Experience,
-                        template_type: job.template_type,
-                        company_Industry: job.company_Industry,
-                        job_photo: job.job_photo,
-                        status: job.status,
-                        empId: job.emp_Id,
-                        isPsychometricTest: job.isPsychometricTest,
-                        psychometric_Test: job.psychometric_Test,
-                        maleCandidateCount: maleCandidateCount,
-                        femaleCandidateCount: femaleCandidateCount,
-                        fav_status : job.fav_status,
-                        job_image : job.job_image || '',
-                        location : job.location
-                    };
+                // Prepare job title counts and map data
+                const jobTitle_Count = new Map();
+        
+                const jobsData = await Promise.all(
+                    allJobs.map(async (job) => {
+                        // Salary pay formatting
+                        const salary_pay = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
+        
+                        // Normalize job title for counting
+                        const normalized_title = job.job_title.trim().toLowerCase();
+                        jobTitle_Count.set(normalized_title, (jobTitle_Count.get(normalized_title) || 0) + 1);
+        
+                        // Fetch applied candidates for this job
+                        const candidateDetails = await appliedjobModel.find({ jobId: job.jobId });
+        
+                        // Count male and female candidates
+                        const maleCandidateCount = candidateDetails.filter((candidate) => candidate.gender === 'Male').length;
+                        const femaleCandidateCount = candidateDetails.filter((candidate) => candidate.gender === 'Female').length;
+        
+                        // Return job data
+                        return {
+                            jobId: job.jobId,
+                            job_title: job.job_title,
+                            sub_job_title : job.sub_job_title ,
+                            company_name: job.company_name,
+                            Number_of_emp_needed: job.Number_of_emp_needed,
+                            job_type: job.job_type,
+                            job_schedule: job.job_schedule,
+                            salary_pay,
+                            job_Description: job.job_Description,
+                            job_Responsibility: job.job_Responsibility || null,
+                            company_address: job.company_address,
+                            employee_email: job.employee_email,
+                            requirement_timeline: job.requirement_timeline,
+                            startDate: job.startDate,
+                            endDate: job.endDate,
+                            phone_no: job.phone_no,
+                            key_qualification: job.key_qualification,
+                            Experience: job.Experience,
+                            template_type: job.template_type,
+                            company_Industry: job.company_Industry,
+                            job_photo: job.job_photo,
+                            status: job.status,
+                            empId: job.emp_Id,
+                            isPsychometricTest: job.isPsychometricTest,
+                            psychometric_Test: job.psychometric_Test,
+                            maleCandidateCount,
+                            femaleCandidateCount,
+                            fav_status: job.fav_status,
+                            job_image: job.job_image || '',
+                            location: job.location,
+                        };
+                    })
+                );
+        
+                // Convert job title counts to array
+                const job_title_array = Array.from(jobTitle_Count.entries()).map(([title, count]) => ({
+                    title,
+                    count,
                 }));
-                
-                   const sortedjobsData = jobsData.sort(( a , b ) => b.createdAt - a.createdAt )
-
-                   // convert job title count to an Array of objects
-
-                   const job_title_array = Array.from(jobTitle_Count.entries()).map(([title , count]) => ({
-                        title : title,
-                        count : count
-                   }))
-                // Return successful response with jobs data
+        
+                // Return successful response
                 return res.status(200).json({
                     success: true,
                     message: 'All Jobs',
                     JobsCount: allJobs.length,
-                    allJobs: sortedjobsData,
-                
+                //    job_title_array,
+                    allJobs: jobsData,
                 });
             } catch (error) {
-                // Return error response if any error occurs
+                // Handle server errors
                 return res.status(500).json({
                     success: false,
                     message: 'Server error',
-                    error_message: error.message
+                    error_message: error.message,
                 });
             }
         };
+        
 
 
         // All active job count with there title
@@ -1950,6 +1940,7 @@ const deleteJob_Description = async (req, res) => {
                     return {
                         jobId: job.jobId,
                         job_title: job.job_title,
+                        sub_job_title : job.sub_job_title ,
                         company_name: job.company_name,
                         Number_of_emp_needed: job.Number_of_emp_needed,
                         job_type: job.job_type,
@@ -2227,7 +2218,7 @@ const filterJob = async (req, res) => {
         
         
 
-                                                     /* Applied job section */
+                                                                    /* Applied job section */
 
         // APi for apply on job
 
@@ -2335,19 +2326,27 @@ const filterJob = async (req, res) => {
                         }
                         
 
-                        // Check if the uploaded file is a PDF
-                        const allowedExtensions = ['.pdf'];
-                        let fileExtension = uploadResume.originalname ? uploadResume.originalname.split('.').pop().toLowerCase() : null;
-                        fileExtension = fileExtension.trim()
+                        //  Check if the uploaded file exists and is a PDF
+                            const allowedExtensions = ['.pdf'];
 
+                            // Ensure `uploadResume` and `originalname` are defined
+                            if (!uploadResume || !uploadResume.originalname) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: 'No file was uploaded or file name is invalid'
+                                });
+                            }
 
-                        if (!fileExtension || !allowedExtensions.includes('.' + fileExtension)) {
-                        
-                            return res.status(400).json({
-                                success: false,
-                                message: 'Only PDF files are allowed for resume upload'
-                            });
-                        }     
+                            // Extract and validate file extension
+                            let fileExtension = uploadResume.originalname.split('.').pop().toLowerCase();
+
+                            if (!fileExtension || !allowedExtensions.includes('.' + fileExtension.trim())) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: 'Only PDF files are allowed for resume upload'
+                                });
+                            }
+
 
                         const resumePath = uploadResume.path || uploadResume.filename;
                               
@@ -2359,14 +2358,9 @@ const filterJob = async (req, res) => {
                                    
                                     
                         // Calculate the match percentage
-                        const matchPercentage = calculateMatchPercentage(cvText, combine_jd  , job.job_title)
-
-                         
+                        const matchPercentage = calculateMatchPercentage(cvText, combine_jd  , job.job_title)                    
                             
-
-                                
-
-                            const newData = new appliedjobModel({
+                             const newData = new appliedjobModel({
                                 first_Name,
                                 last_Name,
                                 user_Email,
@@ -2406,15 +2400,6 @@ const filterJob = async (req, res) => {
                             }
                             await newData.save();
                                   
-                                    
-                        
-
-                              
-                                
-                    
-                                        
-
-                    
                             const emailContent = `<!DOCTYPE html>
                             <html lang="en">
                             <head>
@@ -3379,6 +3364,7 @@ const client_dashboardCount = async (req, res) => {
          const download_jd = async (req, res) => {
             try {
                 const jd_id = req.params.jd_id;
+                const jd_download_count = req.query.jd_download_count
         
                 if (!jd_id) {
                     return res.status(400).json({
@@ -3394,6 +3380,9 @@ const client_dashboardCount = async (req, res) => {
                         message: 'Job Description not found',
                     });
                 }
+
+                jd.jd_download_count = jd_download_count
+              await jd.save()
         
                 const { jobTitle, job_Description, Responsibilities } = jd;
         
@@ -3562,6 +3551,8 @@ const client_dashboardCount = async (req, res) => {
                 });
         
                 res.send(Buffer.from(pdfBytes));
+
+                 
             } catch (error) {
                 return res.status(500).json({
                     success: false,
@@ -3577,8 +3568,8 @@ const client_dashboardCount = async (req, res) => {
    const share_cv = async (req, res) => {
     try {
         const candidate_id = req.params.candidate_id;
-        const { to, from, subject, message } = req.body;
-
+        var { to, from, subject, message , shareVia , country_code ,  receiver_no } = req.body;
+        var baseUrl = process.env.image_baseURl
         // Check for candidate_id
         if (!candidate_id) {
             return res.status(400).json({
@@ -3587,7 +3578,34 @@ const client_dashboardCount = async (req, res) => {
             });
         }
 
-        // Check for required fields
+       
+
+        // Check for candidate profile
+        const candidate = await appliedjobModel.findOne({ _id: candidate_id });
+        if (!candidate) {
+            return res.status(400).json({
+                success: false,
+                message: 'Candidate not found'
+            });
+        }
+                    
+                    
+        // Check for candidate CV
+        var candidate_cv = path.resolve(__dirname, '..', 'uploads', candidate.uploadResume);
+        
+        if (!fs.existsSync(candidate_cv)) {
+            return res.status(400).json({
+                success: false,
+                message: `Candidate CV not found at path: ${candidate_cv}`
+            });
+        }
+
+
+
+        if (shareVia === 1) {
+
+            
+           // Check for required fields
         if (!to || (typeof to === 'string' && !validator.isEmail(to)) || (Array.isArray(to) && to.length === 0)) {
             return res.status(400).json({
                 success: false,
@@ -3595,7 +3613,7 @@ const client_dashboardCount = async (req, res) => {
             });
         }
         if (typeof to === 'string') {
-            to = [to];  // Convert to a single-element array
+            to = [to];  
         }
         if (!from || !validator.isEmail(from)) {
             return res.status(400).json({
@@ -3618,24 +3636,6 @@ const client_dashboardCount = async (req, res) => {
                     message: `Invalid email address in receiver list: ${email}`
                 });
             }
-        }
-
-        // Check for candidate profile
-        const candidate = await appliedjobModel.findOne({ _id: candidate_id });
-        if (!candidate) {
-            return res.status(400).json({
-                success: false,
-                message: 'Candidate not found'
-            });
-        }
-
-        // Check for candidate CV
-        const candidate_cv = path.resolve(__dirname, '..', 'uploads', candidate.uploadResume);
-        if (!fs.existsSync(candidate_cv)) {
-            return res.status(400).json({
-                success: false,
-                message: `Candidate CV not found at path: ${candidate_cv}`
-            });
         }
 
         // Setup nodemailer transporter
@@ -3682,6 +3682,39 @@ const client_dashboardCount = async (req, res) => {
             }
         });
 
+
+        }
+
+        else if (shareVia === 2) {
+            if (!country_code || !receiver_no) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Country code and receiver number are required for WhatsApp sharing'
+                });
+            }
+
+
+            // Generate WhatsApp sharing link with the CV's public URL
+            var waLink = `https://wa.me/${country_code}${receiver_no}?text=${encodeURIComponent(
+                message = `${baseUrl}/${candidate.uploadResume}` 
+            )}`;
+
+            return res.status(200).json({
+                success: true,
+                message: 'WhatsApp link generated successfully',
+                waLink
+            });         
+        }
+        else
+        {
+               return res.status(400).json({
+                   success : false ,
+                   message : 'Invalid Value of shareVia , use 1 for email and 2 for whatsapp'
+               })
+        }
+
+        
+
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -3712,7 +3745,7 @@ const client_dashboardCount = async (req, res) => {
                 success: false,
                 message: 'Candidate not found.'
             });
-        }
+        } 
 
         // Check if the associated job exists
         const job = await jobModel.findOne({ jobId: candidate.jobId });
@@ -3760,8 +3793,6 @@ const client_dashboardCount = async (req, res) => {
         });
     }
 };
-
-
 
     // get all the saved candidate profile of the client 
     const get_saved_candidate_profile = async (req, res) => {
@@ -6174,6 +6205,263 @@ course: courseData,
             }
         };
 
+
+
+        const export_client_jobs_filteredcandidate = async (req, res) => {
+            try {
+                const client_id = req.params.client_id;
+                const { from_date, to_date, gender, district, job_Type } = req.query;
+        
+                // Check for client ID
+                if (!client_id) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Client ID is required',
+                    });
+                }
+        
+                // Check for client existence
+                const client = await employeeModel.findOne({ _id: client_id });
+                if (!client) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Client not found',
+                    });
+                }
+        
+                // Construct filter for applied job candidates
+                const filter = {};
+        
+                // Date range filter (checks `createdAt` in `appliedjobModel`)
+                if (from_date || to_date) {
+                    filter.createdAt = {};
+                    if (from_date) filter.createdAt.$gte = new Date(from_date);
+                    if (to_date) filter.createdAt.$lte = new Date(to_date);
+                }
+        
+                // Gender filter
+                if (gender) {
+                    filter.gender = gender;
+                }
+        
+                // Construct regex-based filters for `district` and `job_Type`
+                if (district) {
+                    filter.city = { $regex: district, $options: 'i' }; 
+                }
+                if (job_Type) {
+                    filter.job_Heading = { $regex: job_Type, $options: 'i' }; 
+                }
+        
+                // Fetch jobs posted by the client
+                const totalJobs = await jobModel.find({ emp_Id: client_id });
+                if (totalJobs.length === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'No jobs found for this client',
+                    });
+                }
+        
+                // Fetch candidates applied for the jobs with combined filters
+                const totalCandidates = await appliedjobModel.find({
+                    jobId: { $in: totalJobs.map(job => job.jobId) }, 
+                    ...filter, 
+                });
+        
+                if (totalCandidates.length === 0 ) {                   
+                    
+                    return res.status(400).json({
+                        success: false,
+                        message: `No candidates found for the jobs posted by this client`,
+                    });
+                }
+                else
+                {                     
+                       
+                    // Create Excel workbook and worksheet
+                const workbook = new ExcelJs.Workbook();
+                const worksheet = workbook.addWorksheet("Candidates");
+        
+                // Define Excel header
+                worksheet.columns = [
+                    { header: "First Name", key: "first_Name", width: 15 },
+                    { header: "Last Name", key: "last_Name", width: 15 },
+                    { header: "User Email", key: "user_Email", width: 25 },
+                    { header: "District", key: "city", width: 15 },
+                    { header: "Phone Number", key: "phone_no", width: 15 },
+                    { header: "Status", key: "jobSeeker_status", width: 15 },
+                    { header: "Gender", key: "gender", width: 10 },
+                    { header: "Job Heading", key: "job_Heading", width: 20 },
+                    { header: "Job ID", key: "jobId", width: 10 },
+                    { header: "Highest Education", key: "Highest_Education", width: 20 },
+                    { header: "Total Experience", key: "Total_experience", width: 15 },
+                    { header: "CV", key: "uploadResume", width: 25 },
+                    { header: "Candidate Rating", key: "candidate_rating", width: 15 },
+                ];
+        
+                // Add data to the worksheet
+                totalCandidates.forEach(candidate => {
+                    worksheet.addRow({
+                        first_Name: candidate.first_Name,
+                        last_Name: candidate.last_Name,
+                        user_Email: candidate.user_Email,
+                        city: candidate.city,
+                        phone_no: candidate.phone_no,
+                        jobSeeker_status: candidate.jobSeeker_status,
+                        gender: candidate.gender,
+                        job_Heading: candidate.job_Heading,
+                        jobId: candidate.jobId,
+                        Highest_Education: candidate.Highest_Education,
+                        Total_experience: candidate.Total_experience,
+                        uploadResume: candidate.uploadResume,
+                        candidate_rating: candidate.candidate_rating,
+                    });
+                });
+        
+                // Set response headers for downloading the Excel file
+                res.setHeader(
+                    "Content-Type",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                );
+                res.setHeader(
+                    "Content-Disposition",
+                    `attachment; filename=${gender || 'all'}_candidates.xlsx`
+                );
+        
+                // Generate and send the Excel file as a response
+                await workbook.xlsx.write(res);
+        
+                // End the response
+                res.end();
+                }
+        
+                
+            } catch (error) {
+                console.error("Error exporting candidates:", error);
+                res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message,
+                });
+            }
+        };
+        
+        // Api for download Jd in word
+
+        const download_word_Jd = async (req, res) => {
+            try {
+                const jd_id = req.params.jd_id; 
+                const jd_download_count = req.query.jd_download_count
+        
+                if (!jd_id) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Job ID required',
+                    });
+                }
+        
+                const jd = await jobDescription_model.findById(jd_id);
+                if (!jd) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Job Description not found',
+                    });
+                }
+                jd.jd_download_count = jd_download_count
+                await jd.save()
+                const { jobTitle, job_Description, Responsibilities } = jd;
+        
+                // Convert HTML content to plain text
+                const plainJobDescription = convert(job_Description || '', { wordwrap: false });
+                const plainResponsibilities = convert(Responsibilities || '', { wordwrap: false });
+        
+                // Create a new Word document
+                const doc = new Document({
+                    sections: [
+                        {
+                            children: [
+                                // Add job title
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({
+                                            text: jobTitle,
+                                            bold: true,
+                                            size: 32, // Font size in half-points
+                                        }),
+                                    ],
+                                    spacing: {
+                                        after: 200,
+                                    },
+                                }),
+        
+                                // Add job description heading
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({
+                                            text: 'Job Description',
+                                            bold: true,
+                                            size: 28,
+                                        }),
+                                    ],
+                                    spacing: {
+                                        after: 100,
+                                    },
+                                }),
+        
+                                // Add job description content
+                                ...plainJobDescription.split('\n').map(line =>
+                                    new Paragraph({
+                                        children: [new TextRun({ text: line, size: 24 })],
+                                    })
+                                ),
+        
+                                // Add responsibilities heading
+                                new Paragraph({
+                                    children: [
+                                        new TextRun({
+                                            text: 'Job Responsibilities',
+                                            bold: true,
+                                            size: 28,
+                                        }),
+                                    ],
+                                    spacing: {
+                                        after: 100,
+                                    },
+                                }),
+        
+                                // Add responsibilities content
+                                ...plainResponsibilities.split('\n').map(line =>
+                                    new Paragraph({
+                                        children: [new TextRun({ text: line, size: 24 })],
+                                    })
+                                ),
+                            ],
+                        },
+                    ],
+                });
+        
+                // Generate the Word document as a buffer
+                const buffer = await Packer.toBuffer(doc);
+        
+                // Set response headers
+                res.set({
+                    'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'Content-Disposition': `attachment; filename=job_description.docx`,
+                });
+        
+                // Send the Word document
+                res.send(buffer);
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message,
+                });
+            }
+        };
+               
+                          
+               
+        
                  
 module.exports = {
     employeeSignup , Emp_login , getEmployeeDetails , updateEmp , emp_ChangePassword , postJob , getJobs_posted_by_employee,
@@ -6200,5 +6488,5 @@ module.exports = {
     update_topic_status , enroll_user_course_topic_quiz , save_user_quiz_record_of_course_topic ,
     get_particular_enrolled_course_details , get_enrolled_user_detail , generate_avg_score_of_enroll_user ,
 
-    download_certificate
+    download_certificate , export_client_jobs_filteredcandidate , download_word_Jd
 } 

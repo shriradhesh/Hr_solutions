@@ -8239,7 +8239,83 @@ const get_all_courses_details = async (req, res) => {
 };
 
 
+// Api for job seeker count of client jobs
+const jobseeker_count_of_client_job = async (req, res) => {
+    try {
+        const clientId = req.params.clientId
+        //check for client Id
+        if(!clientId)
+        {
+            return res.status(400).json({
+                   success : false ,
+                   message : 'Client Id required'
+            })
+        }
 
+        // check for client
+        const client = await employeeModel.findOne({ _id : clientId })
+        if(!client)
+        {
+            return res.status(400).json({
+                   success : false ,
+                   message : 'Client Not Found'
+            })
+        }
+
+           // check for all jobs of client 
+           const all_jobs = await jobModel.find({ emp_Id : clientId
+            })
+            if(!all_jobs)
+            {
+                return res.status(400).json({
+                      success : false ,
+                      message : 'No job Found for the client'
+                })
+            }
+                  const jobIds = all_jobs.map(job => job.jobId)
+                      
+                        
+            
+      const check_all_jobseeker = await appliedjobModel.find({ jobId : { $in: jobIds }} );
+       
+         
+      
+      if (check_all_jobseeker.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'No profile found'
+        });
+      }
+  
+      // Count job seekers by status
+      const pending_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 1).length;
+      const schedule_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 2).length;
+      const assessment_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 3).length;
+      const HR_Discussion_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 4).length;
+      const complete_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 5).length;
+      const shortlisted_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 6).length;
+      const rejected_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 7).length;
+  
+      return res.status(200).json({
+        success: true,
+        message: 'Details',
+        pending_count,
+        schedule_count,
+        assessment_count,
+        HR_Discussion_count,
+        complete_count,
+        shortlisted_count,
+        rejected_count
+      });
+  
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: 'Server error',
+        error_message: error.message
+      });
+    }
+  }
                 
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
@@ -8273,7 +8349,7 @@ module.exports = {
      course_quiz_test , get_quiz_test_of_course, course_quiz ,
       delete_question_in_test , delete_test, addQuestion_in_Quiz_test ,
      add_topics , delete_course_topic , all_topics_of_course , edit_topic , update_question_of_quiz,
-     get_transaction , get_all_courses_details , 
+     get_transaction , get_all_courses_details ,  jobseeker_count_of_client_job
 
      
 }

@@ -9,8 +9,16 @@ job_Description : {
 },
 Responsibilities : {
     type : String
-}
 },
+
+jd_download_count : {
+    type : Number,
+    default : 0
+},
+},
+
+
+
 {timestamps: true}
 )
 

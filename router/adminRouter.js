@@ -338,6 +338,9 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
    // Api for get_all_courses_details
    router.get('/get_all_courses_details', Admin_and_staffController.get_all_courses_details)
 
+   // Api for jobseeker_count_of_client_job
+   router.get('/jobseeker_count_of_client_job/:clientId' , Admin_and_staffController.jobseeker_count_of_client_job)
+
 
 module.exports = router
 

@@ -230,7 +230,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
           router.get('/enroll_user_course_topic_quiz/:enroll_user_id/:topic_id', userController.enroll_user_course_topic_quiz )
 
  // Api for save_user_quiz_record_of_course_topic
- router.post('/save_user_quiz_record_of_course_topic/:enroll_user_id/:course_id', userController.save_user_quiz_record_of_course_topic)
+  router.post('/save_user_quiz_record_of_course_topic/:enroll_user_id/:course_id', userController.save_user_quiz_record_of_course_topic)
  
           // Api for get_particular_enrolled_course_details
           router.get('/get_particular_enrolled_course_details/:user_id/:course_id' , userController.get_particular_enrolled_course_details)
@@ -243,6 +243,12 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
 
          // Api for download_certificate
          router.get('/download_certificate/:user_id/:course_id', userController.download_certificate)
+
+         // Api for export_client_jobs_filteredcandidate
+         router.get('/export_client_jobs_filteredcandidate/:client_id', userController.export_client_jobs_filteredcandidate)
+
+         // Api for download_word_Jd
+         router.get('/download_word_Jd/:jd_id', userController.download_word_Jd)
 
 
 module.exports = router

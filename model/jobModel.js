@@ -7,6 +7,9 @@ const jobSchema = new mongoose.Schema({
     job_title: {
         type: String
     },
+    sub_job_title : {
+          type : String
+    },
     company_name: {
         type: String
     },
