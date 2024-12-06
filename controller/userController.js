@@ -953,7 +953,9 @@ const deleteJob_Description = async (req, res) => {
                     Experience,
                     company_address,
                     template_type,
-                    location
+                    location,
+                    hr_email,
+                    hiring_manager_email
                     // isPsychometricTest,
                     // psychometric_Test
 
@@ -1050,7 +1052,9 @@ const deleteJob_Description = async (req, res) => {
                     location :  location,
                     // isPsychometricTest  ,
                     // psychometric_Test : psychometric_Test || '',
-                    job_image : job_image || ''
+                    job_image : job_image || '',
+                    hiring_manager_email ,
+                    hr_email
                 });
         
                 await newJob.save();
@@ -1180,6 +1184,9 @@ const deleteJob_Description = async (req, res) => {
                         psychometric_Test: job.psychometric_Test,
                         job_image: job.job_image,
                         location: job.location,
+                        hr_email : job.hr_email,
+                        hiring_manager_email : job.hiring_manager_email,
+
         
                         // Add male and female candidate counts
                         candidateCounts: {
@@ -1212,7 +1219,7 @@ const deleteJob_Description = async (req, res) => {
                                 job_Description , job_Responsibility , startDate , endDate , Experience
                              } = req.body
 
-                                        console.log(req.body);
+                                      
                                         
                                  // check for job Id required
                                  if(!jobId)
@@ -1868,6 +1875,8 @@ const deleteJob_Description = async (req, res) => {
                             fav_status: job.fav_status,
                             job_image: job.job_image || '',
                             location: job.location,
+                            hiring_manager_email : job.hiring_manager_email ,
+                            hr_email : job.hr_email
                         };
                     })
                 );
@@ -1966,7 +1975,9 @@ const deleteJob_Description = async (req, res) => {
                         maleCandidateCount: maleCandidateCount,
                         femaleCandidateCount: femaleCandidateCount,
                         fav_status : job.fav_status,
-                        job_image : job.job_image || ''
+                        job_image : job.job_image || '',
+                        hiring_manager_email : job.hiring_manager_email ,
+                            hr_email : job.hr_email
                     };
                 }));
                 

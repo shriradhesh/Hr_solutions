@@ -106,7 +106,20 @@ const jobSchema = new mongoose.Schema({
   },
   job_image : {
       type : String
-  }
+  },
+
+        hr_email : {
+            type : String,
+            unique : true ,
+            trim : true , 
+            lowercase : true 
+        },
+        hiring_manager_email : {
+            type : String,
+            unique : true ,
+            trim : true ,
+            lowercase : true 
+        }
     
 } , { timestamps : true});
 

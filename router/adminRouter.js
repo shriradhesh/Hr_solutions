@@ -341,6 +341,13 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
    // Api for jobseeker_count_of_client_job
    router.get('/jobseeker_count_of_client_job/:clientId' , Admin_and_staffController.jobseeker_count_of_client_job)
 
+   // Api for create_email_template
+   router.post('/create_email_template', Admin_and_staffController.create_email_template)
+   // Api for getall_emailContent
+   router.get('/getall_emailContent', Admin_and_staffController.getall_emailContent)
+   // Api for emailContent_of_title
+   router.get('/emailContent_of_title/:email_title', Admin_and_staffController.emailContent_of_title)
+
 
 module.exports = router
 

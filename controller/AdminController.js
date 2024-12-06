@@ -69,6 +69,7 @@ const natural = require('natural');
 const mammoth = require('mammoth');
 const { execSync } = require('child_process')
 const course_transaction_model = require('../model/transaction')
+const emailTemplateModel = require('../model/emailTemplateModel')
 
 
 
@@ -1198,7 +1199,12 @@ const course_transaction_model = require('../model/transaction')
     const candidate_recruitment_process = async (req, res) => {
         try {
             const candidateId = req.params.candidateId;
-            const { seeker_status, emailSubject, emailContent } = req.body;
+            const { seeker_status , emailSubject, emailContent } = req.body;
+
+
+                
+                
+                 
     
              // Check for candidateId
              if (!candidateId) {
@@ -1207,27 +1213,16 @@ const course_transaction_model = require('../model/transaction')
                     message: 'Candidate ID required'
                 });
             }
-            if (!emailSubject) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'emailSubject required'
-                });
-            }
-            if (!emailContent) {
-                return res.status(400).json({
-                    success: false,
-                    message: 'emailContent required'
-                });
-            }
+            
     
             // Validate seeker_status
-            const validStatuses = [
-                'schedule interview',
-                'assessment',
-                'HR_Discussion',
+            const validStatuses = [               
+                'Shortlisted',
+                'longlisted',
+                'Assessment_Scheduled',
+                'Schedule_Interview',
                 'complete',
-                'shortlist',
-                'reject'
+                'reject',
             ];
             
             if (!validStatuses.includes(seeker_status)) {
@@ -1255,7 +1250,7 @@ const course_transaction_model = require('../model/transaction')
                     message: 'Job not found'
                 });
             }
-    
+
             // Access job details
             const empId = checkJob.emp_Id;
     
@@ -1265,46 +1260,53 @@ const course_transaction_model = require('../model/transaction')
             let emailContentText;
     
             switch (seeker_status) {
-                case 'schedule interview':
-                    candidate_status = 2;
-                    cStatus = 2;
-                    emailSubjectText = emailSubject 
-                    emailContentText = emailContent 
-                    break;
-    
-                case 'assessment':
-                    candidate_status = 3
+                case 'Shortlisted':
+                    candidate_status = 2 ;
                     cStatus = 2;
                     emailSubjectText =  emailSubject 
-                    emailContentText = emailContent 
+                    emailContentText = emailContent
+                    emailRecipient = checkJob.hr_email 
                     break;
-    
-                case 'HR_Discussion':
-                    candidate_status = 4;
+
+                case 'longlisted':
+                    candidate_status = 3;
                     cStatus = 2;
                     emailSubjectText =  emailSubject
                     emailContentText = emailContent 
+                    emailRecipient = checkJob.hiring_manager_email
                     break;
+
+                case 'Assessment_Scheduled':
+                candidate_status = 4
+                cStatus = 2;
+                emailSubjectText =  emailSubject 
+                emailContentText = emailContent 
+                emailRecipient = candidate.user_Email ;
+                break;
+    
+
+                case 'Schedule_Interview':
+                    candidate_status = 5;
+                    cStatus = 2;
+                    emailSubjectText = emailSubject 
+                    emailContentText = emailContent 
+                    emailRecipient = candidate.user_Email
+                    break;  
     
                 case 'complete':
-                    candidate_status = 5;
+                    candidate_status = 6;
                     cStatus = 3;
                     emailSubjectText = emailSubject
                     emailContentText = emailContent
-                    break;
-    
-                case 'shortlist':
-                    candidate_status = 6;
-                    cStatus = 2;
-                    emailSubjectText =  emailSubject 
-                    emailContentText = emailContent
-                    break;
+                    emailRecipient = candidate.user_Email
+                    break;   
     
                 case 'reject':
                     candidate_status = 7;
                     cStatus = 0;
                     emailSubjectText = emailSubject
                     emailContentText = emailContent 
+                    emailRecipient = candidate.user_Email
                     break;
     
                 default:
@@ -1313,7 +1315,7 @@ const course_transaction_model = require('../model/transaction')
     
             // Send email
             const emailOptions = {
-                to: candidate.user_Email,
+                to: emailRecipient ,
                 subject: emailSubjectText,
                 html: emailContentText
             };
@@ -5411,25 +5413,27 @@ const net_salary = async (req, res) => {
               message: 'No profile found'
             });
           }
-      
+
+
+        
           // Count job seekers by status
           const pending_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 1).length;
-          const schedule_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 2).length;
-          const assessment_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 3).length;
-          const HR_Discussion_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 4).length;
-          const complete_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 5).length;
-          const shortlisted_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 6).length;
+          const Shortlisted_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 2).length;
+          const longlisted_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 3).length;
+          const Assessment_Scheduled_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 4).length;
+          const Schedule_Interview_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 5).length;
+          const complete_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 6).length;
           const rejected_count = check_all_jobseeker.filter(job => job.jobSeeker_status === 7).length;
       
           return res.status(200).json({
             success: true,
             message: 'Details',
             pending_count,
-            schedule_count,
-            assessment_count,
-            HR_Discussion_count,
-            complete_count,
-            shortlisted_count,
+            shortlisted_count : Shortlisted_count,
+            longlisted_count : longlisted_count,
+            assessment_count : Assessment_Scheduled_count,           
+            schedule_count : Schedule_Interview_count,           
+            complete_count,          
             rejected_count
           });
       
@@ -5437,7 +5441,7 @@ const net_salary = async (req, res) => {
           return res.status(500).json({
             success: false,
             message: 'Server error',
-            error_message: error.message
+            error_message : error.message
           });
         }
       }
@@ -8316,6 +8320,150 @@ const jobseeker_count_of_client_job = async (req, res) => {
       });
     }
   }
+
+
+  // Api for create email template
+           const create_email_template = async( req , res)=> {
+               try {
+                      const { email_title , email_subject , email_body } = req.body
+                      // check for email template
+                        const existTitleContent = await emailTemplateModel.findOne({ email_title : email_title })
+                        if(existTitleContent)
+                        {
+                            existTitleContent.email_title = email_title
+                            existTitleContent.email_subject = email_subject
+                            existTitleContent.email_body = email_body
+                             await existTitleContent.save()
+
+                             return res.status(200).json({
+                                   success : true ,
+                                   message : `Email Template Update for ${email_title} `
+                             })
+                        }
+                        else
+                        {
+                                if(!email_title)
+
+                                    {
+                                        return res.status(400).json({
+                                              success : false ,
+                                              message : 'email title Required'
+                                        })
+                                    }
+                                if(!email_subject)
+
+                                    {
+                                        return res.status(400).json({
+                                              success : false ,
+                                              message : 'email Subject Required'
+                                        })
+                                    }
+                                if(!email_body)
+
+                                    {
+                                        return res.status(400).json({
+                                              success : false ,
+                                              message : 'email Body Required'
+                                        })
+                                    }
+
+                                    // add new email template
+
+                                    const new_email_template = new emailTemplateModel({
+                                            email_title,
+                                            email_subject,
+                                            email_body
+                                    })
+
+                                    await new_email_template.save()
+
+                                    return res.status(200).json({
+                                          success : true ,
+                                          message : `Email Template Created for ${email_title}`
+                                    })
+                        }
+
+
+                      
+               } catch (error) {
+                   return res.status(500).json({
+                       success : false ,
+                       message : 'Server error',
+                       error_message : error.message
+                   })
+               }
+           }
+
+           // check for get all email contents
+           const getall_emailContent = async( req , res)=> {
+                try {
+                        // check for email contents
+                        const emailContents = await emailTemplateModel.find({ }).sort({ createdAt  : -1}).lean()
+                        if(!emailContents)
+                        {
+                            return res.status(400).json({
+                                  success : false ,
+                                  message : 'Email Contents not Found'
+                            })
+                        }
+
+                        return res.status(200).json({
+                              success : true ,
+                              message : 'Email Contents',
+                              emailContents : emailContents.map((e)=>({
+                                       email_title : e.email_title,
+                                       email_subject : e.email_subject,
+                                       email_body : e.email_body
+                              }))
+                        })
+                } catch (error) {
+                      return res.status(500).json({
+                          success : false ,
+                          message : 'Server error',
+                          error_message : error.message
+                      })
+                }
+           }
+              
+    // check for email content of email title
+    const emailContent_of_title = async( req , res)=> {
+            try {
+                     const email_title = req.params.email_title
+                     if(!email_title)
+                     {
+                        return res.status(400).json({
+                              success : false ,
+                              message : 'email Title Required'
+                        })
+                     }
+
+                     // check for email content 
+                     const emailContent = await emailTemplateModel.findOne({ email_title })
+                     if(!emailContent)
+                     {
+                        return res.status(400).json({
+                               success : false ,
+                               message : `No email Template Found for  ${email_title}`
+                        })
+                     }
+
+                     return res.status(200).json({
+                           sucess : true ,
+                           message : 'Email template',
+                           template : {
+                                   email_title : emailContent.email_title,
+                                   email_subject : emailContent.email_subject,
+                                   email_body : emailContent.email_body
+                           }
+                     })
+            } catch (error) {
+                  return res.status(500).json({
+                      success : false ,
+                      message : 'Server error',
+                      error_message : error.message
+                  })
+            }
+    }
                 
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
@@ -8349,7 +8497,9 @@ module.exports = {
      course_quiz_test , get_quiz_test_of_course, course_quiz ,
       delete_question_in_test , delete_test, addQuestion_in_Quiz_test ,
      add_topics , delete_course_topic , all_topics_of_course , edit_topic , update_question_of_quiz,
-     get_transaction , get_all_courses_details ,  jobseeker_count_of_client_job
+     get_transaction , get_all_courses_details ,  jobseeker_count_of_client_job,
+
+     create_email_template , getall_emailContent , emailContent_of_title
 
      
 }
