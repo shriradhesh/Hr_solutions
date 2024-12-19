@@ -46,6 +46,11 @@ const user_enrolled_course_toic_manage_Model = require('../model/user_enrolled_t
 const user_enrolled_course_toic_quiz_manage_Model = require('../model/topic_quiz_manage')
 const course_transaction_model = require('../model/transaction')
 
+const main_jobTitleModel = require('../model/main_jobTitle')
+const clientPackageModel = require('../model/clientPackage')
+const package_transaction_model = require('../model/package_transaction')
+
+
 
 
 
@@ -112,10 +117,10 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
      
                    const employeeSignup = async( req , res)=>{
                      try {
-                           const { name , email , password , phone_no , company_name , Number_of_emp ,company_industry , company_HQ } = req.body
+                           const { name , email , password , phone_no , company_name , Number_of_emp ,company_industry , company_HQ , package_id ,  session_id ,  payment_status } = req.body
                       
                            // check for required fields
-                           const requiredFields = [ "name", "email", "password" , "phone_no" ,"company_name" , "Number_of_emp" , "company_industry" , "company_HQ"];
+                           const requiredFields = [ "name", "email", "password" , "phone_no" ,"company_name" , "Number_of_emp" , "company_industry" , "company_HQ" , "package_id"];
 
                            for (const field of requiredFields) {
                            if (!req.body[field]) {
@@ -171,20 +176,108 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                     });
                     }
                 }
-    
 
-                             const newData = new employeeModel({
-                                 name ,  
-                                 email ,
-                                 password : hashedPassword, 
-                                 phone_no , 
-                                 company_name , 
-                                 Number_of_emp ,
-                                 company_industry ,
-                                 profileImage : profileImage ,
-                                 status : 0,
-                                 company_HQ : company_HQ
-                             })
+                             // check for package
+                             const package = await clientPackageModel.findOne({ _id : package_id })
+                             if(!package)
+                             {
+                              return res.status(400).json({
+                                    success :false ,
+                                    message : 'Package Not Found'
+                              })
+                             }
+
+                                    let newData;
+                                    let transaction;
+                                        if(package.package_type === 'Weekly')
+                                            {
+
+                                                 newData = new employeeModel({
+                                                    name ,  
+                                                    email ,
+                                                    password : hashedPassword, 
+                                                    phone_no , 
+                                                    company_name , 
+                                                    Number_of_emp ,
+                                                    company_industry ,
+                                                    profileImage : profileImage ,
+                                                    status : 0,
+                                                    company_HQ : company_HQ,
+                                                    package_id,
+                                                    package_name : package.package_name,
+                                                    package_type : package.package_type,
+                                                    
+                                                })                                                
+                                            }
+                                            else
+                                            {
+                                                        if(!session_id)
+                                                        {
+                                                               return res.status(400).json({
+                                                                    success : false ,
+                                                                    message : 'Session Id Required'
+                                                               })
+                                                        }
+                                                        if(!payment_status)
+                                                        {
+                                                               return res.status(400).json({
+                                                                    success : false ,
+                                                                    message : 'payment_status Required'
+                                                               })
+                                                         }
+
+                                                                if(payment_status === 1)
+                                                                {
+                                                                    transaction = await package_transaction_model.findOne({ session_id : session_id })
+                                                                    if(transaction)
+                                                                    {
+                                                                        transaction.client_id = '',
+                                                                        transaction.package_id = package_id,
+                                                                        transaction.package_name = package.package_name,
+                                                                        transaction.client_name = name,                                                                                          
+                                                                        transaction.payment_status = 'STATE_COMPLETED'
+                                            
+                                                                        await transaction.save()
+                                                                    }
+                                                                    }
+                                                        
+                                                        else
+                                                        {          transaction.client_id = '',
+                                                                  transaction.package_id = package_id,
+                                                                 transaction.package_name = package.package_name,
+                                                                  transaction.client_name = name,      
+                                                                   transaction.payment_status = 'STATE_FAILED'
+
+                                                                   await transaction.save()
+                                                        }
+
+                                                        newData = new employeeModel({
+                                                            name ,  
+                                                            email ,
+                                                            password : hashedPassword, 
+                                                            phone_no , 
+                                                            company_name , 
+                                                            Number_of_emp ,
+                                                            company_industry ,
+                                                            profileImage : profileImage ,
+                                                            status : 1,
+                                                            company_HQ : company_HQ,
+                                                            package_id,
+                                                            package_name : package.package_name,
+                                                            package_type : package.package_type,
+                                                            
+                                                        })                                                        
+                                                }
+
+                                                         await newData.save()
+                                                         if(package.package_type === 'Yearly')
+                                                         {
+                                                            transaction.client_id = newData._id
+                                                            await transaction.save()
+                                                          
+                                                         }
+                                                        
+
                              const EmployeeContent = `
                              <p> Hello ${name}</p>
                              <p>Here are your account Login details:</p>
@@ -206,7 +299,8 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                          `;
                          // Send email to the staff
                          await send_EmployeeEmail (email, `Your Account successfully Created`, EmployeeContent);
-                                await newData.save()
+                                  
+                               
 
                                 // send notification to admin
                                 try {
@@ -220,6 +314,8 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                 } catch (notificationError) {
                                     console.error('Error creating notification:', notificationError);
                                 }
+
+                                     
                             
                             return res.status(200).json({
                                   success : true ,
@@ -235,6 +331,7 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                         })
                      }
                    }
+                   
 
     // Employee Login
     const Emp_login = async (req, res) => {
@@ -642,7 +739,7 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
         }
     };
 
-                                        /* job Title section */
+                                                 /* job Category section */
 
             // API for add job title in job title schema
 
@@ -748,6 +845,107 @@ const deletejobTitle = async (req, res) => {
       res
         .status(200)
         .json({ success: true, message: "JobTitle deleted successfully" });
+    } catch (error) {
+      console.error(error);
+      res
+        .status(500)
+        .json({ success: false, message: "server error", error_message : error.message });
+    }
+  };
+
+                                    /*  main Job title section  */
+
+        const add_Main_JobTitle = async (req, res) => {
+            const { Main_jobTitle } = req.body;
+        
+            try {
+                // Validate required field
+                if (!Main_jobTitle) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Missing Main job title field",
+                    });
+                }
+        
+                // Check for existing Main_jobTitle (case-insensitive)
+                const existMainJobTitle = await main_jobTitleModel.findOne({
+                    Main_jobTitle: { $regex: `^${Main_jobTitle}$`, $options: 'i' },
+                });
+        
+                if (existMainJobTitle) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Main job title already exists",
+                    });
+                }
+        
+                // Create and save new Main job title
+                const newMainJobTitle = new main_jobTitleModel({ Main_jobTitle });
+                await newMainJobTitle.save();
+        
+                return res.status(200).json({
+                    success: true,
+                    message: "Main job title added successfully",
+                });
+            } catch (error) {
+                console.error("Error in add_Main_JobTitle:", error);
+                return res.status(500).json({
+                    success: false,
+                    message: "Server error",
+                    error_message: error.message,
+                });
+            }
+        };
+
+  // Api for get all main job titles
+  const all_main_jobTitle = async (req, res) => {
+    try {
+        // Fetch all jobTitles from the database
+        const jobTitles = await main_jobTitleModel.find({});
+        
+        // Check if jobTitles array is empty
+        if (jobTitles.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "No JobTitles found",
+            });
+        } else {
+            // Map jobTitles to required format
+            const formattedJobTitles = jobTitles.map(jobT => ({
+                Main_jobTitle: jobT.Main_jobTitle,
+                _id: jobT._id
+            }));
+            
+            // Send formatted jobTitles as response
+            res.status(200).json({
+                success: true,
+                message: "All Main JobTitles",
+                details: formattedJobTitles
+            });
+        }
+    } catch (error) {
+        // Handle server error
+        res.status(500).json({ success: false, message: "Server error", error_message: error.message });
+    }
+};
+        
+ // Api for delete main job Title
+ const delete_main_jobTitle = async (req, res) => {
+    try {
+      const main_jobtitle_id = req.params.main_jobtitle_id;
+  
+      // Check for route existence
+      const existingjobTitle = await main_jobTitleModel.findOne({ _id: main_jobtitle_id });
+      if (!existingjobTitle) {
+        return res.status(400).json({ success: false, error: `main_jobtitle not found` });
+      }
+  
+      // Delete the jobTitle from the database
+      await existingjobTitle.deleteOne();
+  
+      res
+        .status(200)
+        .json({ success: true, message: "jobtitle deleted successfully" });
     } catch (error) {
       console.error(error);
       res
@@ -937,7 +1135,7 @@ const deleteJob_Description = async (req, res) => {
                 const empId = req.params.empId;
                 const {
                     job_title,
-                    sub_job_title ,
+                  //  sub_job_title ,
                     job_Description,
                     job_Responsibility,
                     job_type,
@@ -961,6 +1159,7 @@ const deleteJob_Description = async (req, res) => {
 
                 } = req.body;
                        
+                                  
                                        
                 if (!empId) {
                     return res.status(400).json({
@@ -983,7 +1182,7 @@ const deleteJob_Description = async (req, res) => {
 
 
                                 // Check if the jobTitle exists in the jobTitleMOdel
-                const existingjobTitle = await jobTitleModel.findOne({ jobTitle : job_title });
+                const existingjobTitle = await main_jobTitleModel.findOne({ Main_jobTitle  : job_title });
 
                 if (!existingjobTitle) {
                 return res
@@ -1031,7 +1230,7 @@ const deleteJob_Description = async (req, res) => {
                     emp_Id: empId,
                     jobId : finalString,
                     job_title,
-                    sub_job_title,
+                   // sub_job_title,
                     job_Description,
                     job_Responsibility : job_Responsibility || null,
                     job_type,
@@ -1160,7 +1359,7 @@ const deleteJob_Description = async (req, res) => {
                     return {
                         jobId: job.jobId,
                         job_title: job.job_title,
-                        sub_job_title : job.sub_job_title,
+                     //   sub_job_title : job.sub_job_title,
                         company_name: job.company_name,
                         Number_of_emp_needed: job.Number_of_emp_needed,
                         job_type: job.job_type,
@@ -1847,7 +2046,7 @@ const deleteJob_Description = async (req, res) => {
                         return {
                             jobId: job.jobId,
                             job_title: job.job_title,
-                            sub_job_title : job.sub_job_title ,
+                        //    sub_job_title : job.sub_job_title ,
                             company_name: job.company_name,
                             Number_of_emp_needed: job.Number_of_emp_needed,
                             job_type: job.job_type,
@@ -1949,7 +2148,7 @@ const deleteJob_Description = async (req, res) => {
                     return {
                         jobId: job.jobId,
                         job_title: job.job_title,
-                        sub_job_title : job.sub_job_title ,
+                    //    sub_job_title : job.sub_job_title ,
                         company_name: job.company_name,
                         Number_of_emp_needed: job.Number_of_emp_needed,
                         job_type: job.job_type,
@@ -3393,175 +3592,175 @@ const client_dashboardCount = async (req, res) => {
                 }
 
                 jd.jd_download_count = jd_download_count
-              await jd.save()
+                   await jd.save()
         
-                const { jobTitle, job_Description, Responsibilities } = jd;
+                // const { jobTitle, job_Description, Responsibilities } = jd;
         
-                const pdfDoc = await PDFDocument.create();
-                const page = pdfDoc.addPage();
-                const { width, height } = page.getSize();
+                // const pdfDoc = await PDFDocument.create();
+                // const page = pdfDoc.addPage();
+                // const { width, height } = page.getSize();
         
-                const fontSize = 12;
-                const titleFontSize = 20;
-                const headingFontSize = 16;
-                const textColor = rgb(0, 0, 0);
-                const bulletColor = rgb(0.1, 0.1, 0.1);
-                const margin = 50;
-                const maxWidth = width - 2 * margin;
+                // const fontSize = 12;
+                // const titleFontSize = 20;
+                // const headingFontSize = 16;
+                // const textColor = rgb(0, 0, 0);
+                // const bulletColor = rgb(0.1, 0.1, 0.1);
+                // const margin = 50;
+                // const maxWidth = width - 2 * margin;
         
-                const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+                // const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
         
-                const wrapText = (text, font, fontSize, maxWidth) => {
-                    const words = text.split(' ');
-                    let lines = [];
-                    let currentLine = words[0];
+                // const wrapText = (text, font, fontSize, maxWidth) => {
+                //     const words = text.split(' ');
+                //     let lines = [];
+                //     let currentLine = words[0];
         
-                    for (let i = 1; i < words.length; i++) {
-                        const word = words[i];
-                        const width = font.widthOfTextAtSize(currentLine + ' ' + word, fontSize);
-                        if (width < maxWidth) {
-                            currentLine += ' ' + word;
-                        } else {
-                            lines.push(currentLine);
-                            currentLine = word;
-                        }
-                    }
-                    lines.push(currentLine);
-                    return lines;
-                };
+                //     for (let i = 1; i < words.length; i++) {
+                //         const word = words[i];
+                //         const width = font.widthOfTextAtSize(currentLine + ' ' + word, fontSize);
+                //         if (width < maxWidth) {
+                //             currentLine += ' ' + word;
+                //         } else {
+                //             lines.push(currentLine);
+                //             currentLine = word;
+                //         }
+                //     }
+                //     lines.push(currentLine);
+                //     return lines;
+                // };
         
-                const renderNode = (node, x, y, font, fontSize, maxWidth) => {
-                    let currentY = y;
+                // const renderNode = (node, x, y, font, fontSize, maxWidth) => {
+                //     let currentY = y;
         
-                    const drawText = (text, options) => {
-                        const lines = wrapText(text, options.font, options.size, maxWidth);
-                        lines.forEach(line => {
-                            page.drawText(line, {
-                                x: options.x,
-                                y: currentY,
-                                size: options.size,
-                                color: options.color,
-                                font: options.font,
-                            });
-                            currentY -= options.size + 4;
-                        });
-                    };
+                //     const drawText = (text, options) => {
+                //         const lines = wrapText(text, options.font, options.size, maxWidth);
+                //         lines.forEach(line => {
+                //             page.drawText(line, {
+                //                 x: options.x,
+                //                 y: currentY,
+                //                 size: options.size,
+                //                 color: options.color,
+                //                 font: options.font,
+                //             });
+                //             currentY -= options.size + 4;
+                //         });
+                //     };
         
-                    if (node.nodeName === '#text') {
-                        const text = node.value.trim();
-                        if (text) {
-                            drawText(text, { x, size: fontSize, color: textColor, font });
-                        }
-                    } else if (node.nodeName === 'b' || node.nodeName === 'strong') {
-                        node.childNodes.forEach(childNode => {
-                            if (childNode.nodeName === '#text') {
-                                const text = childNode.value.trim();
-                                if (text) {
-                                    drawText(text, { x, size: fontSize, color: textColor, font });
-                                }
-                            } else {
-                                currentY = renderNode(childNode, x, currentY, font, fontSize, maxWidth);
-                            }
-                        });
-                    } else if (node.nodeName === 'i' || node.nodeName === 'em') {
-                        node.childNodes.forEach(childNode => {
-                            if (childNode.nodeName === '#text') {
-                                const text = childNode.value.trim();
-                                if (text) {
-                                    drawText(text, { x, size: fontSize, color: textColor, font });
-                                }
-                            } else {
-                                currentY = renderNode(childNode, x, currentY, font, fontSize, maxWidth);
-                            }
-                        });
-                    } else if (node.nodeName === 'p' || node.nodeName === 'div') {
-                        node.childNodes.forEach(childNode => {
-                            currentY = renderNode(childNode, x, currentY, font, fontSize, maxWidth);
-                        });
-                        currentY -= 10; // Extra space after paragraph
-                    } else if (node.nodeName === 'ul' || node.nodeName === 'ol') {
-                        node.childNodes.forEach((liNode, index) => {
-                            if (liNode.nodeName === 'li') {
-                                const bullet = node.nodeName === 'ul' ? '• ' : `${index + 1}. `;
-                                const bulletWidth = font.widthOfTextAtSize(bullet, fontSize);
+                //     if (node.nodeName === '#text') {
+                //         const text = node.value.trim();
+                //         if (text) {
+                //             drawText(text, { x, size: fontSize, color: textColor, font });
+                //         }
+                //     } else if (node.nodeName === 'b' || node.nodeName === 'strong') {
+                //         node.childNodes.forEach(childNode => {
+                //             if (childNode.nodeName === '#text') {
+                //                 const text = childNode.value.trim();
+                //                 if (text) {
+                //                     drawText(text, { x, size: fontSize, color: textColor, font });
+                //                 }
+                //             } else {
+                //                 currentY = renderNode(childNode, x, currentY, font, fontSize, maxWidth);
+                //             }
+                //         });
+                //     } else if (node.nodeName === 'i' || node.nodeName === 'em') {
+                //         node.childNodes.forEach(childNode => {
+                //             if (childNode.nodeName === '#text') {
+                //                 const text = childNode.value.trim();
+                //                 if (text) {
+                //                     drawText(text, { x, size: fontSize, color: textColor, font });
+                //                 }
+                //             } else {
+                //                 currentY = renderNode(childNode, x, currentY, font, fontSize, maxWidth);
+                //             }
+                //         });
+                //     } else if (node.nodeName === 'p' || node.nodeName === 'div') {
+                //         node.childNodes.forEach(childNode => {
+                //             currentY = renderNode(childNode, x, currentY, font, fontSize, maxWidth);
+                //         });
+                //         currentY -= 10; // Extra space after paragraph
+                //     } else if (node.nodeName === 'ul' || node.nodeName === 'ol') {
+                //         node.childNodes.forEach((liNode, index) => {
+                //             if (liNode.nodeName === 'li') {
+                //                 const bullet = node.nodeName === 'ul' ? '• ' : `${index + 1}. `;
+                //                 const bulletWidth = font.widthOfTextAtSize(bullet, fontSize);
                                 
-                                // Draw the bullet
-                                page.drawText(bullet, {
-                                    x: x,
-                                    y: currentY,
-                                    size: fontSize,
-                                    color: bulletColor,
-                                    font,
-                                });
+                //                 // Draw the bullet
+                //                 page.drawText(bullet, {
+                //                     x: x,
+                //                     y: currentY,
+                //                     size: fontSize,
+                //                     color: bulletColor,
+                //                     font,
+                //                 });
                                 
-                                // Draw the list item content with indentation
-                                currentY = renderNode(liNode, x + bulletWidth + 10, currentY, font, fontSize, maxWidth - bulletWidth - 10);
-                            }
-                        });
-                        currentY -= 10; // Extra space after list
-                    } else {
-                        node.childNodes.forEach(childNode => {
-                            currentY = renderNode(childNode, x, currentY, font, fontSize, maxWidth);
-                        });
-                    }
+                //                 // Draw the list item content with indentation
+                //                 currentY = renderNode(liNode, x + bulletWidth + 10, currentY, font, fontSize, maxWidth - bulletWidth - 10);
+                //             }
+                //         });
+                //         currentY -= 10; // Extra space after list
+                //     } else {
+                //         node.childNodes.forEach(childNode => {
+                //             currentY = renderNode(childNode, x, currentY, font, fontSize, maxWidth);
+                //         });
+                //     }
         
-                    return currentY;
-                };
+                //     return currentY;
+                // };
         
-                // Parse HTML and render content
-                const parseAndRenderHTML = (html, startY) => {
-                    const fragment = parse5.parseFragment(html);
-                    let currentY = startY;
+                // // Parse HTML and render content
+                // const parseAndRenderHTML = (html, startY) => {
+                //     const fragment = parse5.parseFragment(html);
+                //     let currentY = startY;
         
-                    fragment.childNodes.forEach(node => {
-                        currentY = renderNode(node, margin, currentY, font, fontSize, maxWidth);
-                    });
+                //     fragment.childNodes.forEach(node => {
+                //         currentY = renderNode(node, margin, currentY, font, fontSize, maxWidth);
+                //     });
         
-                    return currentY;
-                };
+                //     return currentY;
+                // };
         
-                // Add job title
-                page.drawText(jobTitle, {
-                    x: margin,
-                    y: height - margin,
-                    size: titleFontSize,
-                    color: rgb(0, 0, 1),
-                    font,
-                });
+                // // Add job title
+                // page.drawText(jobTitle, {
+                //     x: margin,
+                //     y: height - margin,
+                //     size: titleFontSize,
+                //     color: rgb(0, 0, 1),
+                //     font,
+                // });
         
-                // Add job description
-                page.drawText('Job Description', {
-                    x: margin,
-                    y: height - margin - 40,
-                    size: headingFontSize,
-                    color: rgb(0, 0, 1),
-                    font,
-                });
+                // // Add job description
+                // page.drawText('Job Description', {
+                //     x: margin,
+                //     y: height - margin - 40,
+                //     size: headingFontSize,
+                //     color: rgb(0, 0, 1),
+                //     font,
+                // });
         
-                let y = height - margin - 60;
-                y = parseAndRenderHTML(job_Description, y);
+                // let y = height - margin - 60;
+                // y = parseAndRenderHTML(job_Description, y);
         
-                // Add job responsibilities
-                page.drawText('Job Responsibilities', {
-                    x: margin,
-                    y: y - 20,
-                    size: headingFontSize,
-                    color: rgb(0, 0, 1),
-                    font,
-                });
+                // // Add job responsibilities
+                // page.drawText('Job Responsibilities', {
+                //     x: margin,
+                //     y: y - 20,
+                //     size: headingFontSize,
+                //     color: rgb(0, 0, 1),
+                //     font,
+                // });
         
-                y -= 40;
-                parseAndRenderHTML(Responsibilities, y);
+                // y -= 40;
+                // parseAndRenderHTML(Responsibilities, y);
         
-                const pdfBytes = await pdfDoc.save();
+                // const pdfBytes = await pdfDoc.save();
         
-                res.set({
-                    'Content-Type': 'application/pdf',
-                    'Content-Length': pdfBytes.length,
-                    'Content-Disposition': `attachment; filename=job_description.pdf`,
-                });
+                // res.set({
+                //     'Content-Type': 'application/pdf',
+                //     'Content-Length': pdfBytes.length,
+                //     'Content-Disposition': `attachment; filename=job_description.pdf`,
+                // });
         
-                res.send(Buffer.from(pdfBytes));
+                // res.send(Buffer.from(pdfBytes));
 
                  
             } catch (error) {
@@ -6327,6 +6526,7 @@ course: courseData,
                         candidate_rating: candidate.candidate_rating,
                     });
                 });
+                   
         
                 // Set response headers for downloading the Excel file
                 res.setHeader(
@@ -6499,5 +6699,7 @@ module.exports = {
     update_topic_status , enroll_user_course_topic_quiz , save_user_quiz_record_of_course_topic ,
     get_particular_enrolled_course_details , get_enrolled_user_detail , generate_avg_score_of_enroll_user ,
 
-    download_certificate , export_client_jobs_filteredcandidate , download_word_Jd
+    download_certificate , export_client_jobs_filteredcandidate , download_word_Jd ,
+
+    add_Main_JobTitle , all_main_jobTitle , delete_main_jobTitle
 } 

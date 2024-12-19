@@ -251,4 +251,13 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          router.get('/download_word_Jd/:jd_id', userController.download_word_Jd)
 
 
+
+         // Api for add_Main_JobTitle
+         router.post('/add_Main_JobTitle', userController.add_Main_JobTitle)
+         // Api for all_main_jobTitle
+         router.get('/all_main_jobTitle', userController.all_main_jobTitle)
+         // Api for delete_main_jobTitle
+         router.delete('/delete_main_jobTitle/:main_jobtitle_id' , userController.delete_main_jobTitle )
+
+
 module.exports = router

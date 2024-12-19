@@ -348,6 +348,17 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
    // Api for emailContent_of_title
    router.get('/emailContent_of_title/:email_title', Admin_and_staffController.emailContent_of_title)
 
+   // Api for add_clientPackage
+   router.post('/add_clientPackage', Admin_and_staffController.add_clientPackage)
+   // Api for get_allPackages
+   router.get('/get_allPackages', Admin_and_staffController.get_allPackages)
+   // Api for active_inactive_Package
+   router.post('/active_inactive_Package/:package_id' , Admin_and_staffController.active_inactive_Package)
+   // Api for updatepackage
+   router.put('/updatepackage/:package_id', Admin_and_staffController.updatepackage)
+   // Api for getActivePackages
+   router.get('/getActivePackages', Admin_and_staffController.getActivePackages)
+
 
 module.exports = router
 

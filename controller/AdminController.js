@@ -71,6 +71,8 @@ const { execSync } = require('child_process')
 const course_transaction_model = require('../model/transaction')
 const emailTemplateModel = require('../model/emailTemplateModel')
 
+const clientPackageModel = require('../model/clientPackage')
+
 
 
 
@@ -8465,6 +8467,275 @@ const jobseeker_count_of_client_job = async (req, res) => {
             }
     }
                 
+
+     // Api for create client package         
+
+     const add_clientPackage = async (req, res) => {
+        try {
+            const { package_name, features, duration , price , package_type , price_with_gst } = req.body;
+    
+            // Validate required fields
+            const requiredFields = ['package_name', 'features' , 'price' , 'duration'];
+            for (let field of requiredFields) {
+                if (!req.body[field]) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Required ${field.replace('_', ' ')}`,
+                    });
+                }
+            }                        
+    
+            // Check if package already exists (case-insensitive)
+            const existPackage = await clientPackageModel.findOne({
+                package_name: { $regex: `^${package_name}$`, $options: 'i' },
+                package_type : package_type
+            });
+    
+            if (existPackage) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Package '${package_name}' already exists`,
+                });
+            }
+                   let newPackage
+
+                        if(package_type === 'Yearly')
+                        {
+                                        // Create and save new package with package_type
+                                       
+                         newPackage = new clientPackageModel({
+                            package_name,
+                            features,
+                            price,
+                            duration,
+                            package_type: package_type
+                        });
+    
+                                  
+                        }
+                        else
+                        {
+                               // Create and save new package with package_type
+                               newPackage  = new clientPackageModel({
+                                    package_name,
+                                    duration,
+                                    features,
+                                    price,
+                                    price_with_gst,
+                                    package_type: package_type,
+
+                                });
+                        
+                               
+                        }
+    
+                        await newPackage.save();
+    
+            return res.status(200).json({
+                success: true,
+                message: 'New package added successfully',
+              
+            });
+        } catch (error) {
+            console.error("Error in add_clientPackage:", error);
+            return res.status(500).json({
+                success: false,
+                message: 'Server error',
+                error_message: error.message,
+            });
+        }
+    };
+    
+
+  // Api for get all packages
+          const get_allPackages = async( req , res)=> {
+                try {
+                      
+                     
+
+                         const getYearlyPackages = await clientPackageModel.find({  package_type : 'Yearly'}).sort({ createdAt : -1}).lean()
+                         const getWeeklyPackages = await clientPackageModel.find({  package_type : 'Weekly'}).sort({ createdAt : -1}).lean()
+
+                         return res.status(200).json({
+                               success : true ,
+                               message : 'All packages',
+                               yearly_packages : getYearlyPackages.map((e)=> ({
+                                        package_id : e._id,
+                                        package_name : e.package_name ,
+                                        features : e.features,                                       
+                                        package_type : e.package_type,
+                                        price : `${e.price}/${e.duration}`,                                       
+                                        status : e.status
+                               })),
+                               weekly_packages : getWeeklyPackages.map((e)=> ({
+                                        package_id : e._id,
+                                        package_name : e.package_name ,
+                                        features : e.features,                                    
+                                        package_type : e.package_type,
+                                        price : `${e.price} -- (${e.duration})`,
+                                        price_with_gst : `${e.price_with_gst} -- (${e.duration})`,
+                                        status : e.status
+                               }))
+                         })
+
+                } catch (error) {
+                      return res.status(500).json({
+                          success : false ,
+                          message : 'Server error',
+                          error_message : error.message
+                      })
+                }
+          }
+
+          // Api for active inactive package
+
+             const active_inactive_Package = async( req , res)=> {
+                    try {
+                           const { package_id } = req.params
+                           // check for packageId
+                           if(!package_id)
+                           {
+                              return res.status(400).json({
+                                   success : false ,
+                                   message : 'Package Id Required'
+                              })
+                           }
+
+                           // check for package
+                           const package = await clientPackageModel.findOne({ _id : package_id })
+                           if(!package)
+                           {
+                            return res.status(400).json({
+                                  success :false ,
+                                  message : 'Package Not Found'
+                            })
+                           }
+
+                           let message = ''
+                           if(package.status === 1)
+                           {
+                                package.status = 0,
+                                message =  'Package Inactive Successfully'
+                           }
+                           else
+                           {
+                               package.status = 1,
+                               message = 'Package Active Successfully'
+                           }
+
+                           await package.save()
+
+                             return res.status(200).json({
+                                   success : true ,
+                                   message : message 
+                             })
+                    } catch (error) {
+                          return res.status(500).json({
+                               success : false ,
+                               message : 'Server error',
+                               error_message : error.message
+                          })
+                    }
+             }
+
+
+             // Api for update package
+                  const updatepackage = async( req , res)=> {
+                        try {
+                              const { package_id } = req.params
+                              const { package_name , features , price , price_with_gst } = req.body
+                                 // check for packageId
+                           if(!package_id)
+                            {
+                               return res.status(400).json({
+                                    success : false ,
+                                    message : 'Package Id Required'
+                               })
+                            }
+ 
+                            // check for package
+                            const package = await clientPackageModel.findOne({ _id : package_id })
+                            if(!package)
+                            {
+                             return res.status(400).json({
+                                   success :false ,
+                                   message : 'Package Not Found'
+                             })
+                            }
+
+                              if(package_name)
+                              {
+                                   package.package_name = package_name
+                              }
+                              if(features)
+                              {
+                                   package.features = features
+                              }
+                              if(price)
+                              {
+                                   package.price = price       
+                               }
+                              if(price_with_gst)
+                              {
+                                   package.price_with_gst = price_with_gst       
+                               }
+
+                                        await package.save()
+
+                                        return res.status(200).json({
+                                              success : true ,
+                                              message : 'Package Details Updated'
+                                        })
+                              
+                        } catch (error) {
+                             return res.status(500).json({
+                                  success : false ,
+                                  message : 'Server error',
+                                  error_message : error_message
+                             })
+                        }
+                  }
+
+                  // Api for get all active packages
+                    const getActivePackages = async( req , res)=> {
+                        try {
+                            const getYearlyPackages = await clientPackageModel.find({  package_type : 'Yearly'}).sort({ createdAt : -1}).lean()
+                            const getWeeklyPackages = await clientPackageModel.find({  package_type : 'Weekly'}).sort({ createdAt : -1}).lean()
+   
+                          
+                                        
+                            return res.status(200).json({
+                                  success : true ,
+                                  message : 'All packages',
+                                  yearly_packages : getYearlyPackages.map((e)=> ({
+                                    package_id : e._id,
+                                    package_name : e.package_name ,
+                                    features : e.features,                                       
+                                    package_type : e.package_type,
+                                    price : `${e.price}/${e.duration}`,                                       
+                                    status : e.status
+                           })),
+                           weekly_packages : getWeeklyPackages.map((e)=> ({
+                                    package_id : e._id,
+                                    package_name : e.package_name ,
+                                    features : e.features,                                    
+                                    package_type : e.package_type,
+                                    price : `${e.price} -- (${e.duration})`,
+                                    price_with_gst : `${e.price_with_gst} -- (${e.duration})`,
+                                    status : e.status
+                               }))
+                            })
+
+                   } catch (error) {
+                         return res.status(500).json({
+                             success : false ,
+                             message : 'Server error',
+                             error_message : error.message
+                         })
+                   }   
+
+                    }
+                    
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
     active_inactive_job , getStaff_Details , updatestaff , staff_ChangePassword , getAllFemale_Candidate ,
@@ -8479,6 +8750,7 @@ module.exports = {
     jobseeker_count , getclient_count , get_talent_pool_count , get_female_screened_count , jobseeker_count_city_wise ,
     
               /*  CMS PAGE */
+
      create_testimonial , getAll_testimonial , get_testimonial , update_testimonial , delete_testimonial,
      cms_job_posting_section1 , getJobs_posted_procedure_section1 , cms_need_any_job_section,
      get_cms_need_any_job_section , cms_post_your_job_section , get_cms_post_your_job , cms_job_market_data_section,
@@ -8499,7 +8771,8 @@ module.exports = {
      add_topics , delete_course_topic , all_topics_of_course , edit_topic , update_question_of_quiz,
      get_transaction , get_all_courses_details ,  jobseeker_count_of_client_job,
 
-     create_email_template , getall_emailContent , emailContent_of_title
+     create_email_template , getall_emailContent , emailContent_of_title ,
+     add_clientPackage , get_allPackages , active_inactive_Package , updatepackage , getActivePackages
 
      
 }

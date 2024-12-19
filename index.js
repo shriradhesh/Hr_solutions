@@ -47,13 +47,14 @@ app.get('/cancle', (req ,res)=>{
 
 
 
-                                               /*   Monime Payment Integration */
+                                               /*   Monime Payment Integration for both courses and packages */
 
         const PAYMENT_BASE_URL = 'https://api.monime.space/v1';
         const { Access_Token , Space_ID  } = process.env;
         const { v4: uuidv4 } = require('uuid');
         const crypto = require('crypto');
 const { log } = require('console')
+const package_transaction_model = require('./model/package_transaction')
          // Function to generate a random number
          function generateRandomNumber(length) {
           let result = '';
@@ -207,6 +208,93 @@ const { log } = require('console')
               });
             }
           });
+
+
+                                                  /*  for packages  */
+
+          app.get('/api/create_checkOut_session_for_package' , async ( req , res )=> {
+
+            var {  cancelUrl , receiptUrl , total_amount  } = req.query
+          
+              //    const callbackUrlState = crypto.randomBytes(16).toString('hex')  
+            const callbackUrlState = `${randomNumber2}`                  
+          
+            cancelUrl = `${cancelUrl}?sid=${check_out_session_id}$state=${callbackUrlState}`
+            receiptUrl = `${receiptUrl}?sid=${check_out_session_id}$state=${callbackUrlState}`
+      
+              const amountValue = total_amount * 100
+
+                  try {
+                    // Prepare the request payload
+                    const payload = {
+                        clientReference,
+                        callbackUrlState,
+                        bulk: {
+                            amount: {
+                                currency: 'SLE',
+                                value: amountValue
+                            }
+                        },
+                        cancelUrl,
+                        receiptUrl
+                    };
+            
+                    // Make the API request
+                    const response = await axios.post(`${PAYMENT_BASE_URL}/checkout-sessions`, payload, {
+                        headers: {
+                            Authorization: `Bearer ${Access_Token}`,
+                            'X-Monime-Space-Id': Space_ID,
+                            'X-Idempotency-Key': `${clientReference}-${Date.now()}`
+                        }
+                    });
+            
+                  const payment_response = response.data.result;
+      
+                        
+                      const booking_id = `BKID${randomNumber}`;
+                
+                  
+                          const transaction = new package_transaction_model({
+                              booking_id : booking_id ,
+                              client_id :  '',
+                              package_id : '',
+                              amount : total_amount,
+                              payment_status : payment_response.status.state,
+                              session_id : payment_response.id,
+                              kind : payment_response.kind,
+                              payment_time : payment_response.status.stateTime,
+                              payment_info : {
+                                      state : payment_response.paymentInfo.state,
+                                      method : payment_response.paymentInfo.method,
+                                      financialAccount : payment_response.paymentInfo.financialAccount
+                              },
+                              currency : payment_response.totalAmount.currency
+      
+                          })  
+                      
+                          await transaction.save()
+                        
+                          
+                    res.status(200).json({
+                        success : true ,                            
+                        checkoutUrl : payment_response.checkoutUrl,
+                        status : payment_response.status.state,
+                        cancelUrl : payment_response.cancelUrl,
+                        session_id : payment_response.id,
+                        receiptUrl : payment_response.receiptUrl,
+                      
+                    })
+                  
+
+                        } catch (error) {
+                            res.status(500).json({
+                                success : false ,
+                                message : 'Server Error',
+                                error_message : error.message
+                                            })
+                        }
+                      })
+
 
 
 app.listen(Port , ()=>{

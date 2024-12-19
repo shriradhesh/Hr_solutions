@@ -16,7 +16,7 @@ const employeeSchema = new mongoose.Schema({
          status : {
             type : Number,
             enum : [1, 0],
-            default : 0
+           
          },
          profileImage : {
             type : String
@@ -33,7 +33,14 @@ const employeeSchema = new mongoose.Schema({
          },
          company_HQ : {
                 type : String
-         }
+         },
+         package_id : {
+               type : mongoose.Schema.Types.ObjectId
+         },
+         package_name : {
+               type : String
+         },
+         package_type : String
 
 }, {timestamps : true })
 
