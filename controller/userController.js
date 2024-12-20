@@ -226,6 +226,11 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                                                })
                                                          }
 
+                                                            console.log(session_id);
+                                                            console.log(payment_status);
+                                                            
+                                                                    payment_status = parseInt(payment_status)
+
                                                                 if(payment_status === 1)
                                                                 {
                                                                     transaction = await package_transaction_model.findOne({ session_id : session_id })
@@ -239,44 +244,48 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                             
                                                                         await transaction.save()
                                                                     }
+
+                                                                    newData = new employeeModel({
+                                                                        name ,  
+                                                                        email ,
+                                                                        password : hashedPassword, 
+                                                                        phone_no , 
+                                                                        company_name , 
+                                                                        Number_of_emp ,
+                                                                        company_industry ,
+                                                                        profileImage : profileImage ,
+                                                                        status : 1,
+                                                                        company_HQ : company_HQ,
+                                                                        package_id,
+                                                                        package_name : package.package_name,
+                                                                        package_type : package.package_type,
+                                                                        
+                                                                    })      
+                                                                         await newData.save() 
+                                                                         if(package.package_type === 'Yearly')
+                                                                            {
+                                                                               transaction.client_id = newData._id
+                                                                               await transaction.save()
+                                                                             
+                                                                            }
+                                                                           
                                                                     }
                                                         
-                                                        else
-                                                        {          transaction.client_id = '',
-                                                                  transaction.package_id = package_id,
-                                                                 transaction.package_name = package.package_name,
-                                                                  transaction.client_name = name,      
-                                                                   transaction.payment_status = 'STATE_FAILED'
+                                                                            else
+                                                                            {          transaction.client_id = '',
+                                                                                    transaction.package_id = package_id,
+                                                                                    transaction.package_name = package.package_name,
+                                                                                    transaction.client_name = name,      
+                                                                                    transaction.payment_status = 'STATE_FAILED'
 
-                                                                   await transaction.save()
-                                                        }
+                                                                                    await transaction.save()
+                                                                            }
 
-                                                        newData = new employeeModel({
-                                                            name ,  
-                                                            email ,
-                                                            password : hashedPassword, 
-                                                            phone_no , 
-                                                            company_name , 
-                                                            Number_of_emp ,
-                                                            company_industry ,
-                                                            profileImage : profileImage ,
-                                                            status : 1,
-                                                            company_HQ : company_HQ,
-                                                            package_id,
-                                                            package_name : package.package_name,
-                                                            package_type : package.package_type,
-                                                            
-                                                        })                                                        
+                                                                                                       
                                                 }
 
-                                                         await newData.save()
-                                                         if(package.package_type === 'Yearly')
-                                                         {
-                                                            transaction.client_id = newData._id
-                                                            await transaction.save()
-                                                          
-                                                         }
-                                                        
+                                                       
+                                                       
 
                              const EmployeeContent = `
                              <p> Hello ${name}</p>
@@ -1159,6 +1168,7 @@ const deleteJob_Description = async (req, res) => {
 
                 } = req.body;
                        
+                                
                                   
                                        
                 if (!empId) {
@@ -1239,7 +1249,7 @@ const deleteJob_Description = async (req, res) => {
                     Number_of_emp_needed,
                     startDate: formattedStartDate,
                     endDate: formattedEndDate,
-                    key_qualification: skills, // Assign skills directly to key_qualification
+                    key_qualification: JSON.parse(skills), 
                     Experience,
                     company_address,
                     template_type,

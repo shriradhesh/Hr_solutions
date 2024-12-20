@@ -8643,7 +8643,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                   const updatepackage = async( req , res)=> {
                         try {
                               const { package_id } = req.params
-                              const { package_name , features , price , price_with_gst } = req.body
+                              const { package_name , features  , price , price_with_gst } = req.body
                                  // check for packageId
                            if(!package_id)
                             {
