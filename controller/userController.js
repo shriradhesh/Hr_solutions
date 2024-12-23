@@ -117,7 +117,7 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
      
                    const employeeSignup = async( req , res)=>{
                      try {
-                           const { name , email , password , phone_no , company_name , Number_of_emp ,company_industry , company_HQ , package_id ,  session_id ,  payment_status } = req.body
+                           var { name , email , password , phone_no , company_name , Number_of_emp , company_industry , company_HQ , package_id } = req.body
                       
                            // check for required fields
                            const requiredFields = [ "name", "email", "password" , "phone_no" ,"company_name" , "Number_of_emp" , "company_industry" , "company_HQ" , "package_id"];
@@ -131,10 +131,10 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                    success: false,
                                });
                            }
-                           }
-
+                           }                                           
+                                            
                               // check for existing employee
-                            const existingEmp = await employeeModel.findOne({ email : email})
+                            const existingEmp = await employeeModel.findOne({ email : email })
                             if(existingEmp)
                             {
                                 return  res.status(400).json({
@@ -188,7 +188,7 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                              }
 
                                     let newData;
-                                    let transaction;
+                                   
                                         if(package.package_type === 'Weekly')
                                             {
 
@@ -202,135 +202,77 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                                     company_industry ,
                                                     profileImage : profileImage ,
                                                     status : 0,
+                                                    company_HQ : company_HQ ,
+                                                    package_id,
+                                                    package_name : package.package_name,
+                                                    package_type : package.package_type,
+                                                    
+                                                })    
+                                                
+                                                const EmployeeContent = `
+                                                <p> Hello ${name}</p>
+                                                <p>Here are your account Login details:</p>
+                                                <table style="border-collapse: collapse; width: 50%; margin: auto; border: 1px solid #4CAF50; border-radius: 10px;">
+                                                <tr>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Email:</strong></td>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${email}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Password:</strong></td>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${password}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>phone No:</strong></td>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${phone_no}</td>
+                                                </tr>
+                                                
+                                            </table>
+                                            `;
+                   
+                                            // Send email to the staff
+                                            await send_EmployeeEmail (email, `Your Account successfully Created`, EmployeeContent);                                                
+                                                  
+                   
+                                                   // send notification to admin
+                                                   try {
+                                                       const newNotification =  adminNotificationModel.create({
+                                                           title : `New Client`,
+                                                           message: `New client added successfully! Please activate their account from pending status`,
+                                                           date: new Date(),
+                                                           status: 1,
+                                                       });
+                                                        newNotification.save();
+                                                   } catch (notificationError) {
+                                                       console.error('Error creating notification:', notificationError);
+                                                   }                                                      
+                                            }
+                                            else
+                                            {
+                                               
+                                                newData = new employeeModel({
+                                                    name ,  
+                                                    email ,
+                                                    password : hashedPassword, 
+                                                    phone_no , 
+                                                    company_name , 
+                                                    Number_of_emp ,
+                                                    company_industry ,
+                                                    profileImage : profileImage ,
+                                                    status : 2,
                                                     company_HQ : company_HQ,
                                                     package_id,
                                                     package_name : package.package_name,
                                                     package_type : package.package_type,
                                                     
-                                                })                                                
-                                            }
-                                            else
-                                            {
-                                                        if(!session_id)
-                                                        {
-                                                               return res.status(400).json({
-                                                                    success : false ,
-                                                                    message : 'Session Id Required'
-                                                               })
-                                                        }
-                                                        if(!payment_status)
-                                                        {
-                                                               return res.status(400).json({
-                                                                    success : false ,
-                                                                    message : 'payment_status Required'
-                                                               })
-                                                         }
-
-                                                            console.log(session_id);
-                                                            console.log(payment_status);
-                                                            
-                                                                    payment_status = parseInt(payment_status)
-
-                                                                if(payment_status === 1)
-                                                                {
-                                                                    transaction = await package_transaction_model.findOne({ session_id : session_id })
-                                                                    if(transaction)
-                                                                    {
-                                                                        transaction.client_id = '',
-                                                                        transaction.package_id = package_id,
-                                                                        transaction.package_name = package.package_name,
-                                                                        transaction.client_name = name,                                                                                          
-                                                                        transaction.payment_status = 'STATE_COMPLETED'
-                                            
-                                                                        await transaction.save()
-                                                                    }
-
-                                                                    newData = new employeeModel({
-                                                                        name ,  
-                                                                        email ,
-                                                                        password : hashedPassword, 
-                                                                        phone_no , 
-                                                                        company_name , 
-                                                                        Number_of_emp ,
-                                                                        company_industry ,
-                                                                        profileImage : profileImage ,
-                                                                        status : 1,
-                                                                        company_HQ : company_HQ,
-                                                                        package_id,
-                                                                        package_name : package.package_name,
-                                                                        package_type : package.package_type,
-                                                                        
-                                                                    })      
-                                                                         await newData.save() 
-                                                                         if(package.package_type === 'Yearly')
-                                                                            {
-                                                                               transaction.client_id = newData._id
-                                                                               await transaction.save()
-                                                                             
-                                                                            }
-                                                                           
-                                                                    }
-                                                        
-                                                                            else
-                                                                            {          transaction.client_id = '',
-                                                                                    transaction.package_id = package_id,
-                                                                                    transaction.package_name = package.package_name,
-                                                                                    transaction.client_name = name,      
-                                                                                    transaction.payment_status = 'STATE_FAILED'
-
-                                                                                    await transaction.save()
-                                                                            }
-
-                                                                                                       
-                                                }
-
-                                                       
-                                                       
-
-                             const EmployeeContent = `
-                             <p> Hello ${name}</p>
-                             <p>Here are your account Login details:</p>
-                             <table style="border-collapse: collapse; width: 50%; margin: auto; border: 1px solid #4CAF50; border-radius: 10px;">
-                             <tr>
-                                 <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Email:</strong></td>
-                                 <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${email}</td>
-                             </tr>
-                             <tr>
-                                 <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Password:</strong></td>
-                                 <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${password}</td>
-                             </tr>
-                             <tr>
-                                 <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>phone No:</strong></td>
-                                 <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${phone_no}</td>
-                             </tr>
-                             
-                         </table>
-                         `;
-                         // Send email to the staff
-                         await send_EmployeeEmail (email, `Your Account successfully Created`, EmployeeContent);
-                                  
-                               
-
-                                // send notification to admin
-                                try {
-                                    const newNotification =  adminNotificationModel.create({
-                                        title : `New Client`,
-                                        message: `New client added successfully! Please activate their account from pending status`,
-                                        date: new Date(),
-                                        status: 1,
-                                    });
-                                     newNotification.save();
-                                } catch (notificationError) {
-                                    console.error('Error creating notification:', notificationError);
-                                }
-
-                                     
-                            
-                            return res.status(200).json({
-                                  success : true ,
-                                  message : 'successfully SignUP',
-                                  employee_Id : newData._id
-                            })                        
+                                                })      
+                                                                                                                       
+                                            }                        
+                                            await newData.save()                                     
+                                            return res.status(200).json({
+                                                success : true ,
+                                                message : 'successfully SignUP',
+                                                clientId : newData._id
+                                            })                        
 
                      } catch (error) {
                         return res.status(500).json({
@@ -342,6 +284,133 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                    }
                    
 
+                     // Api for update yearly transaction and client Data
+                       const update_detail = async( req , res)=> {
+                             try {
+                                    let { clientId , session_id , payment_status } = req.body
+                                    // check for required fields
+                                    if(!clientId)
+                                    {
+                                        return res.status(400).json({
+                                              success : false ,
+                                              message : 'Client ID Required'
+                                        })
+                                    }
+                                    if(!session_id)
+                                    {
+                                        return res.status(400).json({
+                                              success : false ,
+                                              message : 'session ID Required'
+                                        })
+                                    }
+                                    if(!payment_status)
+                                    {
+                                        return res.status(400).json({
+                                              success : false ,
+                                              message : 'payment_status Required'
+                                        })
+                                    }
+
+                                        //check for client
+                                        let client = await employeeModel.findOne({ _id : clientId })
+                                        
+                                        if(!client)
+                                        {
+                                            return res.status(400).json({
+                                                   success : false ,
+                                                   message : 'Client not found'
+                                            })
+                                        }
+
+                                       payment_status = parseInt(payment_status)
+                                        let transaction 
+                                       if(payment_status === 1)
+                                       {
+                                                transaction = await package_transaction_model.findOne({ session_id : session_id })
+                                                if(transaction)
+                                                {                                                      
+                                                    
+                                                        transaction.client_id = clientId,
+                                                        transaction.client_name = client.name, 
+                                                        transaction.company = client.company_name,   
+                                                        transaction.package_id = client.package_id
+                                                        transaction.package_name = client.package_name                                                                                                                                             
+                                                        transaction.payment_status = 'STATE_COMPLETED'
+                            
+                                                        await transaction.save()
+
+                                                           client.status = 1
+                                                           await client.save() 
+                                                           
+                                                           const EmployeeContent = `
+                                                <p> Hello ${client.name}</p>
+                                                <p>Here are your account Login details:</p>
+                                                <table style="border-collapse: collapse; width: 50%; margin: auto; border: 1px solid #4CAF50; border-radius: 10px;">
+                                                <tr>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Email:</strong></td>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${client.email}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Password:</strong></td>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${client.password}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>phone No:</strong></td>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${client.phone_no}</td>
+                                                </tr>
+                                                
+                                            </table>
+                                            `;
+                   
+                                            // Send email to the staff
+                                            await send_EmployeeEmail (client.email, `Your Account successfully Created`, EmployeeContent);
+                                                     
+                                                  
+                   
+                                                   // send notification to admin
+                                                   try {
+                                                       const newNotification =  adminNotificationModel.create({
+                                                           title : `New Client`,
+                                                           message: `New client added successfully`,
+                                                           date: new Date(),
+                                                           status: 1,
+                                                       });
+                                                        newNotification.save();
+                                                   } catch (notificationError) {
+                                                       console.error('Error creating notification:', notificationError);
+                                                   }
+                                                
+                                                }
+                                                else
+                                                {
+                                                       
+                                                    transaction.client_id = clientId,   
+                                                    transaction.client_name = client.name, 
+                                                    transaction.company = client.company_name,
+                                                     transaction.package_id = client.package_id
+                                                     transaction.package_name = client.package_name                                                                                                                                          
+                                                    transaction.payment_status = 'STATE_FAILED'
+                        
+                                                    await transaction.save()                                               
+                                              
+                                                }
+                                       }
+
+                                          return res.status(200).json({
+                                               success : true ,
+                                               message : 'details updated'
+                                          })
+                                  
+                             } catch (error) {
+                                  return res.status(500).json({
+                                        success : false ,
+                                        message : 'Server error',
+                                        error_message : error.message
+                                  })
+                             }
+                       }
+
+                       
     // Employee Login
     const Emp_login = async (req, res) => {
         try {
@@ -6681,7 +6750,50 @@ course: courseData,
         };
                
                           
-               
+
+    // Api for get all transaction for packages
+
+                            let all_package_transaction = async( req ,res)=> {
+                                    try {
+                                            // check for all package transaction of user
+                                            let all_transactions = await package_transaction_model.find({ }).sort({  createdAt : -1  }).lean()
+                                            if(!all_transactions)
+                                            {
+                                                return res.status(400).json({
+                                                       success : false ,
+                                                       message : 'No Transaction Found'
+                                                })
+                                            }
+
+                                            return res.status(200).json({
+                                                  success : true ,
+                                                  message : 'All Package Transaction',
+                                                  all_transactions : all_transactions.map((t)=> ({
+                                                         booking_id : t.booking_id,
+                                                         package_id : t.package_id,
+                                                         client_id : t.client_id,
+                                                         package_name : t.package_name,
+                                                         client_name : t.client_name,
+                                                         company : t.company,
+                                                         amount : t.amount,
+                                                         payment_status : t.payment_status,
+                                                         transaction_id : t.session_id,
+                                                         payment_time : t.payment_time,
+                                                         kind : t.kind,
+                                                         payment_info : t.payment_info,
+                                                         currency : t.currency,
+
+                                                  }))
+                                            })
+                                    } catch (error) {
+
+                                         return res.status(500).json({
+                                                success : false ,
+                                                message : 'Server error',
+                                                error_message : error.message
+                                         })
+                                    }
+                            }
         
                  
 module.exports = {
@@ -6711,5 +6823,5 @@ module.exports = {
 
     download_certificate , export_client_jobs_filteredcandidate , download_word_Jd ,
 
-    add_Main_JobTitle , all_main_jobTitle , delete_main_jobTitle
+    add_Main_JobTitle , all_main_jobTitle , delete_main_jobTitle , all_package_transaction , update_detail
 } 

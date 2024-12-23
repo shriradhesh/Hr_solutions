@@ -15,7 +15,7 @@ const employeeSchema = new mongoose.Schema({
          },
          status : {
             type : Number,
-            enum : [1, 0],
+            enum : [1, 0 , 2],
            
          },
          profileImage : {

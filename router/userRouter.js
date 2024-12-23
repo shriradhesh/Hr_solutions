@@ -259,5 +259,11 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          // Api for delete_main_jobTitle
          router.delete('/delete_main_jobTitle/:main_jobtitle_id' , userController.delete_main_jobTitle )
 
+         // Api for all_package_transaction
+         router.get('/all_package_transaction', userController.all_package_transaction)
+
+         // Api for update_detail
+         router.post('/update_detail', userController.update_detail)
+
 
 module.exports = router

@@ -1450,35 +1450,36 @@ const clientPackageModel = require('../model/clientPackage')
 
                                                             /* Employee Section */
         // Api for get All Employees
-              const getAllEmp = async( req , res)=>{
-                  try {
-                         // check for all employee
-                        const allEmp = await employeeModel.find({
-                                 
-                        })
-
-                        if(!allEmp)
-                        {
-                            return res.status(400).json({
-                                  success : false ,
-                                  message : 'No employee Found'
-                            })
-                        }
-                        const sortclient = allEmp.sort(( a , b )=> b.createdAt - a.createdAt)
-                        return res.status(200).json({
-                               success : true ,
-                               message : 'All Employees',
-                               Details : sortclient
-                        })
-                  } catch (error) {
-                    return res.status(500).json({
-                            success : false ,
-                            message : 'server error',
-                            error_message : error.message
-                    })
-                  }
-              }
-
+        const getAllEmp = async (req, res) => {
+            try {
+                // check for all employees excluding status 2
+                const allEmp = await employeeModel.find({ status: { $ne: 2 } });
+        
+                // Check if no employees are found
+                if (allEmp.length === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'No employees found'
+                    });
+                }
+        
+                // Sort employees by createdAt in descending order
+                const sortedEmp = allEmp.sort((a, b) => b.createdAt - a.createdAt);
+        
+                return res.status(200).json({
+                    success: true,
+                    message: 'All Employees',
+                    Details: sortedEmp
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        }
+        
        // Active inactive particular employee
 
                  const active_inactive_emp = async ( req , res)=>{
@@ -1540,6 +1541,7 @@ const clientPackageModel = require('../model/clientPackage')
                         })
                     }
                  }
+                 
                                                 
                                                          /*Job Section */
 // Active inactive particular job
