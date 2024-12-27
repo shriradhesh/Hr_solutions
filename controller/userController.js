@@ -111,183 +111,213 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
   
       return matchPercentage;
   };
-                                    /* employer Section */
+                                                                       /* employer Section */
 
 // Api for user Signup
+
+
      
-                   const employeeSignup = async( req , res)=>{
-                     try {
-                           var { name , email , password , phone_no , company_name , Number_of_emp , company_industry , company_HQ , package_id } = req.body
-                      
-                           // check for required fields
-                           const requiredFields = [ "name", "email", "password" , "phone_no" ,"company_name" , "Number_of_emp" , "company_industry" , "company_HQ" , "package_id"];
-
-                           for (const field of requiredFields) {
-                           if (!req.body[field]) {
-                               return res
-                               .status(400)
-                               .json({
-                                   message: `Missing ${field.replace("_", " ")} `,
-                                   success: false,
-                               });
-                           }
-                           }                                           
-                                            
-                              // check for existing employee
-                            const existingEmp = await employeeModel.findOne({ email : email })
-                            if(existingEmp)
-                            {
-                                return  res.status(400).json({
-                                     success : false ,
-                                     message : 'email already exists'
-                                })
-                            }
-                            
-                              // check for company
-                              const existCompany = await employeeModel.findOne({ company_name : company_name })
-                              if(existCompany)
-                              {
-                                return res.status(400).json({
-                                     success : false ,
-                                     message : 'Company Details already exists'
-                                })
-                              }
-
-                                //hashed the password
-                            const hashedPassword = await bcrypt.hash(password , 10)
-                            let profileImage = null 
-                           
-                 if (req.file && req.file.filename) {
-                    // Get the file extension
-                    const fileExtension = path.extname(req.file.filename).toLowerCase();
-
-                    // List of allowed extensions
-                    const allowedExtensions = ['.jpg', '.jpeg', '.png'];
-
-                    // Check if the file extension is in the allowed list
-                    if (allowedExtensions.includes(fileExtension)) {
-                        // If valid, update the profile image
-                        profileImage = req.file.filename;
-                    } else {
-                        // If not valid, throw an error
-                        return res.status(400).json({
-                            success : false ,
-                            message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
-                    });
-                    }
+    const employeeSignup = async( req , res)=>{
+        try {
+              var { name , email , password , phone_no , company_name , Number_of_emp , company_industry , company_HQ , package_id } = req.body
+         
+              // check for required fields
+              const requiredFields = [ "name", "email", "password" , "phone_no" ,"company_name" , "Number_of_emp" , "company_industry" , "company_HQ" , "package_id"];
+    
+              for (const field of requiredFields) {
+              if (!req.body[field]) {
+                  return res
+                  .status(400)
+                  .json({
+                      message: `Missing ${field.replace("_", " ")} `,
+                      success: false,
+                  });
+              }
+              }                                           
+                               
+                 // check for existing employee
+               const existingEmp = await employeeModel.findOne({ email : email })
+               if(existingEmp)
+               {
+                   return  res.status(400).json({
+                        success : false ,
+                        message : 'email already exists'
+                   })
+               }
+               
+                 // check for company
+                 const existCompany = await employeeModel.findOne({ company_name : company_name })
+                 if(existCompany)
+                 {
+                   return res.status(400).json({
+                        success : false ,
+                        message : 'Company Details already exists'
+                   })
+                 }
+    
+                   //hashed the password
+               const hashedPassword = await bcrypt.hash(password , 10)
+               let profileImage = null 
+              
+    if (req.file && req.file.filename) {
+       // Get the file extension
+       const fileExtension = path.extname(req.file.filename).toLowerCase();
+    
+       // List of allowed extensions
+       const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+    
+       // Check if the file extension is in the allowed list
+       if (allowedExtensions.includes(fileExtension)) {
+           // If valid, update the profile image
+           profileImage = req.file.filename;
+       } else {
+           // If not valid, throw an error
+           return res.status(400).json({
+               success : false ,
+               message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+       });
+       }
+    }
+                // check for package
+                var package = await clientPackageModel.findOne({ _id : package_id })
+                if(!package)
+                {
+                 return res.status(400).json({
+                       success :false ,
+                       message : 'Package Not Found'
+                 })
                 }
-
-                             // check for package
-                             const package = await clientPackageModel.findOne({ _id : package_id })
-                             if(!package)
-                             {
-                              return res.status(400).json({
-                                    success :false ,
-                                    message : 'Package Not Found'
-                              })
-                             }
-
-                                    let newData;
+           
+                            var today = new Date()
+                            let package_active_date = today.toISOString()
+    
+                            let package_end_date = null
+                            if(package.valid_days)
+                            {
+                                package_end_date = new Date(today)
+                                package_end_date.setDate(package_end_date.getDate() + package.valid_days)
+                                package_end_date = package_end_date.toISOString()
+                            }
+                            else{
+                                  return res.status(400).json({
+                                      success : false ,
+                                      message : 'Package Valid days are missing'
+                                  })
+                            }
+            
+                       let newData;
+                   
+                      
+                           if(package.package_type === 'Weekly')
+                               {
+                                
+                                    newData = new employeeModel({
+                                       name ,  
+                                       email ,
+                                       password : hashedPassword, 
+                                       phone_no , 
+                                       company_name , 
+                                       Number_of_emp ,
+                                       company_industry ,
+                                       profileImage : profileImage ,
+                                       status : 0,
+                                       company_HQ : company_HQ ,
+                                       package_id,
+                                       package_name : package.package_name,
+                                       package_type : package.package_type,
+                                       package_active_date,
+                                       package_end_date,
+                                       
+                                   })    
+    
+                                  
+    
                                    
-                                        if(package.package_type === 'Weekly')
-                                            {
-
-                                                 newData = new employeeModel({
-                                                    name ,  
-                                                    email ,
-                                                    password : hashedPassword, 
-                                                    phone_no , 
-                                                    company_name , 
-                                                    Number_of_emp ,
-                                                    company_industry ,
-                                                    profileImage : profileImage ,
-                                                    status : 0,
-                                                    company_HQ : company_HQ ,
-                                                    package_id,
-                                                    package_name : package.package_name,
-                                                    package_type : package.package_type,
-                                                    
-                                                })    
-                                                
-                                                const EmployeeContent = `
-                                                <p> Hello ${name}</p>
-                                                <p>Here are your account Login details:</p>
-                                                <table style="border-collapse: collapse; width: 50%; margin: auto; border: 1px solid #4CAF50; border-radius: 10px;">
-                                                <tr>
-                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Email:</strong></td>
-                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${email}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Password:</strong></td>
-                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${password}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>phone No:</strong></td>
-                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${phone_no}</td>
-                                                </tr>
-                                                
-                                            </table>
-                                            `;
-                   
-                                            // Send email to the staff
-                                            await send_EmployeeEmail (email, `Your Account successfully Created`, EmployeeContent);                                                
-                                                  
-                   
-                                                   // send notification to admin
-                                                   try {
-                                                       const newNotification =  adminNotificationModel.create({
-                                                           title : `New Client`,
-                                                           message: `New client added successfully! Please activate their account from pending status`,
-                                                           date: new Date(),
-                                                           status: 1,
-                                                       });
-                                                        newNotification.save();
-                                                   } catch (notificationError) {
-                                                       console.error('Error creating notification:', notificationError);
-                                                   }                                                      
-                                            }
-                                            else
-                                            {
-                                               
-                                                newData = new employeeModel({
-                                                    name ,  
-                                                    email ,
-                                                    password : hashedPassword, 
-                                                    phone_no , 
-                                                    company_name , 
-                                                    Number_of_emp ,
-                                                    company_industry ,
-                                                    profileImage : profileImage ,
-                                                    status : 2,
-                                                    company_HQ : company_HQ,
-                                                    package_id,
-                                                    package_name : package.package_name,
-                                                    package_type : package.package_type,
-                                                    
-                                                })      
-                                                                                                                       
-                                            }                        
-                                            await newData.save()                                     
-                                            return res.status(200).json({
-                                                success : true ,
-                                                message : 'successfully SignUP',
-                                                clientId : newData._id
-                                            })                        
-
-                     } catch (error) {
-                        return res.status(500).json({
-                             success : false ,
-                             message : 'server error',
-                             error_message : error.message
-                        })
-                     }
-                   }
+                                   const EmployeeContent = `
+                                   <p> Hello ${name}</p>
+                                   <p>Here are your account Login details:</p>
+                                   <table style="border-collapse: collapse; width: 50%; margin: auto; border: 1px solid #4CAF50; border-radius: 10px;">
+                                   <tr>
+                                       <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Email:</strong></td>
+                                       <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${email}</td>
+                                   </tr>
+                                   <tr>
+                                       <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Password:</strong></td>
+                                       <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${password}</td>
+                                   </tr>
+                                   <tr>
+                                       <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>phone No:</strong></td>
+                                       <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${phone_no}</td>
+                                   </tr>
+                                   
+                               </table>
+                               `;
+      
+                               // Send email to the staff
+                               await send_EmployeeEmail (email, `Your Account successfully Created`, EmployeeContent);                                                
+                                     
+      
+                                      // send notification to admin
+                                      try {
+                                          const newNotification =  adminNotificationModel.create({
+                                              title : `New Client`,
+                                              message: `New client added successfully! Please activate their account from pending status`,
+                                              date: new Date(),
+                                              status: 1,
+                                          });
+                                           newNotification.save();
+                                      } catch (notificationError) {
+                                          console.error('Error creating notification:', notificationError);
+                                      }                                                      
+                               }
+                               else
+                               {
+    
+                                   newData = new employeeModel({
+                                       name ,  
+                                       email ,
+                                       password : hashedPassword, 
+                                       phone_no , 
+                                       company_name , 
+                                       Number_of_emp ,
+                                       company_industry ,
+                                       profileImage : profileImage ,
+                                       status : 2,
+                                       company_HQ : company_HQ,
+                                       package_id,
+                                       package_name : package.package_name,
+                                       package_type : package.package_type,
+                                       plain_pwd : password,
+                                       package_active_date,
+                                       package_end_date,
+                                       
+                                   })      
+                                                                                                          
+                               }                        
+                               await newData.save()                                            
+                               
+                               return res.status(200).json({
+                                   success : true ,
+                                   message : 'successfully SignUP',
+                                   clientId : newData._id,
+                                   
+                               })                        
+    
+        } catch (error) {
+           return res.status(500).json({
+                success : false ,
+                message : 'server error',
+                error_message : error.message
+           })
+        }
+      }
+    
                    
 
                      // Api for update yearly transaction and client Data
                        const update_detail = async( req , res)=> {
                              try {
-                                    let { clientId , session_id , payment_status } = req.body
+                                    let { clientId , booking_id , payment_status } = req.body
                                     // check for required fields
                                     if(!clientId)
                                     {
@@ -296,11 +326,11 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                               message : 'Client ID Required'
                                         })
                                     }
-                                    if(!session_id)
+                                    if(!booking_id)
                                     {
                                         return res.status(400).json({
                                               success : false ,
-                                              message : 'session ID Required'
+                                              message : 'Booking ID Required'
                                         })
                                     }
                                     if(!payment_status)
@@ -312,21 +342,19 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                     }
 
                                         //check for client
-                                        let client = await employeeModel.findOne({ _id : clientId })
-                                        
-                                        if(!client)
-                                        {
+                                        const client = await employeeModel.findById(clientId);
+                                        if (!client) {
                                             return res.status(400).json({
-                                                   success : false ,
-                                                   message : 'Client not found'
-                                            })
+                                                success: false,
+                                                message: 'Client not found',
+                                            });
                                         }
 
                                        payment_status = parseInt(payment_status)
                                         let transaction 
                                        if(payment_status === 1)
                                        {
-                                                transaction = await package_transaction_model.findOne({ session_id : session_id })
+                                                transaction = await package_transaction_model.findOne({ booking_id : booking_id })
                                                 if(transaction)
                                                 {                                                      
                                                     
@@ -352,13 +380,12 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                                 </tr>
                                                 <tr>
                                                     <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Password:</strong></td>
-                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${client.password}</td>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${client.plain_pwd}</td>
                                                 </tr>
                                                 <tr>
                                                     <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>phone No:</strong></td>
                                                     <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${client.phone_no}</td>
-                                                </tr>
-                                                
+                                                </tr>                                                
                                             </table>
                                             `;
                    
@@ -392,7 +419,7 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                                     transaction.payment_status = 'STATE_FAILED'
                         
                                                     await transaction.save()                                               
-                                              
+                                                      
                                                 }
                                        }
 
@@ -410,7 +437,43 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                              }
                        }
 
-                       
+                       // inactive client automatically
+                       cron.schedule('* * * * *', async () => {
+                        try {
+                            const currentDate = new Date();
+                            currentDate.setHours(0, 0, 0, 0);  
+                    
+                            // Convert string package_end_date to Date object in the query
+                            let inactive_clients = await employeeModel.find({
+                                package_end_date: {
+                                    $lt: currentDate.toISOString(), 
+                                },
+                                status: { $ne: 2 },  
+                            });
+                    
+                            if (inactive_clients.length > 0) {
+                                // Update status for all inactive clients
+                                await employeeModel.updateMany(
+                                    {
+                                        _id: {
+                                            $in: inactive_clients.map((client) => client._id),
+                                        },
+                                    },
+                                    {
+                                        status: 0,  
+                                    }
+                                );
+                    
+                                console.log('Inactive clients have been updated.');
+                            } else {
+                                console.log('No inactive clients found.');
+                            }
+                        } catch (error) {
+                            console.error('Error while updating job status:', error);
+                        }
+                    });
+
+                    
     // Employee Login
     const Emp_login = async (req, res) => {
         try {
@@ -445,6 +508,30 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                     })
                  }
     
+
+                 // check for package
+                 let package = await clientPackageModel.findOne({ _id : emp.package_id})
+                 if(!package)
+                 {
+                    return res.status(400).json({
+                           success : false ,
+                           message : 'package not found'
+                    })
+                 }
+
+                 let package_key = '';
+if (package.package_type === 'Weekly') {
+    const weekNumber = parseInt(package.package_name.match(/\d+/), 10); 
+    package_key = `w${weekNumber}`;
+} else if (package.package_type === 'Yearly') {
+    if (package.package_name === 'starter package') {
+        package_key = 'y1';
+    } else if (package.package_name === 'professional package') {
+        package_key = 'y2';
+    } else {
+        package_key = 'y3'; 
+    }
+}
             // Check if the stored password is in plain text
             if (emp.password && emp.password.startsWith("$2b$")) {
                 // Password is already bcrypt hashed
@@ -464,12 +551,37 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                 // Update the stored password in the database
                 emp.password = hashedPassword;               
                 await emp.save();
-            }
-    
+            }               
+
+           
+
             return res.json({
                 success: true,
                 message: "Login Successfully ",
-                data: emp,
+                data: {
+                        _id : emp._id,
+                        name : emp.name,
+                        email:emp.email,
+                        password : emp.password,
+                        phone_no : emp.phone_no,
+                        status : emp.status,
+                        profileImage : emp.profileImage,
+                        company_name : emp.company_name,
+                        Number_of_emp : emp.Number_of_emp,
+                        company_industry : emp.company_industry,
+                        company_HQ : emp.company_HQ,
+                        package_id : emp.package_id,
+                        package_name : package.package_name,
+                        package_type : package.package_type,
+                        package_features : package.features,
+                        package_price : package.price,
+                        package_price_with_gst : package.price_with_gst || '',
+                        package_duration : package.duration,
+                        package_key : package_key,
+                        package_activate_date : emp.package_active_date || '',
+                        package_expiry_date : emp.package_end_date || ''
+
+                }
             });
         } catch (error) {
             console.error(error);
@@ -6658,89 +6770,89 @@ course: courseData,
                 }
                 jd.jd_download_count = jd_download_count
                 await jd.save()
-                const { jobTitle, job_Description, Responsibilities } = jd;
+            //     const { jobTitle, job_Description, Responsibilities } = jd;
         
-                // Convert HTML content to plain text
-                const plainJobDescription = convert(job_Description || '', { wordwrap: false });
-                const plainResponsibilities = convert(Responsibilities || '', { wordwrap: false });
+            //     // Convert HTML content to plain text
+            //     const plainJobDescription = convert(job_Description || '', { wordwrap: false });
+            //     const plainResponsibilities = convert(Responsibilities || '', { wordwrap: false });
         
-                // Create a new Word document
-                const doc = new Document({
-                    sections: [
-                        {
-                            children: [
-                                // Add job title
-                                new Paragraph({
-                                    children: [
-                                        new TextRun({
-                                            text: jobTitle,
-                                            bold: true,
-                                            size: 32, // Font size in half-points
-                                        }),
-                                    ],
-                                    spacing: {
-                                        after: 200,
-                                    },
-                                }),
+            //     // Create a new Word document
+            //     const doc = new Document({
+            //         sections: [
+            //             {
+            //                 children: [
+            //                     // Add job title
+            //                     new Paragraph({
+            //                         children: [
+            //                             new TextRun({
+            //                                 text: jobTitle,
+            //                                 bold: true,
+            //                                 size: 32, // Font size in half-points
+            //                             }),
+            //                         ],
+            //                         spacing: {
+            //                             after: 200,
+            //                         },
+            //                     }),
         
-                                // Add job description heading
-                                new Paragraph({
-                                    children: [
-                                        new TextRun({
-                                            text: 'Job Description',
-                                            bold: true,
-                                            size: 28,
-                                        }),
-                                    ],
-                                    spacing: {
-                                        after: 100,
-                                    },
-                                }),
+            //                     // Add job description heading
+            //                     new Paragraph({
+            //                         children: [
+            //                             new TextRun({
+            //                                 text: 'Job Description',
+            //                                 bold: true,
+            //                                 size: 28,
+            //                             }),
+            //                         ],
+            //                         spacing: {
+            //                             after: 100,
+            //                         },
+            //                     }),
         
-                                // Add job description content
-                                ...plainJobDescription.split('\n').map(line =>
-                                    new Paragraph({
-                                        children: [new TextRun({ text: line, size: 24 })],
-                                    })
-                                ),
+            //                     // Add job description content
+            //                     ...plainJobDescription.split('\n').map(line =>
+            //                         new Paragraph({
+            //                             children: [new TextRun({ text: line, size: 24 })],
+            //                         })
+            //                     ),
         
-                                // Add responsibilities heading
-                                new Paragraph({
-                                    children: [
-                                        new TextRun({
-                                            text: 'Job Responsibilities',
-                                            bold: true,
-                                            size: 28,
-                                        }),
-                                    ],
-                                    spacing: {
-                                        after: 100,
-                                    },
-                                }),
+            //                     // Add responsibilities heading
+            //                     new Paragraph({
+            //                         children: [
+            //                             new TextRun({
+            //                                 text: 'Job Responsibilities',
+            //                                 bold: true,
+            //                                 size: 28,
+            //                             }),
+            //                         ],
+            //                         spacing: {
+            //                             after: 100,
+            //                         },
+            //                     }),
         
-                                // Add responsibilities content
-                                ...plainResponsibilities.split('\n').map(line =>
-                                    new Paragraph({
-                                        children: [new TextRun({ text: line, size: 24 })],
-                                    })
-                                ),
-                            ],
-                        },
-                    ],
-                });
+            //                     // Add responsibilities content
+            //                     ...plainResponsibilities.split('\n').map(line =>
+            //                         new Paragraph({
+            //                             children: [new TextRun({ text: line, size: 24 })],
+            //                         })
+            //                     ),
+            //                 ],
+            //             },
+            //         ],
+            //     });
         
-                // Generate the Word document as a buffer
-                const buffer = await Packer.toBuffer(doc);
+            //     // Generate the Word document as a buffer
+            //     const buffer = await Packer.toBuffer(doc);
         
-                // Set response headers
-                res.set({
-                    'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                    'Content-Disposition': `attachment; filename=job_description.docx`,
-                });
+            //     // Set response headers
+            //     res.set({
+            //         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            //         'Content-Disposition': `attachment; filename=job_description.docx`,
+            //     });
         
-                // Send the Word document
-                res.send(buffer);
-            } catch (error) {
+            //     // Send the Word document
+            //     res.send(buffer);
+             } catch (error) {
                 return res.status(500).json({
                     success: false,
                     message: 'Server error',
@@ -6756,7 +6868,7 @@ course: courseData,
                             let all_package_transaction = async( req ,res)=> {
                                     try {
                                             // check for all package transaction of user
-                                            let all_transactions = await package_transaction_model.find({ }).sort({  createdAt : -1  }).lean()
+                                            let all_transactions = await package_transaction_model.find({ payment_status : { $ne : 'STATE_PENDING'}}).sort({  createdAt : -1  }).lean()
                                             if(!all_transactions)
                                             {
                                                 return res.status(400).json({

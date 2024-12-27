@@ -8,8 +8,8 @@ const adminRouter = require('./router/adminRouter')
 const userRouter = require('./router/userRouter')
 const axios = require('axios')
 const course_transaction_model = require('./model/transaction')
-
-
+const employeeModel = require('./model/employeeModel')
+const clientPackageModel = require('./model/clientPackage')
 
 
 
@@ -55,6 +55,8 @@ app.get('/cancle', (req ,res)=>{
         const crypto = require('crypto');
 const { log } = require('console')
 const package_transaction_model = require('./model/package_transaction')
+
+
          // Function to generate a random number
          function generateRandomNumber(length) {
           let result = '';
@@ -69,18 +71,18 @@ const package_transaction_model = require('./model/package_transaction')
       }
 
 
-      const randomNumber = generateRandomNumber(5);
-      const randomNumber1 = generateRandomNumber(6);
-      const randomNumber2 = generateRandomNumber(15);
-      const check_out_session_id = `scs-${randomNumber}`;
-      const clientReference = `customer-${randomNumber1}`  
+      
+    
+      const check_out_session_id = `scs-${generateRandomNumber(5)}`;
+      const clientReference = `customer-${generateRandomNumber(6)}`  
+
 
         app.get('/api/create_checkOut_session' , async ( req , res )=> {
                 
                    var {  cancelUrl , receiptUrl , total_amount  } = req.query
                 
                     //    const callbackUrlState = crypto.randomBytes(16).toString('hex')  
-                   const callbackUrlState = `${randomNumber2}`                  
+                   const callbackUrlState = `${generateRandomNumber(15)}`                  
                  
                   cancelUrl = `${cancelUrl}?sid=${check_out_session_id}$state=${callbackUrlState}`
                   receiptUrl = `${receiptUrl}?sid=${check_out_session_id}$state=${callbackUrlState}`
@@ -114,7 +116,7 @@ const package_transaction_model = require('./model/package_transaction')
                         const payment_response = response.data.result;
             
                               
-                            const booking_id = `BKID${randomNumber}`;
+                            const booking_id = `BKID${generateRandomNumber(5)}`;
                       
                         
                                 const transaction = new course_transaction_model({
@@ -214,13 +216,15 @@ const package_transaction_model = require('./model/package_transaction')
 
           app.get('/api/create_checkOut_session_for_package' , async ( req , res )=> {
 
-            var {  cancelUrl , receiptUrl , total_amount  } = req.query
+            var {  cancelUrl , receiptUrl , total_amount , client_id , package_id  } = req.query
           
               //    const callbackUrlState = crypto.randomBytes(16).toString('hex')  
-            const callbackUrlState = `${randomNumber2}`                  
-          
-            cancelUrl = `${cancelUrl}?sid=${check_out_session_id}$state=${callbackUrlState}`
-            receiptUrl = `${receiptUrl}?sid=${check_out_session_id}$state=${callbackUrlState}`
+            const callbackUrlState = `${generateRandomNumber(15)}`                  
+            const booking_id = `BKID${generateRandomNumber(5)}`;   
+            cancelUrl = `${cancelUrl}?sid=${check_out_session_id}$state=${callbackUrlState}$client_id=${client_id}$booking_id=${booking_id}`
+            receiptUrl = `${receiptUrl}?sid=${check_out_session_id}$state=${callbackUrlState}$client_id=${client_id}$booking_id=${booking_id}`
+  
+            
       
               const amountValue = total_amount * 100
 
@@ -250,14 +254,24 @@ const package_transaction_model = require('./model/package_transaction')
             
                   const payment_response = response.data.result;
       
-                        
-                      const booking_id = `BKID${randomNumber}`;
-                
+                            // check for client 
+                            let client = await employeeModel.findOne({
+                              _id : client_id
+                            })
+
+                            // check for package
+                            let package = await clientPackageModel.findOne({
+                                 _id : package_id
+                            })
+                                 
                   
                           const transaction = new package_transaction_model({
                               booking_id : booking_id ,
-                              client_id :  '',
-                              package_id : '',
+                              client_id : client_id,
+                              package_id : package_id ,
+                              client_name : client.name,
+                              company : client.company_name,
+                              package_name : package.package_name,
                               amount : total_amount,
                               payment_status : payment_response.status.state,
                               session_id : payment_response.id,
@@ -268,7 +282,7 @@ const package_transaction_model = require('./model/package_transaction')
                                       method : payment_response.paymentInfo.method,
                                       financialAccount : payment_response.paymentInfo.financialAccount
                               },
-                              currency : payment_response.totalAmount.currency
+                              currency : payment_response.totalAmount.currency 
       
                           })  
                       
@@ -279,8 +293,7 @@ const package_transaction_model = require('./model/package_transaction')
                         success : true ,                            
                         checkoutUrl : payment_response.checkoutUrl,
                         status : payment_response.status.state,
-                        cancelUrl : payment_response.cancelUrl,
-                        session_id : payment_response.id,
+                        cancelUrl : payment_response.cancelUrl,                      
                         receiptUrl : payment_response.receiptUrl,
                       
                     })

@@ -14,6 +14,9 @@ const clientPackageSchema = new mongoose.Schema({
            duration : {
                   type :  String
            },
+           valid_days : {
+                   type : Number
+           },
 
            price_with_gst :{
                    type : String
@@ -22,6 +25,7 @@ const clientPackageSchema = new mongoose.Schema({
                    type : String,
                    enum : ['Yearly' , 'Weekly']
            },
+
            status : {
                 type : Number,
                 enum : [1 ,0],

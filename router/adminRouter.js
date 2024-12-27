@@ -360,6 +360,10 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
    router.get('/getActivePackages', Admin_and_staffController.getActivePackages)
 
 
+
+   
+
+
 module.exports = router
 
 

@@ -122,7 +122,7 @@ const clientPackageModel = require('../model/clientPackage')
 
                    const status = admin_and_staffs.status
                 if(status === 0)
-                {
+                {  
                     return res.status(400).json({
                          success : false ,
                          message : 'Your account is suspended. Please contact the super admin for further details'
@@ -1461,7 +1461,7 @@ const clientPackageModel = require('../model/clientPackage')
                         success: false,
                         message: 'No employees found'
                     });
-                }
+                }             
         
                 // Sort employees by createdAt in descending order
                 const sortedEmp = allEmp.sort((a, b) => b.createdAt - a.createdAt);
@@ -1526,7 +1526,7 @@ const clientPackageModel = require('../model/clientPackage')
                             } catch (notificationError) {
                                 // Handle notification creation error
                                 console.error('Error creating notification:', notificationError);
-                                // Optionally, you can choose to return an error response here or handle it in another way
+                                
                             }    
                             return res.status(200).json({
                                 success: true,
@@ -8474,10 +8474,10 @@ const jobseeker_count_of_client_job = async (req, res) => {
 
      const add_clientPackage = async (req, res) => {
         try {
-            const { package_name, features, duration , price , package_type , price_with_gst } = req.body;
+            const { package_name, features, duration , price , package_type , price_with_gst , valid_days} = req.body;
     
             // Validate required fields
-            const requiredFields = ['package_name', 'features' , 'price' , 'duration'];
+            const requiredFields = ['package_name', 'features' , 'price' , 'duration' , 'valid_days'];
             for (let field of requiredFields) {
                 if (!req.body[field]) {
                     return res.status(400).json({
@@ -8510,7 +8510,8 @@ const jobseeker_count_of_client_job = async (req, res) => {
                             features,
                             price,
                             duration,
-                            package_type: package_type
+                            package_type: package_type,
+                            valid_days
                         });
     
                                   
@@ -8525,6 +8526,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                     price,
                                     price_with_gst,
                                     package_type: package_type,
+                                    valid_days
 
                                 });
                         
@@ -8553,7 +8555,6 @@ const jobseeker_count_of_client_job = async (req, res) => {
           const get_allPackages = async( req , res)=> {
                 try {
                       
-                     
 
                          const getYearlyPackages = await clientPackageModel.find({  package_type : 'Yearly'}).sort({ createdAt : -1}).lean()
                          const getWeeklyPackages = await clientPackageModel.find({  package_type : 'Weekly'}).sort({ createdAt : -1}).lean()
@@ -8737,6 +8738,12 @@ const jobseeker_count_of_client_job = async (req, res) => {
                    }   
 
                     }
+
+
+
+
+        
+        
                     
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
@@ -8774,7 +8781,6 @@ module.exports = {
      get_transaction , get_all_courses_details ,  jobseeker_count_of_client_job,
 
      create_email_template , getall_emailContent , emailContent_of_title ,
-     add_clientPackage , get_allPackages , active_inactive_Package , updatepackage , getActivePackages
-
+     add_clientPackage , get_allPackages , active_inactive_Package , updatepackage , getActivePackages 
      
 }

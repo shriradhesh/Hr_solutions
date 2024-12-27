@@ -40,7 +40,10 @@ const employeeSchema = new mongoose.Schema({
          package_name : {
                type : String
          },
-         package_type : String
+         package_type : String,
+         plain_pwd : String,
+         package_active_date : String,
+         package_end_date : Date
 
 }, {timestamps : true })
 
