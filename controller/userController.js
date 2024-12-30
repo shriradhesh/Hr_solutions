@@ -106,7 +106,7 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
           matchPercentage = (Math.random() * (5 - 3) + 3).toFixed(2);
       } else {
           // Fix match percentage at 1 with no decimal if heading is not found
-          matchPercentage = 1;
+          matchPercentage = 1;m
       }
   
       return matchPercentage;
@@ -114,7 +114,7 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                                                        /* employer Section */
 
 // Api for user Signup
-
+                                     
 
      
     const employeeSignup = async( req , res)=>{
@@ -203,7 +203,7 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                       success : false ,
                                       message : 'Package Valid days are missing'
                                   })
-                            }
+                                }
             
                        let newData;
                    
@@ -234,23 +234,40 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
     
                                    
                                    const EmployeeContent = `
-                                   <p> Hello ${name}</p>
-                                   <p>Here are your account Login details:</p>
-                                   <table style="border-collapse: collapse; width: 50%; margin: auto; border: 1px solid #4CAF50; border-radius: 10px;">
-                                   <tr>
-                                       <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Email:</strong></td>
-                                       <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${email}</td>
-                                   </tr>
-                                   <tr>
-                                       <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Password:</strong></td>
-                                       <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${password}</td>
-                                   </tr>
-                                   <tr>
-                                       <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>phone No:</strong></td>
-                                       <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${phone_no}</td>
-                                   </tr>
-                                   
-                               </table>
+                                                                <!DOCTYPE html>
+                                <html lang="en">
+                                <head>
+                                    <meta charset="UTF-8">
+                                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                    <title>Account Login Details</title>
+                                </head>
+                                <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4;">
+
+                                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+                                    <h2 style="text-align: center; color: #4CAF50;">Hello ${name},</h2>
+                                    <p>Thank you for registering with us. Below are your account login details:</p>
+
+                                    <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
+                                        <tr>
+                                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold; background-color: #f1f1f1;">Email</th>
+                                            <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; background-color: #fafafa;">${email}</td>
+                                        </tr>
+                                        <tr>
+                                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold; background-color: #f1f1f1;">Password</th>
+                                            <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; background-color: #fafafa;">${password}</td>
+                                        </tr>
+                                        <tr>
+                                            <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold; background-color: #f1f1f1;">Phone Number</th>
+                                            <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; background-color: #fafafa;">${phone_no}</td>
+                                        </tr>
+                                    </table>
+
+                                    <p>If you have any questions, feel free to reach out to our support team.</p>
+                                </div>
+
+                                </body>
+                                </html>
+
                                `;
       
                                // Send email to the staff
@@ -371,27 +388,39 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                                            await client.save() 
                                                            
                                                            const EmployeeContent = `
-                                                <p> Hello ${client.name}</p>
-                                                <p>Here are your account Login details:</p>
-                                                <table style="border-collapse: collapse; width: 50%; margin: auto; border: 1px solid #4CAF50; border-radius: 10px;">
+                                                                                            <p style="font-family: Arial, sans-serif; font-size: 16px; color: #333;">Hello ${client.name},</p>
+                                            <p style="font-family: Arial, sans-serif; font-size: 16px; color: #333;">Here are your account login details:</p>
+
+                                            <table style="border-collapse: collapse; width: 50%; margin: auto; border: 1px solid #4CAF50; border-radius: 10px;">
                                                 <tr>
-                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Email:</strong></td>
-                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${client.email}</td>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold; background-color: #f1f1f1;">
+                                                        <strong>Email:</strong>
+                                                    </td>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; background-color: #fafafa;">
+                                                        ${client.email}
+                                                    </td>
                                                 </tr>
                                                 <tr>
-                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>Password:</strong></td>
-                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${client.plain_pwd}</td>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold; background-color: #f1f1f1;">
+                                                        <strong>Password:</strong>
+                                                    </td>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; background-color: #fafafa;">
+                                                        ${client.plain_pwd}
+                                                    </td>
                                                 </tr>
                                                 <tr>
-                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold;"><strong>phone No:</strong></td>
-                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd;">${client.phone_no}</td>
-                                                </tr>                                                
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; font-weight: bold; background-color: #f1f1f1;">
+                                                        <strong>Phone No:</strong>
+                                                    </td>
+                                                    <td style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; background-color: #fafafa;">
+                                                        ${client.phone_no}
+                                                    </td>
+                                                </tr>
                                             </table>
                                             `;
                    
                                             // Send email to the staff
-                                            await send_EmployeeEmail (client.email, `Your Account successfully Created`, EmployeeContent);
-                                                     
+                                            await send_EmployeeEmail (client.email, `Your Account successfully Created`, EmployeeContent);                                                    
                                                   
                    
                                                    // send notification to admin
@@ -450,7 +479,7 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                 },
                                 status: { $ne: 2 },  
                             });
-                    
+
                             if (inactive_clients.length > 0) {
                                 // Update status for all inactive clients
                                 await employeeModel.updateMany(
@@ -466,14 +495,15 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                     
                                 console.log('Inactive clients have been updated.');
                             } else {
-                                console.log('No inactive clients found.');
+                                console.log('No active clients found.');
                             }
                         } catch (error) {
                             console.error('Error while updating job status:', error);
                         }
                     });
-
                     
+
+
     // Employee Login
     const Emp_login = async (req, res) => {
         try {
@@ -508,7 +538,6 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                     })
                  }
     
-
                  // check for package
                  let package = await clientPackageModel.findOne({ _id : emp.package_id})
                  if(!package)
@@ -672,6 +701,7 @@ if (package.package_type === 'Weekly') {
                 //     });
                 //     }
                 }
+                 
 
                    exist_emp.name = name
                    exist_emp.email = email
@@ -840,8 +870,7 @@ if (package.package_type === 'Weekly') {
     
             res.status(200).json({ success: true, 
                                      message: "An OTP has been sent to your email",
-                                     email: client.email , 
-                                     
+                                     email: client.email ,                                      
                                      });
         } catch (error) {
             console.error('error', error);
@@ -929,7 +958,7 @@ if (package.package_type === 'Weekly') {
         }
     };
 
-                                                 /* job Category section */
+                                                                /* job Category section */
 
             // API for add job title in job title schema
 
@@ -1575,9 +1604,8 @@ const deleteJob_Description = async (req, res) => {
                         job_image: job.job_image,
                         location: job.location,
                         hr_email : job.hr_email,
-                        hiring_manager_email : job.hiring_manager_email,
+                        hiring_manager_email : job.hiring_manager_email,  
 
-        
                         // Add male and female candidate counts
                         candidateCounts: {
                             Male: maleCount,
