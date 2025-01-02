@@ -115,7 +115,11 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
 
 // Api for user Signup
                                      
-
+function isValidEmail(email) {
+    // Define the email validation regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
      
     const employeeSignup = async( req , res)=>{
         try {
@@ -133,8 +137,16 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                       success: false,
                   });
               }
-              }                                           
-                               
+              }                                          
+                    
+                    if (!isValidEmail(email)) {
+                        return res.status(400).json({
+                            success : false ,
+                            message : 'Please Enter valid Email'
+                        })
+                    }              
+              
+
                  // check for existing employee
                const existingEmp = await employeeModel.findOne({ email : email })
                if(existingEmp)
@@ -143,8 +155,7 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                         success : false ,
                         message : 'email already exists'
                    })
-               }
-               
+               }               
                  // check for company
                  const existCompany = await employeeModel.findOne({ company_name : company_name })
                  if(existCompany)
@@ -159,49 +170,49 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                const hashedPassword = await bcrypt.hash(password , 10)
                let profileImage = null 
               
-    if (req.file && req.file.filename) {
-       // Get the file extension
-       const fileExtension = path.extname(req.file.filename).toLowerCase();
-    
-       // List of allowed extensions
-       const allowedExtensions = ['.jpg', '.jpeg', '.png'];
-    
-       // Check if the file extension is in the allowed list
-       if (allowedExtensions.includes(fileExtension)) {
-           // If valid, update the profile image
-           profileImage = req.file.filename;
-       } else {
-           // If not valid, throw an error
-           return res.status(400).json({
-               success : false ,
-               message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
-       });
-       }
-    }
-                // check for package
-                var package = await clientPackageModel.findOne({ _id : package_id })
-                if(!package)
-                {
-                 return res.status(400).json({
-                       success :false ,
-                       message : 'Package Not Found'
-                 })
+                if (req.file && req.file.filename) {
+                // Get the file extension
+                const fileExtension = path.extname(req.file.filename).toLowerCase();
+                
+                // List of allowed extensions
+                const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+                
+                // Check if the file extension is in the allowed list
+                if (allowedExtensions.includes(fileExtension)) {
+                    // If valid, update the profile image
+                    profileImage = req.file.filename;
+                } else {
+                    // If not valid, throw an error
+                    return res.status(400).json({
+                        success : false ,
+                        message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
+                });
                 }
+                }
+                // check for package
+                            var package = await clientPackageModel.findOne({ _id : package_id })
+                            if(!package)
+                            {
+                            return res.status(400).json({
+                                success :false ,
+                                message : 'Package Not Found'
+                            })
+                            }
            
                             var today = new Date()
                             let package_active_date = today.toISOString()
     
                             let package_end_date = null
-                            if(package.valid_days)
+                            if(package.access_portal)
                             {
                                 package_end_date = new Date(today)
-                                package_end_date.setDate(package_end_date.getDate() + package.valid_days)
+                                package_end_date.setDate(package_end_date.getDate() + package.access_portal)
                                 package_end_date = package_end_date.toISOString()
                             }
                             else{
                                   return res.status(400).json({
                                       success : false ,
-                                      message : 'Package Valid days are missing'
+                                      message : 'Package Activation days are missing'
                                   })
                                 }
             
@@ -440,16 +451,25 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                                                 else
                                                 {
                                                        
-                                                    transaction.client_id = clientId,   
-                                                    transaction.client_name = client.name, 
-                                                    transaction.company = client.company_name,
-                                                     transaction.package_id = client.package_id
-                                                     transaction.package_name = client.package_name                                                                                                                                          
-                                                    transaction.payment_status = 'STATE_FAILED'
-                        
-                                                    await transaction.save()                                               
+                                                   return res.status(400).json({
+                                                       success : false ,
+                                                       message : 'transaction Not Found'
+                                                   })                                              
                                                       
                                                 }
+                                       }
+                                       else
+                                       {
+                                        transaction = await package_transaction_model.findOne({ booking_id : booking_id })
+                                        
+                                        transaction.client_id = clientId,   
+                                        transaction.client_name = client.name, 
+                                        transaction.company = client.company_name,
+                                         transaction.package_id = client.package_id
+                                         transaction.package_name = client.package_name                                                                                                                                          
+                                        transaction.payment_status = 'STATE_FAILED'
+            
+                                        await transaction.save() 
                                        }
 
                                           return res.status(200).json({
@@ -534,7 +554,7 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
                  {
                     return res.status(400).json({
                          success : false ,
-                         message : 'Your account is Not Approval yet. Please contact the admin for further details.'
+                         message : 'Your account is Not Active yet. Please contact the admin for further details.'
                     })
                  }
     
@@ -553,9 +573,9 @@ if (package.package_type === 'Weekly') {
     const weekNumber = parseInt(package.package_name.match(/\d+/), 10); 
     package_key = `w${weekNumber}`;
 } else if (package.package_type === 'Yearly') {
-    if (package.package_name === 'starter package') {
+    if (package.package_name === 'Starter package') {
         package_key = 'y1';
-    } else if (package.package_name === 'professional package') {
+    } else if (package.package_name === 'Professional package') {
         package_key = 'y2';
     } else {
         package_key = 'y3'; 
@@ -1376,10 +1396,8 @@ const deleteJob_Description = async (req, res) => {
                     // isPsychometricTest,
                     // psychometric_Test
 
-                } = req.body;
-                       
+                } = req.body;                    
                                 
-                                  
                                        
                 if (!empId) {
                     return res.status(400).json({
@@ -1392,10 +1410,34 @@ const deleteJob_Description = async (req, res) => {
                 if (!employee) {
                     return res.status(400).json({
                         success: false,
-                        message: 'Employer details not found or account is suspended'
+                        message: 'Client details not found or account is suspended'
                     });
                 }
+                      // Determine job post limit based on the package
+                        const packageJobLimits = {
+                            'Starter Package': 5,
+                            'Professional Package': 15,
+                            'Enterprise Package': 30,
+                        };
                         
+                        let jobCountPerPackage = packageJobLimits[employee.package_name] || 1;
+                        
+                        // Find jobs posted by the employee within the package period
+                        const jobs = await jobModel.find({
+                            emp_Id: empId,
+                            createdAt: {
+                            $gte: employee.package_active_date,
+                            $lte: employee.package_end_date,
+                            },
+                        });
+                                                
+                        if (jobs.length > jobCountPerPackage) {
+                            return res.status(400).json({
+                            success: false,
+                            message: 'You cannot post a job for the client, as their job post limit is exceeded.',
+                            });
+                        }
+
 
                 const formattedStartDate = new Date(startDate);
                 const formattedEndDate = new Date(endDate);
@@ -2472,7 +2514,7 @@ const deleteJob_Description = async (req, res) => {
             cron.schedule('* * * * *', async () => {
                 try {
                   const currentDate = new Date();
-                  currentDate.setHours(0, 0, 0, 0); // Set current time to 00:00:00 for date comparison
+                  currentDate.setHours(0, 0, 0, 0); 
               
                   // Find jobs with endDate less than the current date
                   const expiredJob = await jobModel.find({

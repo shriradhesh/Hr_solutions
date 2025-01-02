@@ -25,6 +25,7 @@ const clientPackageSchema = new mongoose.Schema({
                    type : String,
                    enum : ['Yearly' , 'Weekly']
            },
+           access_portal : Number,
 
            status : {
                 type : Number,

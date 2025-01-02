@@ -1452,33 +1452,56 @@ const clientPackageModel = require('../model/clientPackage')
         // Api for get All Employees
         const getAllEmp = async (req, res) => {
             try {
-                // check for all employees excluding status 2
+                // Fetch all employees excluding status 2
                 const allEmp = await employeeModel.find({ status: { $ne: 2 } });
         
                 // Check if no employees are found
                 if (allEmp.length === 0) {
                     return res.status(400).json({
                         success: false,
-                        message: 'No employees found'
+                        message: 'No employees found',
                     });
-                }             
+                }
         
-                // Sort employees by createdAt in descending order
-                const sortedEmp = allEmp.sort((a, b) => b.createdAt - a.createdAt);
+                // Fetch job count for each employee
+                const allClientWithJobCount = await Promise.all(
+                    allEmp.map(async (emp) => {
+                        const jobCount = await jobModel.countDocuments({
+                            emp_Id: emp._id,
+                            createdAt: {
+                                $gte: emp.package_active_date,
+                                $lte: emp.package_end_date,
+                            },
+                        });
+        
+                        // Exclude sensitive data like passwords
+                        const { password, ...empData } = emp.toObject();
+        
+                        return {
+                            ...empData,
+                            jobCount,
+                        };
+                    })
+                );
+        
+                // Sort employees in descending order by createdAt
+                allClientWithJobCount.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
         
                 return res.status(200).json({
                     success: true,
                     message: 'All Employees',
-                    Details: sortedEmp
+                    Details: allClientWithJobCount,
                 });
             } catch (error) {
                 return res.status(500).json({
                     success: false,
                     message: 'Server error',
-                    error_message: error.message
+                    error_message: error.message,
                 });
             }
-        }
+        };
+        
+        
         
        // Active inactive particular employee
 
@@ -8702,8 +8725,8 @@ const jobseeker_count_of_client_job = async (req, res) => {
                   // Api for get all active packages
                     const getActivePackages = async( req , res)=> {
                         try {
-                            const getYearlyPackages = await clientPackageModel.find({  package_type : 'Yearly'}).sort({ createdAt : -1}).lean()
-                            const getWeeklyPackages = await clientPackageModel.find({  package_type : 'Weekly'}).sort({ createdAt : -1}).lean()
+                            const getYearlyPackages = await clientPackageModel.find({  package_type : 'Yearly' ,  status : 1})
+                            const getWeeklyPackages = await clientPackageModel.find({  package_type : 'Weekly' ,  status : 1})
    
                           
                                         

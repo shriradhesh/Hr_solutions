@@ -1,3 +1,13 @@
+const getJobsForEmployee = async (empId, packageActiveDate, packageEndDate) => {
+  const jobs = await JobModel.find({
+    empId: empId, // Match the employee ID
+    createdAt: {
+      $gte: packageActiveDate, // Jobs posted after or on package_active_date
+      $lte: packageEndDate, // Jobs posted before or on package_end_date
+    },
+  });
+  return jobs;
+};
 
 
 
