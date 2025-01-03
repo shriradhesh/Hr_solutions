@@ -515,7 +515,7 @@ function isValidEmail(email) {
                     
                                 console.log('Inactive clients have been updated.');
                             } else {
-                                console.log('No active clients found.');
+                                // console.log('No active clients found.');
                             }
                         } catch (error) {
                             console.error('Error while updating job status:', error);
@@ -689,6 +689,14 @@ if (package.package_type === 'Weekly') {
                         message : 'empId required'
                    })
                }
+
+               
+               if (!isValidEmail(email)) {
+                return res.status(400).json({
+                    success : false ,
+                    message : 'Please Enter valid Email'
+                })
+            }  
                   // check for existing emp
 
                   const exist_emp = await employeeModel.findOne({ _id : empId })
@@ -846,7 +854,13 @@ if (package.package_type === 'Weekly') {
                     message: "Valid email is required"
                 });
             }
-    
+                
+            if (!isValidEmail(email)) {
+                return res.status(400).json({
+                    success : false ,
+                    message : 'Please Enter valid Email'
+                })
+            }  
             const client = await employeeModel.findOne({ email });
     
             if (!client) {
@@ -1363,7 +1377,7 @@ const deleteJob_Description = async (req, res) => {
     }
   };
 
-                                           /* Psychometric Testing Section   */
+                                         
  
 
         
@@ -1467,7 +1481,18 @@ const deleteJob_Description = async (req, res) => {
                         message: 'Similar job already exists within the specified time period'
                     });
                 }
-
+                if (!isValidEmail(hiring_manager_email)) {
+                    return res.status(400).json({
+                        success : false ,
+                        message : 'Please Enter valid Email'
+                    })
+                }   
+                if (!isValidEmail(hr_email)) {
+                    return res.status(400).json({
+                        success : false ,
+                        message : 'Please Enter valid Email'
+                    })
+                }   
                     
                     // Generate a random job
                 function generateRandomNumber(length) {
@@ -1510,7 +1535,7 @@ const deleteJob_Description = async (req, res) => {
                     phone_no: employee.phone_no,
                     company_Industry: employee.company_industry,
                     status: 1,
-                    location :  location,
+                    location : location,
                     // isPsychometricTest  ,
                     // psychometric_Test : psychometric_Test || '',
                     job_image : job_image || '',

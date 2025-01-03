@@ -439,9 +439,9 @@ const clientPackageModel = require('../model/clientPackage')
     
             res.status(200).json({ success: true, 
                                      message: "An OTP has been sent to your email",
-                                     email: admin.email , 
-                                     
+                                     email: admin.email ,                                      
                                      });
+
         } catch (error) {
             console.error('error', error);
             res.status(500).json({ success: false, message: "server error", error_message: error.message });
@@ -466,12 +466,12 @@ const clientPackageModel = require('../model/clientPackage')
           const { otp } = req.body
           if(!otp)
           {
-            return res.status(400).json({ success : false , message : ' otp is required' })
+            return res.status(400).json({ success : false , message : 'otp is required' })
           }
           const adminOTP = await otpModel.findOne ({ otp })
           if(!adminOTP)
           {
-            return res.status(400).json({ success : false , message : ' Invalid OTP or expired' })
+            return res.status(400).json({ success : false , message : 'Invalid OTP or expired' })
           }
           res.status(200).json({ success : true , message : 'otp verified successfully' , AdminId : adminOTP.AdminId})
         } catch (error) {
