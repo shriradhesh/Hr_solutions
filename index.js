@@ -88,7 +88,12 @@ const package_transaction_model = require('./model/package_transaction')
                  
                   cancelUrl = `${cancelUrl}?sid=${check_out_session_id}$state=${callbackUrlState}$booking_id=${booking_id}$enroll_user_id=${enroll_user_id}$course_id=${course_id}`
                   receiptUrl = `${receiptUrl}?sid=${check_out_session_id}$state=${callbackUrlState}$booking_id=${booking_id}$enroll_user_id=${enroll_user_id}$course_id=${course_id}`
+                                
+                  
+                  
              
+                      total_amount = total_amount.replace(/[^0-9]/g, '')                           
+               
                      const amountValue = total_amount * 100
 
                         try {
@@ -253,16 +258,24 @@ const package_transaction_model = require('./model/package_transaction')
 
           app.get('/api/create_checkOut_session_for_package' , async ( req , res )=> {
 
-            var {  cancelUrl , receiptUrl , total_amount , client_id , package_id  } = req.query
+            var {  cancelUrl , receiptUrl , client_id , package_id  } = req.query
           
               //    const callbackUrlState = crypto.randomBytes(16).toString('hex')  
             const callbackUrlState = `${generateRandomNumber(15)}`                  
-            const booking_id = `BKID${generateRandomNumber(5)}`;   
+            const booking_id = `BKID${generateRandomNumber(5)}`;  
+            
+             // check for package
+             let package = await clientPackageModel.findOne({
+              _id : package_id
+         })
+         
             cancelUrl = `${cancelUrl}?sid=${check_out_session_id}$state=${callbackUrlState}$client_id=${client_id}$booking_id=${booking_id}`
             receiptUrl = `${receiptUrl}?sid=${check_out_session_id}$state=${callbackUrlState}$client_id=${client_id}$booking_id=${booking_id}`
   
+            let total_amount = package.price
             
-      
+            total_amount = total_amount.replace(/[^0-9]/g, '') 
+
               const amountValue = total_amount * 100
 
                   try {
@@ -296,10 +309,7 @@ const package_transaction_model = require('./model/package_transaction')
                               _id : client_id
                             })
 
-                            // check for package
-                            let package = await clientPackageModel.findOne({
-                                 _id : package_id
-                            })
+                           
                                  
                   
                           const transaction = new package_transaction_model({

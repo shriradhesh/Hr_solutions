@@ -581,7 +581,7 @@ function isValidEmail(email) {
                         package_key = 'y3'; 
                     }
                 }
-                
+
             // Check if the stored password is in plain text
             if (emp.password && emp.password.startsWith("$2b$")) {
                 // Password is already bcrypt hashed
@@ -5687,7 +5687,7 @@ const enroll_course = async (req, res) => {
 
                                     await transaction.save()                               
                                 
-                                    return res.status(400).json({
+                                    return res.status(200).json({
                                     success : false ,
                                     message : `You are unable to enroll in the course due to a payment failure`
                                 })

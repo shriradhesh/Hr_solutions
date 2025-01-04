@@ -8770,7 +8770,6 @@ const jobseeker_count_of_client_job = async (req, res) => {
 
 
 
-
         
         
                     
