@@ -1473,7 +1473,8 @@ const clientPackageModel = require('../model/clientPackage')
                                 $lte: emp.package_end_date,
                             },
                         });
-        
+
+                       
                         // Exclude sensitive data like passwords
                         const { password, ...empData } = emp.toObject();
         
@@ -8598,8 +8599,9 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                         package_name : e.package_name ,
                                         features : e.features,                                    
                                         package_type : e.package_type,
-                                        price : `${e.price} -- (${e.duration})`,
-                                        price_with_gst : `${e.price_with_gst} -- (${e.duration})`,
+                                        price : e.price,
+                                        duration :e.duration,
+                                        price_with_gst : e.price_with_gst,
                                         status : e.status
                                }))
                          })
@@ -8725,8 +8727,8 @@ const jobseeker_count_of_client_job = async (req, res) => {
                   // Api for get all active packages
                     const getActivePackages = async( req , res)=> {
                         try {
-                            const getYearlyPackages = await clientPackageModel.find({  package_type : 'Yearly' ,  status : 1})
-                            const getWeeklyPackages = await clientPackageModel.find({  package_type : 'Weekly' ,  status : 1})
+                            const getYearlyPackages = await clientPackageModel.find({  package_type : 'Yearly' ,  status : 1 })
+                            const getWeeklyPackages = await clientPackageModel.find({  package_type : 'Weekly' ,  status : 1 })
    
                           
                                         
@@ -8738,17 +8740,21 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                     package_name : e.package_name ,
                                     features : e.features,                                       
                                     package_type : e.package_type,
-                                    price : `${e.price}/${e.duration}`,                                       
-                                    status : e.status
+                                    price : e.price, 
+                                    duration : e.duration,                                      
+                                    status : e.status,
+                                    job_active_days : e.valid_days
                            })),
                            weekly_packages : getWeeklyPackages.map((e)=> ({
                                     package_id : e._id,
                                     package_name : e.package_name ,
                                     features : e.features,                                    
                                     package_type : e.package_type,
-                                    price : `${e.price} -- (${e.duration})`,
-                                    price_with_gst : `${e.price_with_gst} -- (${e.duration})`,
-                                    status : e.status
+                                    price : e.price,
+                                    price_with_gst : e.price_with_gst,
+                                    duration : e.duration,
+                                    status : e.status,
+                                    job_active_days : e.valid_days
                                }))
                             })
 

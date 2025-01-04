@@ -559,7 +559,7 @@ function isValidEmail(email) {
                  }
     
                  // check for package
-                 let package = await clientPackageModel.findOne({ _id : emp.package_id})
+                 let package = await clientPackageModel.findOne({ _id : emp.package_id })
                  if(!package)
                  {
                     return res.status(400).json({
@@ -568,19 +568,20 @@ function isValidEmail(email) {
                     })
                  }
 
-                 let package_key = '';
-if (package.package_type === 'Weekly') {
-    const weekNumber = parseInt(package.package_name.match(/\d+/), 10); 
-    package_key = `w${weekNumber}`;
-} else if (package.package_type === 'Yearly') {
-    if (package.package_name === 'Starter package') {
-        package_key = 'y1';
-    } else if (package.package_name === 'Professional package') {
-        package_key = 'y2';
-    } else {
-        package_key = 'y3'; 
-    }
-}
+                                let package_key = '';
+                if (package.package_type === 'Weekly') {
+                    const weekNumber = parseInt(package.package_name.match(/\d+/), 10); 
+                    package_key = `w${weekNumber}`;
+                } else if (package.package_type === 'Yearly') {
+                    if (package.package_name === 'Starter Package') {
+                        package_key = 'y1';
+                    } else if (package.package_name === 'Professional Package') {
+                        package_key = 'y2';
+                    } else {
+                        package_key = 'y3'; 
+                    }
+                }
+                
             // Check if the stored password is in plain text
             if (emp.password && emp.password.startsWith("$2b$")) {
                 // Password is already bcrypt hashed
@@ -589,7 +590,7 @@ if (package.package_type === 'Weekly') {
                 if (!passwordMatch) {
                     return res.status(400).json({
                         success: false,
-                        message: "Password incorrect"
+                        message: "Password Incorrect"
                     });
                 }
             } else {
@@ -601,8 +602,7 @@ if (package.package_type === 'Weekly') {
                 emp.password = hashedPassword;               
                 await emp.save();
             }               
-
-           
+          
 
             return res.json({
                 success: true,
@@ -626,6 +626,7 @@ if (package.package_type === 'Weekly') {
                         package_price : package.price,
                         package_price_with_gst : package.price_with_gst || '',
                         package_duration : package.duration,
+                        job_active_days : package.valid_days,
                         package_key : package_key,
                         package_activate_date : emp.package_active_date || '',
                         package_expiry_date : emp.package_end_date || ''
@@ -5516,7 +5517,7 @@ try {
 const enroll_course = async (req, res) => {
    try {
        let user_id = req.params.user_id; 
-       let { course_id , session_id ,  status   } = req.body;      
+       let { course_id , booking_id ,  status   } = req.body;      
    
        // Check if course_id is provided
        if (!course_id) {
@@ -5555,7 +5556,7 @@ const enroll_course = async (req, res) => {
             if(status === 1)
             {
                    
-                    const transaction = await course_transaction_model.findOne({ session_id : session_id })
+                    const transaction = await course_transaction_model.findOne({ booking_id : booking_id })
                        if(transaction)
                        {
                              transaction.course_id = course_id
@@ -5668,14 +5669,14 @@ const enroll_course = async (req, res) => {
                        {
                            return res.status(400).json({
                                  success : false ,
-                                 message : `Transaction not found for the session Id  : ${session_id}`
+                                 message : `Transaction not found for the booking_id  : ${booking_id}`
                            })
                        }            
 
             }
             else
               {      
-                        const transaction = await course_transaction_model.findOne({ session_id : session_id })
+                        const transaction = await course_transaction_model.findOne({ booking_id : booking_id })
                         if(transaction)
                         {
                                     transaction.course_id = course_id
@@ -5695,7 +5696,7 @@ const enroll_course = async (req, res) => {
                         {
                             return res.status(400).json({
                                   success : false ,
-                                  message : `Transaction not found for the session Id  : ${session_id}`
+                                  message : `Transaction not found for the booking_id  : ${booking_id}`
                             })
                         }    
 

@@ -10,6 +10,8 @@ const axios = require('axios')
 const course_transaction_model = require('./model/transaction')
 const employeeModel = require('./model/employeeModel')
 const clientPackageModel = require('./model/clientPackage')
+const cms_online_courses_Model = require('./model/cms_online_cources')
+const courses_user_enroll_Model = require('./model/courses_enroll_user')
 
 
 
@@ -79,13 +81,13 @@ const package_transaction_model = require('./model/package_transaction')
 
         app.get('/api/create_checkOut_session' , async ( req , res )=> {
                 
-                   var {  cancelUrl , receiptUrl , total_amount  } = req.query
-                
+                   var {  cancelUrl , receiptUrl , total_amount , course_id , enroll_user_id } = req.query
+                   var booking_id = `BKID${generateRandomNumber(5)}`;
                     //    const callbackUrlState = crypto.randomBytes(16).toString('hex')  
                    const callbackUrlState = `${generateRandomNumber(15)}`                  
                  
-                  cancelUrl = `${cancelUrl}?sid=${check_out_session_id}$state=${callbackUrlState}`
-                  receiptUrl = `${receiptUrl}?sid=${check_out_session_id}$state=${callbackUrlState}`
+                  cancelUrl = `${cancelUrl}?sid=${check_out_session_id}$state=${callbackUrlState}$booking_id=${booking_id}$enroll_user_id=${enroll_user_id}$course_id=${course_id}`
+                  receiptUrl = `${receiptUrl}?sid=${check_out_session_id}$state=${callbackUrlState}$booking_id=${booking_id}$enroll_user_id=${enroll_user_id}$course_id=${course_id}`
              
                      const amountValue = total_amount * 100
 
@@ -114,15 +116,51 @@ const package_transaction_model = require('./model/package_transaction')
                           });
                   
                         const payment_response = response.data.result;
-            
+
+                                if(!course_id)
+                                {
+                                  return res.status(400).json({
+                                       success : false ,
+                                       message : 'Course Id Required'
+                                  })
+                                }
+                                
+                                if(!enroll_user_id)
+                                  {
+                                    return res.status(400).json({
+                                         success : false ,
+                                         message : 'Enroll user Id Required'
+                                    })
+                                  }
+                                // check for course
+                                  let course = await cms_online_courses_Model.findOne({ _id : course_id  })
+                                  if(!course)
+                                  {
+                                    return res.status(400).json({
+                                        success : false ,
+                                        message : 'Enroll course Not Found'
+                                    })
+                                  }
+
+                                  // check for Enroll USer
+                                  let enroll_user = await courses_user_enroll_Model.findOne({ _id : enroll_user_id  })
+                                  if(!enroll_user)
+                                  {
+                                    return res.status(400).json({
+                                        success : false ,
+                                        message : 'Enroll User Not Found'
+                                    })
+                                  }
                               
-                            const booking_id = `BKID${generateRandomNumber(5)}`;
+                      
                       
                         
                                 const transaction = new course_transaction_model({
                                     booking_id : booking_id ,
-                                    course_id :  '',
-                                    enroll_user_id : '',
+                                    course_id : course._id  ,
+                                    enroll_user_id :enroll_user._id ,
+                                    course_name : course.Heading,
+                                    user_name : `${enroll_user.first_name} ${enroll_user.last_name}`,
                                     amount : total_amount,
                                     payment_status : payment_response.status.state,
                                     session_id : payment_response.id,
@@ -144,8 +182,7 @@ const package_transaction_model = require('./model/package_transaction')
                               success : true ,                            
                               checkoutUrl : payment_response.checkoutUrl,
                               status : payment_response.status.state,
-                              cancelUrl : payment_response.cancelUrl,
-                              session_id : payment_response.id,
+                              cancelUrl : payment_response.cancelUrl,                           
                               receiptUrl : payment_response.receiptUrl,
                             
                           })
