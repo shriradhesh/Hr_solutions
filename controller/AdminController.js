@@ -1448,7 +1448,7 @@ const clientPackageModel = require('../model/clientPackage')
     };
     
 
-                                                            /* Employee Section */
+                                                            /* Client Section */
         // Api for get All Employees
         const getAllEmp = async (req, res) => {
             try {
@@ -1463,7 +1463,16 @@ const clientPackageModel = require('../model/clientPackage')
                     });
                 }
         
-                // Fetch job count for each employee
+                // Fetch all packages at once
+                const packageIds = allEmp.map(emp => emp.package_id);
+                const packages = await clientPackageModel.find({ _id: { $in: packageIds } });        
+               
+                const packageMap = packages.reduce((map, pkg) => {
+                    map[pkg._id] = pkg;
+                    return map;
+                }, {});
+        
+                // Fetch job count for each employee and package details
                 const allClientWithJobCount = await Promise.all(
                     allEmp.map(async (emp) => {
                         const jobCount = await jobModel.countDocuments({
@@ -1473,14 +1482,17 @@ const clientPackageModel = require('../model/clientPackage')
                                 $lte: emp.package_end_date,
                             },
                         });
-
-                       
+        
+                        const package = packageMap[emp.package_id] || {}; 
+        
                         // Exclude sensitive data like passwords
                         const { password, ...empData } = emp.toObject();
         
                         return {
                             ...empData,
                             jobCount,
+                            job_active_days: package.valid_days || 0,
+                            portel_access_days: package.access_portal || 0,
                         };
                     })
                 );
@@ -1501,6 +1513,7 @@ const clientPackageModel = require('../model/clientPackage')
                 });
             }
         };
+        
         
         
         

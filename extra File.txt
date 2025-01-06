@@ -1,3 +1,73 @@
+// Add multiple Skills
+
+const addJob_skills = async (req, res) => {
+  const { jobTitle, skill_Names } = req.body; // 'skill_Names' is an array of skills
+
+  try {
+    const requiredFields = ["jobTitle", "skill_Names"];
+
+    // Check for required fields
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        return res.status(400).json({
+          message: `Missing ${field.replace("_", " ")} field`,
+          success: false,
+        });
+      }
+    }
+
+    // Validate that skill_Names is an array
+    if (!Array.isArray(skill_Names) || skill_Names.length === 0) {
+      return res.status(400).json({
+        message: "skill_Names should be a non-empty array",
+        success: false,
+      });
+    }
+
+    // Check if any of the skills already exist
+    for (const skill_Name of skill_Names) {
+      const existskill_Name = await jobSkills_Model.findOne({
+        jobTitle: jobTitle,
+        skill_Name: skill_Name,
+      });
+
+      if (existskill_Name) {
+        return res.status(400).json({
+          message: `${skill_Name} already exists`,
+          success: false,
+        });
+      }
+    }
+
+    // Create and save the new skills
+    const newSkills = skill_Names.map((skill_Name) => {
+      return new jobSkills_Model({
+        jobTitle: jobTitle,
+        skill_Name: skill_Name,
+      });
+    });
+
+    const savedSkills = await jobSkills_Model.insertMany(newSkills);
+
+    return res.status(200).json({
+      success: true,
+      message: `${skill_Names.join(", ")} added successfully`,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error_message: error,
+    });
+  }
+};
+
+
+
+
+
+
 const getJobsForEmployee = async (empId, packageActiveDate, packageEndDate) => {
   const jobs = await JobModel.find({
     empId: empId, // Match the employee ID
@@ -8,6 +78,9 @@ const getJobsForEmployee = async (empId, packageActiveDate, packageEndDate) => {
   });
   return jobs;
 };
+
+
+
 
 
 

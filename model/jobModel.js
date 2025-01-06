@@ -69,6 +69,9 @@ const jobSchema = new mongoose.Schema({
     key_qualification: [{
         type: String  // Assuming skills are strings
     }],
+    acadmic_qualification: [{
+        type: String  // Assuming skills are strings
+    }],
     Experience: {
         type: String
     },

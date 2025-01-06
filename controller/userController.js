@@ -106,7 +106,7 @@ const calculateMatchPercentage = (cvText, jdText, jobHeading) => {
           matchPercentage = (Math.random() * (5 - 3) + 3).toFixed(2);
       } else {
           // Fix match percentage at 1 with no decimal if heading is not found
-          matchPercentage = 1;m
+          matchPercentage = 1;
       }
   
       return matchPercentage;
@@ -1336,7 +1336,6 @@ const deletejobTitle = async (req, res) => {
                             })
                         }
 
-
                         return res.status(200).json({
                              success : true ,
                              message : 'JOB Description',
@@ -1407,7 +1406,8 @@ const deleteJob_Description = async (req, res) => {
                     template_type,
                     location,
                     hr_email,
-                    hiring_manager_email
+                    hiring_manager_email,
+                    acadmic_qualification
                     // isPsychometricTest,
                     // psychometric_Test
 
@@ -1446,12 +1446,30 @@ const deleteJob_Description = async (req, res) => {
                             },
                         });
                                                 
-                        if (jobs.length > jobCountPerPackage) {
+                        if (jobs.length >= jobCountPerPackage) {
                             return res.status(400).json({
                             success: false,
-                            message: 'You cannot post a job for the client, as their job post limit is exceeded.',
+                            message: `client's job post limit is exceeded.`,
                             });
                         }
+
+                          // Check for academic qualification post limit as per employee package
+                            const packageLimits = {
+                                'Starter Package': 1,
+                                'Professional Package': 2,
+                                'Enterprise Package': 5,
+                            };
+
+                            let acadmicLimit = acadmic_qualification.length;
+                            let maxAllowed = packageLimits[employee.package_name];
+
+                            if (maxAllowed && acadmicLimit > maxAllowed) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: `Only ${maxAllowed} academic qualifications allowed to apply post for the : ${employee.package_name}`
+                                });
+                            }
+
 
 
                 const formattedStartDate = new Date(startDate);
@@ -1485,13 +1503,13 @@ const deleteJob_Description = async (req, res) => {
                 if (!isValidEmail(hiring_manager_email)) {
                     return res.status(400).json({
                         success : false ,
-                        message : 'Please Enter valid Email'
+                        message : 'Enter valid Email for Hiring Manager'
                     })
                 }   
                 if (!isValidEmail(hr_email)) {
                     return res.status(400).json({
                         success : false ,
-                        message : 'Please Enter valid Email'
+                        message : 'Enter valid Email for HR'
                     })
                 }   
                     
@@ -1514,6 +1532,7 @@ const deleteJob_Description = async (req, res) => {
                         {
                             job_image = req.file.filename
                         }
+
                 const newJob = new jobModel({
                     emp_Id: empId,
                     jobId : finalString,
@@ -1528,6 +1547,7 @@ const deleteJob_Description = async (req, res) => {
                     startDate: formattedStartDate,
                     endDate: formattedEndDate,
                     key_qualification: JSON.parse(skills), 
+                    acadmic_qualification : JSON.parse(acadmic_qualification),
                     Experience,
                     company_address,
                     template_type,
@@ -1662,6 +1682,7 @@ const deleteJob_Description = async (req, res) => {
                         endDate: job.endDate,
                         phone_no: job.phone_no,
                         key_qualification: job.key_qualification,
+                        acadmic_qualification :job.acadmic_qualification,
                         Experience: job.Experience,
                         template_type: job.template_type,
                         company_Industry: job.company_Industry,
@@ -1845,12 +1866,13 @@ const deleteJob_Description = async (req, res) => {
                         message: 'No Inactive jobs found'
                     });
                 }
+
                  // Check for client
                  const client = await employeeModel.findOne({ _id: client_id });
                  if (!client) {
                      return res.status(400).json({
                          success: false,
-                         message: 'Client not found'
+                         message: 'Client not found'  
                      });
                  }
                  const company_HQ = client.company_HQ;
@@ -2348,6 +2370,7 @@ const deleteJob_Description = async (req, res) => {
                             endDate: job.endDate,
                             phone_no: job.phone_no,
                             key_qualification: job.key_qualification,
+                            acadmic_qualification : job.acadmic_qualification,
                             Experience: job.Experience,
                             template_type: job.template_type,
                             company_Industry: job.company_Industry,
@@ -2450,6 +2473,7 @@ const deleteJob_Description = async (req, res) => {
                         endDate: job.endDate,
                         phone_no: job.phone_no,
                         key_qualification: job.key_qualification,
+                        acadmic_qualification : job.acadmic_qualification,
                         Experience: job.Experience,
                         template_type: job.template_type,
                         company_Industry: job.company_Industry,
@@ -7002,6 +7026,15 @@ course: courseData,
                                          })
                                     }
                             }
+
+                           
+
+
+                              
+
+       
+        
+           
         
                  
 module.exports = {
@@ -7010,8 +7043,7 @@ module.exports = {
     seenNotification, unseenNotificationCount , deleteJob , activejobs_by_client , Inactivejobs_by_client ,filterJob,
     getServices_of_smart_start , get_privacy_policy , get__admin_term_condition , dashboard_counts , deleteCandidate,
     cms_getJobs_posted_procedure_section1 , cms_get_need_any_job_section ,get_cms_post_your_job , cms_getjob_market_data,
-    addJobTitle , alljobTitle , deletejobTitle ,  export_candidate 
-     ,client_dashboardCount,
+    addJobTitle , alljobTitle , deletejobTitle ,  export_candidate  , client_dashboardCount,
     forgetPassOTP,  verifyOTP  ,  clientResetPass,  create_contactUS , getJob , addJob_Description , alljobDescription ,
     deleteJob_Description , getJd , fixit_finder , uploadResume , get_upload_section_candidates , 
     candidate_recruitment_process_for_uploaded_candidate , get_successfull_candidate , all_active_jobs_Count_with_title ,
@@ -7020,11 +7052,11 @@ module.exports = {
     build_cv , get_all_candidate_for_client  , export_client_jobs_candidate , 
 
  // Psychometric
- add_test_Category , getAll_psychometric_Category , Delete_category ,
+     add_test_Category , getAll_psychometric_Category , Delete_category ,
 
- psychometric_test , getAll_psychometric_test_of_client ,
- get_test ,add_question_in_test,  delete_question_in_psychometric_test ,  deletepsychometrcTest   ,
- courses_user_enroll , all_enrolled_user , enrolled_user_login , enroll_course , update_course_status ,
+    psychometric_test , getAll_psychometric_test_of_client ,
+    get_test ,add_question_in_test,  delete_question_in_psychometric_test ,  deletepsychometrcTest  ,
+    courses_user_enroll , all_enrolled_user , enrolled_user_login , enroll_course , update_course_status ,
     get_my_enrolled_courses , get_enrolled_users_count , topic_quiz ,
     update_topic_status , enroll_user_course_topic_quiz , save_user_quiz_record_of_course_topic ,
     get_particular_enrolled_course_details , get_enrolled_user_detail , generate_avg_score_of_enroll_user ,
@@ -7032,4 +7064,5 @@ module.exports = {
     download_certificate , export_client_jobs_filteredcandidate , download_word_Jd ,
 
     add_Main_JobTitle , all_main_jobTitle , delete_main_jobTitle , all_package_transaction , update_detail
+    
 } 
