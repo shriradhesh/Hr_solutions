@@ -153,7 +153,7 @@ function isValidEmail(email) {
                {
                    return  res.status(400).json({
                         success : false ,
-                        message : 'email already exists'
+                        message : 'email already exists'        
                    })
                }               
                  // check for company
@@ -300,7 +300,7 @@ function isValidEmail(email) {
                                }
                                else
                                {
-    
+
                                    newData = new employeeModel({
                                        name ,  
                                        email ,
@@ -1386,7 +1386,7 @@ const deleteJob_Description = async (req, res) => {
         const postJob = async (req, res) => {
             try {
                 const empId = req.params.empId;
-                const {
+                var {
                     job_title,
                   //  sub_job_title ,
                     job_Description,
@@ -1413,6 +1413,9 @@ const deleteJob_Description = async (req, res) => {
 
                 } = req.body;                    
                                 
+                skills = JSON.parse(skills), 
+                acadmic_qualification = JSON.parse(acadmic_qualification)
+                       
                                        
                 if (!empId) {
                     return res.status(400).json({
@@ -1421,7 +1424,7 @@ const deleteJob_Description = async (req, res) => {
                     });
                 }
         
-                const employee = await employeeModel.findOne({ _id: empId, status: 1 });
+                const employee = await employeeModel.findOne({ _id: empId, status: 1 }); 
                 if (!employee) {
                     return res.status(400).json({
                         success: false,
@@ -1433,7 +1436,7 @@ const deleteJob_Description = async (req, res) => {
                             'Starter Package': 5,
                             'Professional Package': 15,
                             'Enterprise Package': 30,
-                        };
+                        }; 
                         
                         let jobCountPerPackage = packageJobLimits[employee.package_name] || 1;
                         
@@ -1444,14 +1447,14 @@ const deleteJob_Description = async (req, res) => {
                             $gte: employee.package_active_date,
                             $lte: employee.package_end_date,
                             },
-                        });
+                        }); 
                                                 
                         if (jobs.length >= jobCountPerPackage) {
                             return res.status(400).json({
                             success: false,
                             message: `client's job post limit is exceeded.`,
                             });
-                        }
+                        } 
 
                           // Check for academic qualification post limit as per employee package
                             const packageLimits = {
@@ -1461,9 +1464,10 @@ const deleteJob_Description = async (req, res) => {
                             };
 
                             let acadmicLimit = acadmic_qualification.length;
+                          
                             let maxAllowed = packageLimits[employee.package_name];
 
-                            if (maxAllowed && acadmicLimit > maxAllowed) {
+                            if (acadmicLimit > maxAllowed) {
                                 return res.status(400).json({
                                     success: false,
                                     message: `Only ${maxAllowed} academic qualifications allowed to apply post for the : ${employee.package_name}`
@@ -1546,8 +1550,8 @@ const deleteJob_Description = async (req, res) => {
                     Number_of_emp_needed,
                     startDate: formattedStartDate,
                     endDate: formattedEndDate,
-                    key_qualification: JSON.parse(skills), 
-                    acadmic_qualification : JSON.parse(acadmic_qualification),
+                    key_qualification: skills, 
+                    acadmic_qualification : acadmic_qualification,
                     Experience,
                     company_address,
                     template_type,
@@ -1563,6 +1567,8 @@ const deleteJob_Description = async (req, res) => {
                     hiring_manager_email ,
                     hr_email
                 });
+
+                  
         
                 await newJob.save();
                 try {
@@ -3904,6 +3910,7 @@ const client_dashboardCount = async (req, res) => {
 
                 jd.jd_download_count = jd_download_count
                    await jd.save()
+                   res.end()
         
                 // const { jobTitle, job_Description, Responsibilities } = jd;
         
@@ -6739,9 +6746,11 @@ course: courseData,
                         success: false,
                         message: 'Client ID is required',
                     });
-                }
+                }               
+                
+                
         
-                // Check for client existence
+                // Check for client existence 
                 const client = await employeeModel.findOne({ _id: client_id });
                 if (!client) {
                     return res.status(400).json({
@@ -6750,7 +6759,7 @@ course: courseData,
                     });
                 }
         
-                // Construct filter for applied job candidates
+                // Construct filter for applied job candidates 
                 const filter = {};
         
                 // Date range filter (checks `createdAt` in `appliedjobModel`)
@@ -6890,6 +6899,8 @@ course: courseData,
                 }
                 jd.jd_download_count = jd_download_count
                 await jd.save()
+                res.end()
+
             //     const { jobTitle, job_Description, Responsibilities } = jd;
         
             //     // Convert HTML content to plain text
@@ -7064,5 +7075,5 @@ module.exports = {
     download_certificate , export_client_jobs_filteredcandidate , download_word_Jd ,
 
     add_Main_JobTitle , all_main_jobTitle , delete_main_jobTitle , all_package_transaction , update_detail
-    
+
 } 
