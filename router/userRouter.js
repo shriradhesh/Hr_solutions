@@ -208,7 +208,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
 
                                                     /* Courses USer Enroll */
          // Api for courses_user_enroll
-         router.post('/courses_user_enroll', userController.courses_user_enroll)
+         router.post('/courses_user_enroll', upload.single('profileImage') , userController.courses_user_enroll)
          // Api for all_enrolled_user
          router.get('/all_enrolled_user', userController.all_enrolled_user)
          // Api for enrolled_user_login

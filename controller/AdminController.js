@@ -969,7 +969,7 @@ const clientPackageModel = require('../model/clientPackage')
 
                        return res.status(200).json({
                            success: true,
-                           message: `${newStatus ? 'activated' : 'inactivated'} successfully`
+                           message: `Successfully ${newStatus ? 'Activated' : 'Deactivated'}`
                        });    
 
 
@@ -1201,10 +1201,7 @@ const clientPackageModel = require('../model/clientPackage')
     const candidate_recruitment_process = async (req, res) => {
         try {
             const candidateId = req.params.candidateId;
-            const { seeker_status , emailSubject, emailContent } = req.body;
-
-
-                
+            const { seeker_status , emailSubject, emailContent } = req.body;               
                 
                  
     
@@ -1567,7 +1564,7 @@ const clientPackageModel = require('../model/clientPackage')
                             }    
                             return res.status(200).json({
                                 success: true,
-                                message: `${newStatus ? 'activated' : 'inactivated'} successfully`
+                                message: `Successfully ${newStatus ? 'Activated' : 'Deactivated'} `
                             });                    
         
                     } catch (error) {

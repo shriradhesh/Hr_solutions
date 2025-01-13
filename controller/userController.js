@@ -531,13 +531,13 @@ function isValidEmail(email) {
             if (!email) {
                 return res.status(400).json({
                     success: false,
-                    message: "email is Required",
+                    message: "Email is Required",
                 });
             }
             if (!password) {
                 return res.status(400).json({
                     success: false,
-                    message: "password is Required",
+                    message: "Password is Required",
                 });
             }
             // Find Employee by email
@@ -546,7 +546,7 @@ function isValidEmail(email) {
             if (!emp) {
                 return res.status(400).json({
                     success: false,
-                    message: "email incorrect"
+                    message: "Email incorrect"
                 });
             }
                  const status = emp.status
@@ -564,7 +564,7 @@ function isValidEmail(email) {
                  {
                     return res.status(400).json({
                            success : false ,
-                           message : 'package not found'
+                           message : 'Package not found'
                     })
                  }
 
@@ -931,14 +931,14 @@ function isValidEmail(email) {
           const { otp } = req.body
           if(!otp)
           {
-            return res.status(400).json({ success : false , message : ' otp is required' })
+            return res.status(400).json({ success : false , message : 'OTP is Required' })
           }
           const userOTP = await otpModel.findOne ({ otp })
           if(!userOTP)
           {
             return res.status(400).json({ success : false , message : ' Invalid OTP or expired' })
           }
-          res.status(200).json({ success : true , message : 'otp verified successfully' , clientId : userOTP.clientId})
+          res.status(200).json({ success : true , message : 'OTP Verified Successfully' , clientId : userOTP.clientId})
         } catch (error) {
           return res.status(500).json({
                       success : false ,
@@ -958,7 +958,7 @@ function isValidEmail(email) {
                 return res.status(400).json({ success: false, message: 'Password is required' });
             }
             if (!confirmPassword) {
-                return res.status(400).json({ success: false, message: 'confirm password is required' });
+                return res.status(400).json({ success: false, message: 'Confirm Password is required' });
             }
             if (!clientId) {
                 return res.status(400).json({ success: false, message: 'clientId is required' });
@@ -975,7 +975,7 @@ function isValidEmail(email) {
             {
                 return res.status(400).json({
                         success : false ,
-                        message : 'confirm password not matched'
+                        message : 'Confirm Password Not Matched'
                 })
             }
 
@@ -986,7 +986,7 @@ function isValidEmail(email) {
             // Delete the used OTP
             await otpModel.deleteOne({ clientId });
 
-            res.status(200).json({ success: true, message: 'Password reset successfully' });
+            res.status(200).json({ success: true, message: 'Password Reset Successfully' });
         } catch (error) {
             console.error('error', error);
             res.status(500).json({ success: false, message: 'server error', error_message : error.message });
@@ -1583,18 +1583,18 @@ const deleteJob_Description = async (req, res) => {
                     console.error('Error creating notification:', notificationError);
                 }
                 
-                // send notification to admin
-                try {
-                    const adminNotification = new adminNotificationModel({
-                        title: `New Job`,
-                        message: `${employee.name} from ${employee.company_name} has posted a new job.`,
-                        date: new Date(),
-                        status: 1,
-                    });
-                    await adminNotification.save();
-                } catch (notificationError) {
-                    console.error('Error creating notification:', notificationError);
-                }
+                // // send notification to admin
+                // try {
+                //     const adminNotification = new adminNotificationModel({
+                //         title: `New Job`,
+                //         message: `${employee.name} from ${employee.company_name} has posted a new job.`,
+                //         date: new Date(),
+                //         status: 1,
+                //     });
+                //     await adminNotification.save();
+                // } catch (notificationError) {
+                //     console.error('Error creating notification:', notificationError);
+                // }
                 
         
                 return res.status(200).json({
@@ -2192,9 +2192,10 @@ const deleteJob_Description = async (req, res) => {
         
                 // Define status labels
                 const statusLabels = {
-                    5: 'Completed',
-                    6: 'Shortlisted',
-                    7: 'Rejected'
+                    2: 'Shortlisted',
+                    3: 'longlisted',
+                    4: 'Assessment_Scheduled',
+                    5: 'Schedule_Interview'
                 };
         
                 // Check for job seeker status
@@ -3754,7 +3755,7 @@ const client_dashboardCount = async (req, res) => {
         try {
           // Find candidates with jobSeeker_status 4
           const c1 = await appliedjobModel.find({
-            jobSeeker_status: 4
+            jobSeeker_status: 6
           });
       
           const c2 = await ResumeModel.find({
@@ -3765,6 +3766,7 @@ const client_dashboardCount = async (req, res) => {
           const all_successfull_candidate = [...c1, ...c2];
       
           // Check if no candidates found
+          
           if (all_successfull_candidate.length === 0) {
             return res.status(400).json({
               success: false,
@@ -5417,6 +5419,11 @@ try {
                        })
                    }
 
+                    let profileImage = null 
+                    if(req.file)
+                    {
+                          profileImage = req.file.filename
+                    }
 
                  // add new user
                    const new_enroll_user = new courses_user_enroll_Model({
@@ -5427,6 +5434,7 @@ try {
                           phone_no ,
                           gender,
                           status : 1,
+                          profileImage,
                           courses : []
                    })
 
@@ -6492,6 +6500,7 @@ course: courseData,
                         password : enroll_user.password,
                         phone_no : enroll_user.phone_no,
                         status : enroll_user.status,
+                        profileImage : enroll_user.profileImage
                  }
            })
     } catch (error) {
@@ -7040,7 +7049,7 @@ course: courseData,
 
                            
 
-
+         
                               
 
        

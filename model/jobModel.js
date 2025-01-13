@@ -70,7 +70,7 @@ const jobSchema = new mongoose.Schema({
         type: String  // Assuming skills are strings
     }],
     acadmic_qualification: [{
-        type: String  // Assuming skills are strings
+        type: String  
     }],
     Experience: {
         type: String
