@@ -360,6 +360,16 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
    router.get('/getActivePackages', Admin_and_staffController.getActivePackages)
 
 
+     // Api for exports all clients
+
+     router.get('/export_clients', Admin_and_staffController.export_clients)
+     // Api for export_Jobs
+     router.get('/export_Jobs', Admin_and_staffController.export_Jobs)
+     // Api for export_Hr_staff
+     router.get('/export_Hr_staff', Admin_and_staffController.export_Hr_staff)
+     // Api for export_Enrolled_user
+     router.get('/export_Enrolled_user', Admin_and_staffController.export_Enrolled_user)
+
 
    
 

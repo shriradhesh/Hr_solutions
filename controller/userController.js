@@ -1397,7 +1397,7 @@ const deleteJob_Description = async (req, res) => {
                     Maximum_pay,
                     Rate,
                     Number_of_emp_needed,
-                    requirement_timeline,
+                    requirement_timeline, 
                     startDate,
                     endDate,
                     skills, 

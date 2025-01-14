@@ -8778,10 +8778,314 @@ const jobseeker_count_of_client_job = async (req, res) => {
 
                     }
 
+                    const export_clients = async (req, res) => {
+                        try {
+                            const { client_status } = req.query;
+                    
+                            // Validate and parse client_status
+                            if (!client_status || isNaN(client_status)) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: "Invalid or missing client_status value",
+                                });
+                            }
+                    
+                            const status = parseInt(client_status, 10);
+                            const statusMessages = {
+                                1: "Activated",
+                                2: "Deactivated",
+                            };
+                    
+                            if (!statusMessages[status]) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: "Invalid client_status value",
+                                });
+                            }
+                    
+                            // Fetch clients with the given status
+                            const clients = await employeeModel.find({ status });
+                    
+                            // Create Excel workbook and worksheet
+                            const workbook = new ExcelJs.Workbook();
+                            const worksheet = workbook.addWorksheet("Clients");
+                    
+                            // Define the Excel Header
+                            worksheet.columns = [
+                                { header: "Name", key: "name" },
+                                { header: "Email", key: "email" },
+                                { header: "Company Name", key: "company_name" },
+                                { header: "Phone Number", key: "phone_no" },
+                                { header: "Number of Employees", key: "Number_of_emp" },
+                                { header: "Company Industry", key: "company_industry" },
+                                { header: "Company Headquarters", key: "company_HQ" },
+                                { header: "Active Package", key: "package_name" },
+                                { header: "Package Type", key: "package_type" },
+                                { header: "Package Active Date", key: "package_active_date" },
+                                { header: "Package Expiry Date", key: "package_end_date" },
+                            ];
+                    
+                            // Add clients data to the worksheet
+                            clients.forEach((client) => {
+                                worksheet.addRow({
+                                    name: client.name,
+                                    email: client.email,
+                                    company_name: client.company_name,
+                                    phone_no: client.phone_no,
+                                    Number_of_emp: client.Number_of_emp,
+                                    company_industry: client.company_industry,
+                                    company_HQ: client.company_HQ,
+                                    package_name: client.package_name,
+                                    package_type: client.package_type,
+                                    package_active_date: client.package_active_date,
+                                    package_end_date: client.package_end_date,
+                                });
+                            });
+                    
+                            // Set response headers for downloading the Excel file
+                            res.setHeader(
+                                "Content-Type",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            );
+                            res.setHeader(
+                                "Content-Disposition",
+                                `attachment; filename=${statusMessages[status]}_clients.xlsx`
+                            );
+                    
+                            // Generate and send the Excel File as a response
+                            await workbook.xlsx.write(res);
+                    
+                            // End the response
+                            res.end();
+                        } catch (error) {
+                            console.error("Error exporting clients:", error);
+                            res.status(500).json({ error: "Internal server error" });
+                        }
+                    };
+                    
+        // Api for export all jobs
+
+                    const export_Jobs = async (req, res) => {
+                        try {
+                            const { job_status } = req.query;
+                    
+                            // Validate and parse job_status
+                            if (!job_status || isNaN(job_status)) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: "Invalid or missing job_status value",
+                                });
+                            }
+                    
+                            const status = parseInt(job_status, 10);
+                            const statusMessages = {
+                                1: "Activated",
+                                3: "Deactivated",
+                            };
+                    
+                            if (!statusMessages[status]) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: "Invalid job_status value",
+                                });
+                            }
+                    
+                            // Fetch Jobs with the given status
+                            const jobs = await jobModel.find({ status });
+                    
+                            // Create Excel workbook and worksheet
+                            const workbook = new ExcelJs.Workbook();
+                            const worksheet = workbook.addWorksheet("Jobs");
+                    
+                            // Define the Excel Header
+                            worksheet.columns = [
+                                { header: "Job Id", key: "jobId" },
+                                { header: "Job Title", key: "job_title" },
+                                { header: "Company Name", key: "company_name" },                   
+                                { header: "Number of Employees Needed", key: "Number_of_emp_needed" },
+                                { header: "Job Type", key: "job_type" },
+                                { header: "Job Schedule", key: "job_schedule" },
+                                { header: "Salary Pay", key: "salary_pay" },
+                                { header: "Job Description", key: "job_Description" },
+                                { header: "Job Responsibility", key: "job_Responsibility" },
+                                { header: "Company Address", key: "company_address" },
+                                { header: "Company Email", key: "employee_email" },
+                                { header: "Job Start Date", key: "startDate" },
+                                { header: "Job End Date", key: "endDate" },
+                                { header: "Client Phone Number", key: "phone_no" },
+                                { header: "Key Qualification", key: "key_qualification" },
+                                { header: "Acadmic Qualification", key: "acadmic_qualification" },
+                                { header: "Experience Needed", key: "Experience" },
+                                { header: "Company Industry", key: "company_Industry" },
+                                { header: "JOb Location", key: "location" },
+                                { header: "HR Email", key: "hr_email" },
+                                { header: "Hiring Manager Email", key: "hiring_manager_email" },                 
 
 
+                            ];
+                    
+                            // Add JObs data to the worksheet
+                            jobs.forEach((job) => {
+                                worksheet.addRow({
+                                    jobId: job.jobId,
+                                    job_title: job.job_title,
+                                    company_name: job.company_name,
+                                    Number_of_emp_needed: job.Number_of_emp_needed,
+                                    job_type: job.job_type,
+                                    job_schedule: job.job_schedule,
+                                    salary_pay: `Sl${job.salary_pay[0].Minimum_pay} - Sl ${job.salary_pay[0].Maximum_pay} / ${job.salary_pay[0].Rate}`,
+                                    job_Description: job.job_Description,
+                                    job_Responsibility: job.job_Responsibility,
+                                    company_address: job.company_address,
+                                    employee_email: job.employee_email,
+                                    startDate: job.startDate,
+                                    endDate: job.endDate,
+                                    phone_no: job.phone_no,
+                                    key_qualification: job.key_qualification,
+                                    acadmic_qualification: job.acadmic_qualification,
+                                    Experience: job.Experience,
+                                    company_Industry: job.company_Industry,
+                                    location: job.location,
+                                    hr_email: job.hr_email,
+                                    hiring_manager_email: job.hiring_manager_email,
+                                });
+                            });
+                    
+                            // Set response headers for downloading the Excel file
+                            res.setHeader(
+                                "Content-Type",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            );
+                            res.setHeader(
+                                "Content-Disposition",
+                                `attachment; filename=${statusMessages[status]}_jobs.xlsx`
+                            );
+                    
+                            // Generate and send the Excel File as a response
+                            await workbook.xlsx.write(res);
+                    
+                            // End the response
+                            res.end();
+                        } catch (error) {
+                            console.error("Error exporting Jobs:", error);
+                            res.status(500).json({ error: "Internal server error" });
+                        }
+                    };
+                    
+        // Api for export all Hr Admin
+          
+        const export_Hr_staff = async (req, res) => {
+            try {            
         
+              
         
+                // Fetch Jobs with the given status
+                const hr_staff = await Admin_and_staffsModel.find({ role : 'HR Coordinator' });
+        
+                // Create Excel workbook and worksheet
+                const workbook = new ExcelJs.Workbook();
+                const worksheet = workbook.addWorksheet("Hr_staff");
+        
+                // Define the Excel Header
+                worksheet.columns = [
+                    { header: "Name", key: "name" },
+                    { header: "Email", key: "email" },
+                    { header: "Phone Number", key: "phone_no" },                   
+                    { header: "profile Image", key: "profileImage" },
+                    { header: "Role", key: "role" },
+                    { header: "Status", key: "status" },                               
+
+
+                ];
+        
+                // Add Hr Staff data to the worksheet
+                hr_staff.forEach((hr) => {
+                    worksheet.addRow({
+                        name: hr.name,
+                        email: hr.email,
+                        phone_no: hr.phone_no,
+                        profileImage: hr.profileImage,
+                        role: hr.role,
+                        status: hr.status,
+                       
+                    });
+                });
+        
+                // Set response headers for downloading the Excel file
+                res.setHeader(
+                    "Content-Type",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                );
+                res.setHeader(
+                    "Content-Disposition",
+                    `attachment; filename=all_hr_staff.xlsx`
+                );
+        
+                // Generate and send the Excel File as a response
+                await workbook.xlsx.write(res);
+        
+                // End the response
+                res.end();
+            } catch (error) {
+                console.error("Error exporting Jobs:", error);
+                res.status(500).json({ error: "Internal server error" });
+            }
+        };
+        
+        const export_Enrolled_user = async (req, res) => {
+            try {         
+                   
+                // Fetch Jobs with the given status
+                const Enroll_user = await courses_user_enroll_Model.find({ });
+        
+                // Create Excel workbook and worksheet
+                const workbook = new ExcelJs.Workbook();
+                const worksheet = workbook.addWorksheet("enroll_user");
+        
+                // Define the Excel Header
+                worksheet.columns = [
+                    { header: "First Name", key: "first_name" },
+                    { header: "Last Name", key: "last_name" },
+                    { header: "Email", key: "email" },                   
+                    { header: "profile Image", key: "profileImage" },
+                    { header: "Gender", key: "gender" },
+                    { header: "phone Number", key: "phone_no" },                           
+
+                ];
+        
+                // Add Enroll_user data to the worksheet
+                Enroll_user.forEach((hr) => {
+                    worksheet.addRow({
+                        first_name: hr.first_name,
+                        last_name: hr.last_name,
+                        email: hr.email,
+                        profileImage: hr.profileImage,
+                        gender: hr.gender,
+                        phone_no: hr.phone_no,
+                       
+                    });
+                });
+        
+                // Set response headers for downloading the Excel file
+                res.setHeader(
+                    "Content-Type",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                );
+                res.setHeader(
+                    "Content-Disposition",
+                    `attachment; filename=Enrolled_user.xlsx`
+                );
+        
+                // Generate and send the Excel File as a response
+                await workbook.xlsx.write(res);
+        
+                // End the response
+                res.end();
+            } catch (error) {
+                console.error("Error exporting Enroll User:", error);
+                res.status(500).json({ error: "Internal server error" });
+            }
+        };
                     
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
@@ -8794,7 +9098,7 @@ module.exports = {
     getJs ,
             
                 /* Report ad Aalysis */
-    jobseeker_count , getclient_count , get_talent_pool_count , get_female_screened_count , jobseeker_count_city_wise ,
+    jobseeker_count , getclient_count , get_talent_pool_count , get_female_screened_count , jobseeker_count_city_wise , 
     
               /*  CMS PAGE */
 
@@ -8819,6 +9123,8 @@ module.exports = {
      get_transaction , get_all_courses_details ,  jobseeker_count_of_client_job,
 
      create_email_template , getall_emailContent , emailContent_of_title ,
-     add_clientPackage , get_allPackages , active_inactive_Package , updatepackage , getActivePackages 
+     add_clientPackage , get_allPackages , active_inactive_Package , updatepackage , getActivePackages , 
+     export_clients , export_Jobs , export_Hr_staff  , export_Enrolled_user
+     
      
 }

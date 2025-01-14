@@ -20,8 +20,8 @@ const courses_user_enroll_Schema = new mongoose.Schema({
 
         phone_no : {
              type : Number
-        },
-        profileImage : String ,
+        }, 
+          profileImage : String ,
         
         status : {
               type : Number,
