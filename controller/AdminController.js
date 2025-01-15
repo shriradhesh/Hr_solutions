@@ -74,6 +74,12 @@ const emailTemplateModel = require('../model/emailTemplateModel')
 const clientPackageModel = require('../model/clientPackage')
 
 
+const jwt =  require('jsonwebtoken')
+
+const role_check = require('../middleware/role_check')
+const authUser = require('../middleware/authMiddleware')
+const tokenBlackList = require('../middleware/tokenBlackList')
+
 
 
 
@@ -136,19 +142,38 @@ const clientPackageModel = require('../model/clientPackage')
                 // Update the stored password in the database
                 admin_and_staffs.password = hashedPassword;               
                 await admin_and_staffs.save();
-            }         
+            }  
+            
+            
+                 // Set token expiry date and time
+                 const now = new Date();
+                 const expiration = new Date(now.getTime() + 24 * 60 * 60 * 1000); 
 
+                 const expireDate = expiration.toISOString().split('T')[0]; 
+                 const expireTime = expiration.toTimeString().split(' ')[0]; 
+
+                    // Generate JWT token
+                    const token = jwt.sign(
+                        { id: admin_and_staffs._id, role: admin_and_staffs.role , expireDate, expireTime , staff_id : admin_and_staffs.staff_id || ''}, 
+                        process.env.JWT_SECRET,
+                        { expiresIn : '1d' }
+                    );
+
+                           
     
-            return res.status(200).json({
-                success: true,
-                message: `${admin_and_staffs.role} login Successfully`,
-                data: admin_and_staffs,
-            });
+                    return res.status(200).json({
+                        success: true,
+                        message: `${admin_and_staffs.role} login Successfully`,
+                        data: admin_and_staffs,
+                        token : token
+                    });
         } catch (error) {
             console.error(error);
             res.status(500).json({
                 success: false,
                 message: "server error",
+                error_message : error.message
+                
             });
         }
     };
@@ -848,9 +873,23 @@ const clientPackageModel = require('../model/clientPackage')
                         });
                         }
                       }
+
+                      function generateRandomNumber(length) {
+                        let result = '';
+                        const characters = '0123456789';
+                        const charactersLength = characters.length;
+                    
+                        for (let i = 0; i < length; i++) {
+                            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+                        }
+                    
+                        return result;
+                    }
+
+                      const staff_id = `ST-${generateRandomNumber(4)}`
                      const newstaff = new Admin_and_staffsModel({
-                         
-                          name,
+                           staff_id,
+                            name,
                           email,
                           password : hashedPassword,
                           profileImage : profileImage,
@@ -8385,7 +8424,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                     {
                                         return res.status(400).json({
                                               success : false ,
-                                              message : 'email title Required'
+                                              message : 'Email title Required'
                                         })
                                     }
                                 if(!email_subject)
@@ -8393,7 +8432,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                     {
                                         return res.status(400).json({
                                               success : false ,
-                                              message : 'email Subject Required'
+                                              message : 'Email Subject Required'
                                         })
                                     }
                                 if(!email_body)
@@ -8401,7 +8440,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                     {
                                         return res.status(400).json({
                                               success : false ,
-                                              message : 'email Body Required'
+                                              message : 'Email Body Required'
                                         })
                                     }
 
@@ -8974,118 +9013,118 @@ const jobseeker_count_of_client_job = async (req, res) => {
                     
         // Api for export all Hr Admin
           
-        const export_Hr_staff = async (req, res) => {
-            try {            
-        
-              
-        
-                // Fetch Jobs with the given status
-                const hr_staff = await Admin_and_staffsModel.find({ role : 'HR Coordinator' });
-        
-                // Create Excel workbook and worksheet
-                const workbook = new ExcelJs.Workbook();
-                const worksheet = workbook.addWorksheet("Hr_staff");
-        
-                // Define the Excel Header
-                worksheet.columns = [
-                    { header: "Name", key: "name" },
-                    { header: "Email", key: "email" },
-                    { header: "Phone Number", key: "phone_no" },                   
-                    { header: "profile Image", key: "profileImage" },
-                    { header: "Role", key: "role" },
-                    { header: "Status", key: "status" },                               
+                    const export_Hr_staff = async (req, res) => {
+                        try {            
+                    
+                        
+                    
+                            // Fetch Jobs with the given status
+                            const hr_staff = await Admin_and_staffsModel.find({ role : 'HR Coordinator' });
+                    
+                            // Create Excel workbook and worksheet
+                            const workbook = new ExcelJs.Workbook();
+                            const worksheet = workbook.addWorksheet("Hr_staff");
+                    
+                            // Define the Excel Header
+                            worksheet.columns = [
+                                { header: "Name", key: "name" },
+                                { header: "Email", key: "email" },
+                                { header: "Phone Number", key: "phone_no" },                   
+                                { header: "profile Image", key: "profileImage" },
+                                { header: "Role", key: "role" },
+                                { header: "Status", key: "status" },                               
 
 
-                ];
+                            ];
+                    
+                            // Add Hr Staff data to the worksheet
+                            hr_staff.forEach((hr) => {
+                                worksheet.addRow({
+                                    name: hr.name,
+                                    email: hr.email,
+                                    phone_no: hr.phone_no,
+                                    profileImage: hr.profileImage,
+                                    role: hr.role,
+                                    status: hr.status,
+                                
+                                });
+                            });
+                    
+                            // Set response headers for downloading the Excel file
+                            res.setHeader(
+                                "Content-Type",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            );
+                            res.setHeader(
+                                "Content-Disposition",
+                                `attachment; filename=all_hr_staff.xlsx`
+                            );
+                    
+                            // Generate and send the Excel File as a response
+                            await workbook.xlsx.write(res);
+                    
+                            // End the response
+                            res.end();
+                        } catch (error) {
+                            console.error("Error exporting Jobs:", error);
+                            res.status(500).json({ error: "Internal server error" });
+                        }
+                    };
         
-                // Add Hr Staff data to the worksheet
-                hr_staff.forEach((hr) => {
-                    worksheet.addRow({
-                        name: hr.name,
-                        email: hr.email,
-                        phone_no: hr.phone_no,
-                        profileImage: hr.profileImage,
-                        role: hr.role,
-                        status: hr.status,
-                       
-                    });
-                });
-        
-                // Set response headers for downloading the Excel file
-                res.setHeader(
-                    "Content-Type",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                );
-                res.setHeader(
-                    "Content-Disposition",
-                    `attachment; filename=all_hr_staff.xlsx`
-                );
-        
-                // Generate and send the Excel File as a response
-                await workbook.xlsx.write(res);
-        
-                // End the response
-                res.end();
-            } catch (error) {
-                console.error("Error exporting Jobs:", error);
-                res.status(500).json({ error: "Internal server error" });
-            }
-        };
-        
-        const export_Enrolled_user = async (req, res) => {
-            try {         
-                   
-                // Fetch Jobs with the given status
-                const Enroll_user = await courses_user_enroll_Model.find({ });
-        
-                // Create Excel workbook and worksheet
-                const workbook = new ExcelJs.Workbook();
-                const worksheet = workbook.addWorksheet("enroll_user");
-        
-                // Define the Excel Header
-                worksheet.columns = [
-                    { header: "First Name", key: "first_name" },
-                    { header: "Last Name", key: "last_name" },
-                    { header: "Email", key: "email" },                   
-                    { header: "profile Image", key: "profileImage" },
-                    { header: "Gender", key: "gender" },
-                    { header: "phone Number", key: "phone_no" },                           
+                    const export_Enrolled_user = async (req, res) => {
+                        try {         
+                            
+                            // Fetch Jobs with the given status
+                            const Enroll_user = await courses_user_enroll_Model.find({ });
+                    
+                            // Create Excel workbook and worksheet
+                            const workbook = new ExcelJs.Workbook();
+                            const worksheet = workbook.addWorksheet("enroll_user");
+                    
+                            // Define the Excel Header
+                            worksheet.columns = [
+                                { header: "First Name", key: "first_name" },
+                                { header: "Last Name", key: "last_name" },
+                                { header: "Email", key: "email" },                   
+                                { header: "profile Image", key: "profileImage" },
+                                { header: "Gender", key: "gender" },
+                                { header: "phone Number", key: "phone_no" },                           
 
-                ];
-        
-                // Add Enroll_user data to the worksheet
-                Enroll_user.forEach((hr) => {
-                    worksheet.addRow({
-                        first_name: hr.first_name,
-                        last_name: hr.last_name,
-                        email: hr.email,
-                        profileImage: hr.profileImage,
-                        gender: hr.gender,
-                        phone_no: hr.phone_no,
-                       
-                    });
-                });
-        
-                // Set response headers for downloading the Excel file
-                res.setHeader(
-                    "Content-Type",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                );
-                res.setHeader(
-                    "Content-Disposition",
-                    `attachment; filename=Enrolled_user.xlsx`
-                );
-        
-                // Generate and send the Excel File as a response
-                await workbook.xlsx.write(res);
-        
-                // End the response
-                res.end();
-            } catch (error) {
-                console.error("Error exporting Enroll User:", error);
-                res.status(500).json({ error: "Internal server error" });
-            }
-        };
+                            ];
+                    
+                            // Add Enroll_user data to the worksheet
+                            Enroll_user.forEach((hr) => {
+                                worksheet.addRow({
+                                    first_name: hr.first_name,
+                                    last_name: hr.last_name,
+                                    email: hr.email,
+                                    profileImage: hr.profileImage,
+                                    gender: hr.gender,
+                                    phone_no: hr.phone_no,
+                                
+                                });
+                            });
+                    
+                            // Set response headers for downloading the Excel file
+                            res.setHeader(
+                                "Content-Type",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            );
+                            res.setHeader(
+                                "Content-Disposition",
+                                `attachment; filename=Enrolled_user.xlsx`
+                            );
+                    
+                            // Generate and send the Excel File as a response
+                            await workbook.xlsx.write(res);
+                    
+                            // End the response
+                            res.end();
+                        } catch (error) {
+                            console.error("Error exporting Enroll User:", error);
+                            res.status(500).json({ error: "Internal server error" });
+                        }
+                    };
                     
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,

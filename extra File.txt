@@ -1,3 +1,135 @@
+// Add permission
+
+object ---
+
+const add_endPoints = async (req, res) => {
+    try {
+        const { endpoints, staff_id } = req.body;
+
+        // Define roles
+        const roles = ['Admin', 'Receptionist', 'Manager', 'Hr Cordinator'];
+
+        for (const role of roles) {
+            const permissions = {};
+
+            // Assign default permission (1) for each endpoint
+            endpoints.forEach(endpoint => {
+                permissions[endpoint] = permissions[endpoint] || 1;
+            });
+
+            if (role === 'Hr Cordinator') {
+                // HR Coordinator-specific logic
+                if (!staff_id) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'staff_id is required for HR Coordinator role.',
+                    });
+                }
+
+                // Find if an entry exists for this role and staff_id
+                const existingPermission = await permissionModel.findOne({ role, staff_id });
+
+                if (!existingPermission) {
+                    // Create a new document for HR Coordinator with staff_id
+                    await permissionModel.create({ role, staff_id, permissions });
+                } else {
+                    // Update existing permissions for the specific staff_id
+                    await permissionModel.updateOne(
+                        { role, staff_id },
+                        { $set: { permissions } }
+                    );
+                }
+            } else {
+                // Logic for other roles without staff_id
+                const existingPermission = await permissionModel.findOne({ role });
+
+                if (!existingPermission) {
+                    // Create a new document for the role
+                    await permissionModel.create({ role, permissions });
+                } else {
+                    // Update permissions for the entire role
+                    await permissionModel.updateOne(
+                        { role },
+                        { $set: { permissions } }
+                    );
+                }
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Endpoints added successfully.',
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to add/update permissions.',
+            error: error.message,
+        });
+    }
+};
+
+-------------------------
+
+Array --
+
+const permissionModel = require('../model/permission_model');
+
+const role_Check = (requiredEndpoint) => async (req, res, next) => {
+    try {
+        const userRole = req.user.role; 
+        const staffId = req.user.staff_id; 
+
+        if (userRole === 'Super Admin') {
+            // Check permissions for Super Admin
+            const permission = await permissionModel.findOne({ role: userRole });
+
+            if (!permission || !permission.permissions.includes(requiredEndpoint)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Dear ${userRole}, You are not authorized to access this section!`,
+                });
+            }
+        } else if (userRole === 'HR Coordinator') {
+            // Check permissions for HR Coordinator
+            const permission = await permissionModel.findOne({ role: userRole, staff_id: staffId });
+
+            if (!permission || !permission.permissions.includes(requiredEndpoint)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Dear ${userRole}, You are not authorized to access this section!`,
+                });
+            }
+        } else {
+            // Handle unknown roles
+            return res.status(400).json({
+                success: false,
+                message: 'Role not recognized!',
+            });
+        }
+
+        next(); // Proceed to the next middleware or route handler
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: 'Server Error',
+            error: error.message,
+        });
+    }
+};
+
+module.exports = role_Check;
+
+
+
+
+
+
+
+
+
 // Add multiple Skills
 
 const addJob_skills = async (req, res) => {

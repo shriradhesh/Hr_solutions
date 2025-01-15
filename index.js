@@ -12,6 +12,7 @@ const employeeModel = require('./model/employeeModel')
 const clientPackageModel = require('./model/clientPackage')
 const cms_online_courses_Model = require('./model/cms_online_cources')
 const courses_user_enroll_Model = require('./model/courses_enroll_user')
+const permissionRouter = require('./router/permissionRouter')
 
 
 
@@ -38,6 +39,7 @@ app.use((req, res, next) => {
 
 app.use('/api', adminRouter)
 app.use('/api', userRouter)
+app.use('/api' , permissionRouter)
 
 app.get('/', (req ,res)=>{
         res.send('Hello from HR Solutions Server')

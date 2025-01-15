@@ -24,6 +24,8 @@ const Admin_Schema = new mongoose.Schema({
         type : String,
         enum : ['HR Coordinator' , 'Super Admin']
     },
+       staff_id :   String
+
 }, { timestamps : true })
 
 const Admin = mongoose.model('Admin_and_staffs', Admin_Schema)
