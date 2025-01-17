@@ -47,7 +47,7 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
 
                                              /* Employer Section */
         // Api for getAllEmp
-                     router.get('/getAllEmp', authUser, role_check('/getAllEmp'), Admin_and_staffController.getAllEmp)
+                     router.get('/getAllEmp',  Admin_and_staffController.getAllEmp)
         // Api for active_inactive_emp
                      router.post('/active_inactive_emp/:empId',authUser, role_check('/active_inactive_emp'), Admin_and_staffController.active_inactive_emp)
         // Api for send_notification_to_client
@@ -360,7 +360,7 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
    // Api for updatepackage
    router.put('/updatepackage/:package_id', authUser, role_check('/updatepackage'),  Admin_and_staffController.updatepackage)
    // Api for getActivePackages
-   router.get('/getActivePackages', authUser, role_check('/getActivePackages'),  Admin_and_staffController.getActivePackages)
+   router.get('/getActivePackages',   Admin_and_staffController.getActivePackages)
 
 
      // Api for exports all clients
@@ -374,6 +374,19 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
      router.get('/export_Enrolled_user', authUser, role_check('/export_Enrolled_user'),  Admin_and_staffController.export_Enrolled_user)
 
 
+     router.post('/add_sl_loc', Admin_and_staffController.add_sl_loc)
+
+
+     // Api for export_package_transaction
+     router.get('/export_package_transaction', Admin_and_staffController.export_package_transaction)
+
+     // Api for export_course_transaction
+     router.get('/export_course_transaction', Admin_and_staffController.export_course_transaction)
+
+     
+  
+
+        
    
 
 

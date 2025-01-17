@@ -80,6 +80,8 @@ const role_check = require('../middleware/role_check')
 const authUser = require('../middleware/authMiddleware')
 const tokenBlackList = require('../middleware/tokenBlackList')
 
+const sl_loc_model = require('../model/sl_loc_lat_long')
+
 
 
 
@@ -1488,8 +1490,18 @@ const tokenBlackList = require('../middleware/tokenBlackList')
         // Api for get All Employees
         const getAllEmp = async (req, res) => {
             try {
-                // Fetch all employees excluding status 2
-                const allEmp = await employeeModel.find({ status: { $ne: 2 } });
+                let status = req.query.status; 
+        
+                // Initialize the filter object
+                let filter = { status: { $ne: 2 } }; 
+        
+                // Apply specific status filtering if provided
+                if (status !== undefined) {
+                    filter = { status: parseInt(status) }; 
+                }
+        
+                // Fetch all employees based on the filter
+                const allEmp = await employeeModel.find(filter);
         
                 // Check if no employees are found
                 if (allEmp.length === 0) {
@@ -1499,10 +1511,11 @@ const tokenBlackList = require('../middleware/tokenBlackList')
                     });
                 }
         
-                // Fetch all packages at once
+                // Fetch all packages associated with employees
                 const packageIds = allEmp.map(emp => emp.package_id);
-                const packages = await clientPackageModel.find({ _id: { $in: packageIds } });        
-               
+                const packages = await clientPackageModel.find({ _id: { $in: packageIds } });
+        
+                // Create a mapping of package details by ID for quick access
                 const packageMap = packages.reduce((map, pkg) => {
                     map[pkg._id] = pkg;
                     return map;
@@ -1519,7 +1532,7 @@ const tokenBlackList = require('../middleware/tokenBlackList')
                             },
                         });
         
-                        const package = packageMap[emp.package_id] || {}; 
+                        const package = packageMap[emp.package_id] || {}; // Get package details or default to empty
         
                         // Exclude sensitive data like passwords
                         const { password, ...empData } = emp.toObject();
@@ -5527,6 +5540,7 @@ const net_salary = async (req, res) => {
       const { parse, format, eachDayOfInterval } = require('date-fns');
       const e = require('cors')
 const jobDescription_model = require('../model/jobDescription')
+const package_transaction_model = require('../model/package_transaction')
       
       // Api for get all clients counts
 
@@ -8832,7 +8846,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                             const status = parseInt(client_status, 10);
                             const statusMessages = {
                                 1: "Activated",
-                                2: "Deactivated",
+                                0: "Deactivated",
                             };
                     
                             if (!statusMessages[status]) {
@@ -9013,6 +9027,142 @@ const jobseeker_count_of_client_job = async (req, res) => {
                     
         // Api for export all Hr Admin
           
+        const export_package_transaction = async (req, res) => {
+            try {
+                const { transaction_status } = req.query;
+        
+                // Validate and parse transaction_status
+                const statusMapping = {
+                    1: "STATE_COMPLETED",
+                    2: "STATE_FAILED",
+                };
+        
+                // Check if transaction_status is valid
+                if (!transaction_status || !statusMapping[transaction_status]) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Invalid or missing transaction_status value.",
+                    });
+                }
+        
+                // Map transaction_status to corresponding payment_status
+                const payment_status = statusMapping[transaction_status];
+        
+                // Fetch transactions with the given payment_status
+                const package_transaction = await package_transaction_model.find({ payment_status });
+        
+               
+        
+                // Create Excel workbook and worksheet
+                const workbook = new ExcelJs.Workbook();
+                const worksheet = workbook.addWorksheet("Package_transaction");
+        
+                // Define the Excel Header
+                worksheet.columns = [
+                    { header: "Booking Id", key: "booking_id" },
+                    { header: "Package Name", key: "package_name" },
+                    { header: "Client Name", key: "client_name" },
+                    { header: "Company Name", key: "company" },
+                    { header: "Amount PAID", key: "amount" },
+                    { header: "Payment Status", key: "payment_status" },
+                    { header: "Transaction Id", key: "session_id" },
+                    { header: "Payment Time", key: "payment_time" },
+                    { header: "Currency", key: "currency" },
+                ];
+        
+                // Add Package Transaction data to the worksheet
+                package_transaction.forEach((pt) => {
+                    worksheet.addRow({
+                        booking_id: pt.booking_id,
+                        package_name: pt.package_name,
+                        client_name: pt.client_name,
+                        company: pt.company,
+                        amount: pt.amount,
+                        payment_status: pt.payment_status,
+                        session_id: pt.session_id,
+                        payment_time: pt.payment_time,
+                        currency: pt.currency,
+                    });
+                });
+        
+                // Set response headers for downloading the Excel file
+                res.setHeader(
+                    "Content-Type",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                );
+                res.setHeader(
+                    "Content-Disposition",
+                    `attachment; filename=Package_transaction.xlsx`
+                );
+        
+                // Generate and send the Excel File as a response
+                await workbook.xlsx.write(res);
+        
+                // End the response
+                res.end();
+            } catch (error) {
+               
+                res.status(500).json({ success: false, error: "Internal server error" , errro_message : error.message});
+            }
+        };
+        
+        
+        
+                    const export_Enrolled_user = async (req, res) => {
+                        try {         
+                            
+                            // Fetch Jobs with the given status
+                            const Enroll_user = await courses_user_enroll_Model.find({ });
+                    
+                            // Create Excel workbook and worksheet
+                            const workbook = new ExcelJs.Workbook();
+                            const worksheet = workbook.addWorksheet("enroll_user");
+                    
+                            // Define the Excel Header
+                            worksheet.columns = [
+                                { header: "First Name", key: "first_name" },
+                                { header: "Last Name", key: "last_name" },
+                                { header: "Email", key: "email" },                   
+                                { header: "profile Image", key: "profileImage" },
+                                { header: "Gender", key: "gender" },
+                                { header: "phone Number", key: "phone_no" },                           
+
+                            ];
+                    
+                            // Add Enroll_user data to the worksheet
+                            Enroll_user.forEach((hr) => {
+                                worksheet.addRow({
+                                    first_name: hr.first_name,
+                                    last_name: hr.last_name,
+                                    email: hr.email,
+                                    profileImage: hr.profileImage,
+                                    gender: hr.gender,
+                                    phone_no: hr.phone_no,
+                                
+                                });
+                            });
+                    
+                            // Set response headers for downloading the Excel file
+                            res.setHeader(
+                                "Content-Type",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            );
+                            res.setHeader(
+                                "Content-Disposition",
+                                `attachment; filename=Enrolled_user.xlsx`
+                            );
+                    
+                            // Generate and send the Excel File as a response
+                            await workbook.xlsx.write(res);
+                    
+                            // End the response
+                            res.end();
+                        } catch (error) {
+                            console.error("Error exporting Enroll User:", error);
+                            res.status(500).json({ error: "Internal server error" });
+                        }
+                    };
+
                     const export_Hr_staff = async (req, res) => {
                         try {            
                     
@@ -9070,61 +9220,128 @@ const jobseeker_count_of_client_job = async (req, res) => {
                             res.status(500).json({ error: "Internal server error" });
                         }
                     };
-        
-                    const export_Enrolled_user = async (req, res) => {
-                        try {         
-                            
-                            // Fetch Jobs with the given status
-                            const Enroll_user = await courses_user_enroll_Model.find({ });
-                    
-                            // Create Excel workbook and worksheet
-                            const workbook = new ExcelJs.Workbook();
-                            const worksheet = workbook.addWorksheet("enroll_user");
-                    
-                            // Define the Excel Header
-                            worksheet.columns = [
-                                { header: "First Name", key: "first_name" },
-                                { header: "Last Name", key: "last_name" },
-                                { header: "Email", key: "email" },                   
-                                { header: "profile Image", key: "profileImage" },
-                                { header: "Gender", key: "gender" },
-                                { header: "phone Number", key: "phone_no" },                           
 
-                            ];
-                    
-                            // Add Enroll_user data to the worksheet
-                            Enroll_user.forEach((hr) => {
-                                worksheet.addRow({
-                                    first_name: hr.first_name,
-                                    last_name: hr.last_name,
-                                    email: hr.email,
-                                    profileImage: hr.profileImage,
-                                    gender: hr.gender,
-                                    phone_no: hr.phone_no,
-                                
-                                });
-                            });
-                    
-                            // Set response headers for downloading the Excel file
-                            res.setHeader(
-                                "Content-Type",
-                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                            );
-                            res.setHeader(
-                                "Content-Disposition",
-                                `attachment; filename=Enrolled_user.xlsx`
-                            );
-                    
-                            // Generate and send the Excel File as a response
-                            await workbook.xlsx.write(res);
-                    
-                            // End the response
-                            res.end();
-                        } catch (error) {
-                            console.error("Error exporting Enroll User:", error);
-                            res.status(500).json({ error: "Internal server error" });
-                        }
-                    };
+
+        // Api for add SL Location
+
+        const add_sl_loc = async (req, res) => {
+            try {
+                const { loc, lat, long } = req.body; 
+        
+                // Check for already existing location
+                const exist_loc = await sl_loc_model.findOne({
+                    loc: { $regex: `^${loc}$`, $options: 'i' } 
+                });
+        
+                if (exist_loc) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Location record already exists.'
+                    });
+                }
+        
+            
+                const newLocation = new sl_loc_model({ 
+                    loc : loc,
+                     lat : lat,
+                      long : long });
+
+                await newLocation.save();
+        
+                return res.status(200).json({
+                    success: true,
+                    message: 'Location added successfully.',
+                   
+                });
+        
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message
+                });
+            }
+        };
+
+        const export_course_transaction = async (req, res) => {
+            try {
+                const { transaction_status } = req.query;
+        
+                // Validate and parse transaction_status
+                const statusMapping = {
+                    1: "STATE_COMPLETED",
+                    2: "STATE_FAILED",
+                };
+        
+                // Check if transaction_status is valid
+                if (!transaction_status || !statusMapping[transaction_status]) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Invalid or missing transaction_status value.",
+                    });
+                }
+        
+                // Map transaction_status to corresponding payment_status
+                const payment_status = statusMapping[transaction_status];
+        
+                // Fetch transactions with the given payment_status
+                const course_transaction = await course_transaction_model.find({ payment_status });
+        
+                
+                // Create Excel workbook and worksheet
+                const workbook = new ExcelJs.Workbook();
+                const worksheet = workbook.addWorksheet("course_transaction");
+        
+                // Define the Excel Header
+                worksheet.columns = [
+                    { header: "Booking Id", key: "booking_id" },
+                    { header: "Course Name", key: "course_name" },
+                    { header: "User Name", key: "user_name" },                    
+                    { header: "Amount PAID", key: "amount" },
+                    { header: "Payment Status", key: "payment_status" },
+                    { header: "Transaction Id", key: "session_id" },
+                    { header: "Payment Time", key: "payment_time" },
+                    { header: "Currency", key: "currency" },
+                ];
+        
+                // Add Course Transaction data to the worksheet
+                course_transaction.forEach((ct) => {
+                    worksheet.addRow({
+                        booking_id: ct.booking_id,
+                        course_name: ct.course_name,
+                        user_name: ct.user_name,
+                        company: ct.company,
+                        amount: ct.amount,
+                        payment_status: ct.payment_status,
+                        session_id: ct.session_id,
+                        payment_time: ct.payment_time,
+                        currency: ct.currency,
+                    });
+                });
+        
+                // Set response headers for downloading the Excel file
+                res.setHeader(
+                    "Content-Type",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                );
+                res.setHeader(
+                    "Content-Disposition",
+                    `attachment; filename=course_transaction.xlsx`
+                );
+        
+                // Generate and send the Excel File as a response
+                await workbook.xlsx.write(res);
+        
+                // End the response
+                res.end();
+            } catch (error) {
+               
+                res.status(500).json({ success: false, error: "Internal server error" , error_message : error.message});
+            }
+        };
+
+        
+        
                     
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
@@ -9163,7 +9380,10 @@ module.exports = {
 
      create_email_template , getall_emailContent , emailContent_of_title ,
      add_clientPackage , get_allPackages , active_inactive_Package , updatepackage , getActivePackages , 
-     export_clients , export_Jobs , export_Hr_staff  , export_Enrolled_user
+     export_clients , export_Jobs , export_Hr_staff  , export_Enrolled_user , add_sl_loc , export_package_transaction,
+     export_course_transaction
      
      
 }
+
+

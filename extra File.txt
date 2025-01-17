@@ -1,3 +1,91 @@
+update permission
+
+--
+
+const updatePermission = async (req, res) => {
+    try {
+        const { role, permissions, staff_id } = req.body;
+
+        // Validate role
+        if (!role) {
+            return res.status(400).json({
+                success: false,
+                message: "Role is required",
+            });
+        }
+
+        // Validate permissions array
+        if (!permissions || !Array.isArray(permissions) || permissions.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Permissions must be a non-empty array",
+            });
+        }
+
+        // Validate staff_id for specific roles
+        if (role === "HR Coordinator" && !staff_id) {
+            return res.status(400).json({
+                success: false,
+                message: `Staff Id is required for role: ${role}`,
+            });
+        }
+
+        // Check if the staff exists if role is HR Coordinator
+        if (role === "HR Coordinator") {
+            const staff = await Admin_and_staffsModel.findOne({ staff_id });
+            if (!staff) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Staff not found with the staff_id: ${staff_id}`,
+                });
+            }
+        }
+
+        // Prepare query for permissions lookup
+        const query = role === "HR Coordinator" ? { role, staff_id } : { role };
+
+        // Find or create permission document
+        let permissionDoc = await permissionModel.findOne(query);
+
+        if (!permissionDoc) {
+            // Create a new document if none exists
+            const formattedPermissions = permissions.map(({ endpoint, allow }) => ({ endpoint, permission: allow ? 1 : 0 }));
+            await permissionModel.create({ role, staff_id, permissions: formattedPermissions });
+        } else {
+            // Update existing document with new permissions
+            const existingEndpoints = permissionDoc.permissions.map(p => p.endpoint);
+
+            permissions.forEach(({ endpoint, allow }) => {
+                const existingPermission = permissionDoc.permissions.find(p => p.endpoint === endpoint);
+                if (existingPermission) {
+                    // Update existing endpoint's permission
+                    existingPermission.permission = allow ? 1 : 0;
+                } else {
+                    // Add new endpoint
+                    permissionDoc.permissions.push({ endpoint, permission: allow ? 1 : 0 });
+                }
+            });
+
+            await permissionDoc.save();
+        }
+
+        // Successful response
+        res.status(200).json({
+            success: true,
+            message: "Permissions updated successfully",
+        });
+    } catch (error) {
+        // Error response
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error_message: error.message,
+        });
+    }
+};
+
+
+
 // Add permission
 
 object ---

@@ -75,7 +75,120 @@ const add_endPoints = async (req, res) => {
 };
 
 
+// APi for update permission
+const updatePermission = async (req, res) => {
+    try {
+        const { role, permissions, staff_id } = req.body;
+
+         // check for role
+        if (!role) {
+            return res.status(400).json({
+                success: false,
+                message: "Role is required",
+            });
+        }
+
+        // Validate permissions array
+        if (!permissions || !Array.isArray(permissions) || permissions.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Permissions must be a non-empty array",
+            });
+        }
+
+        
+        if (role === "HR Coordinator" && !staff_id) {
+            return res.status(400).json({
+                success: false,
+                message: `Staff Id is required for role: ${role}`,
+            });
+        }
+
+        // check for staff_id
+
+        if (role === "HR Coordinator") {
+            const staff = await Admin_and_staffsModel.findOne({ staff_id });
+            if (!staff) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Staff not found with the staff_id: ${staff_id}`,
+                });
+            }
+        }
+        
+        const query = role === "HR Coordinator" ? { role, staff_id } : { role };
+
+        // Find or create permission document
+        let permissionDoc = await permissionModel.findOne(query);
+
+        if (!permissionDoc) {
+        
+            const formattedPermissions = permissions.map(({ endpoint, allow }) => ({ endpoint, permission: allow ? 1 : 0 }));
+            await permissionModel.create({ role, staff_id, permissions: formattedPermissions });
+        } else {
+            
+            const existingEndpoints = permissionDoc.permissions.map(p => p.endpoint)
+
+            permissions.forEach(({ endpoint, allow }) => {
+                const existingPermission = permissionDoc.permissions.find(p => p.endpoint === endpoint)
+                if (existingPermission) {
+                  
+                    existingPermission.permission = allow ? 1 : 0 ;
+                } else {
+                    
+                    permissionDoc.permissions.push({ endpoint, permission: allow ? 1 : 0 });
+                }
+            });
+
+            await permissionDoc.save();
+        }
+
+        
+        res.status(200).json({
+            success: true,
+            message: "Permissions updated successfully",
+        });
+    } catch (error) {
+        // Error response
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error_message: error.message,
+        });
+    }
+};
 
 
 
-module.exports = { add_endPoints }
+// Api for get all permissions
+
+     const get_permissions_data = async( req , res )=> {
+            try {
+                        // check for all permissions
+                         const permissions = await permissionModel.find({ })
+                         if(!permissions)
+                         {
+                               return res.status(400).json({
+                                  success : false ,
+                                  message : 'Permissions Record not found'
+                               })
+                         }
+
+                         return res.status(200).json({
+                               success : true ,
+                               message : 'Permissions Records',
+                               records : permissions.map((p)=> ({
+                                    role : p.role,
+                                    staff_id : p.staff_id || ' ',
+                                    endPoints_permissions : p.permissions
+                               }))
+                         })
+            } catch (error) {
+                 return res.status(500).json({
+                       success : false ,
+                       message : 'Server error', 
+                       error_message : error.message
+                 })
+            }
+     }
+module.exports = { add_endPoints , updatePermission  , get_permissions_data}
