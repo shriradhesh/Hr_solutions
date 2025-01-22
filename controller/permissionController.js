@@ -96,15 +96,14 @@ const updatePermission = async (req, res) => {
             });
         }
 
-        
-        if (role === "HR Coordinator" && !staff_id) {
+                if (role === "HR Coordinator" && !staff_id) {
             return res.status(400).json({
                 success: false,
                 message: `Staff Id is required for role: ${role}`,
             });
         }
 
-        // check for staff_id
+        // check for staff_id 
 
         if (role === "HR Coordinator") {
             const staff = await Admin_and_staffsModel.findOne({ staff_id });
@@ -129,7 +128,7 @@ const updatePermission = async (req, res) => {
             
             const existingEndpoints = permissionDoc.permissions.map(p => p.endpoint)
 
-            permissions.forEach(({ endpoint, allow }) => {
+            permissions.forEach(({ endpoint , allow }) => {
                 const existingPermission = permissionDoc.permissions.find(p => p.endpoint === endpoint)
                 if (existingPermission) {
                   
@@ -148,6 +147,7 @@ const updatePermission = async (req, res) => {
             success: true,
             message: "Permissions updated successfully",
         });
+
     } catch (error) {
         // Error response
         res.status(500).json({
@@ -157,6 +157,7 @@ const updatePermission = async (req, res) => {
         });
     }
 };
+
 
 
 
@@ -191,4 +192,44 @@ const updatePermission = async (req, res) => {
                  })
             }
      }
-module.exports = { add_endPoints , updatePermission  , get_permissions_data}
+
+
+     // APi for get permissions for role
+
+              const get_added_permission_for_staff = async( req , res )=> {
+                    try {
+                           const { staff_id } = req.params
+                           if(!staff_id)
+                           {
+                              return res.status(400).json({
+                                   success : false ,
+                                   message : 'Staff Id Required'
+                              })
+                           }
+
+                           // check for staff 
+                           const check_staff = await permissionModel.findOne({ staff_id : staff_id })
+                           if(!check_staff)
+                           {
+                              return res.status(200).json({
+                                   success : false ,
+                                   message : 'No Permission found yet for Staff'
+                              })
+                           }
+
+                           return res.status(200).json({
+                               success : true ,
+                               message : 'Staff Permission',
+                               role : check_staff.role,
+                               staff_id : check_staff.staff_id,
+                               permissions : check_staff.permissions
+                           })
+                    } catch (error) {
+                          return res.status(500).json({
+                               success : false ,
+                               message : 'Server error',
+                               error_message : error.message
+                          })
+                    }
+              }
+module.exports = { add_endPoints , updatePermission  , get_permissions_data , get_added_permission_for_staff}

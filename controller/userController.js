@@ -188,6 +188,7 @@ const employeeSignup = async (req, res) => {
                 });
             }
         }
+        
         // check for package
         var package = await clientPackageModel.findOne({ _id: package_id })
         if (!package) {
@@ -334,7 +335,7 @@ const employeeSignup = async (req, res) => {
         })
     }
 }
-
+  
 
 
 // Api for update yearly transaction and client Data
@@ -2086,6 +2087,7 @@ const deleteJob = async (req, res) => {
         // if (appliedCandidates.length > 0) {
         //     // Delete all applied candidates for this job
         //     await appliedjobModel.deleteMany({ jobId: jobId });
+         
         // }
 
         // Delete the job
@@ -2148,8 +2150,8 @@ const deleteCandidate = async (req, res) => {
 
 const export_candidate = async (req, res) => {
     try {
-        const { jobSeeker_status } = req.query;
-        const { gender } = req.params;
+        const { jobSeeker_status , jobId } = req.query;
+        const {  gender } = req.params;
 
         // Define status labels
         const statusLabels = {
@@ -2158,6 +2160,14 @@ const export_candidate = async (req, res) => {
             4: 'Assessment_Scheduled',
             5: 'Schedule_Interview'
         };
+
+           if(!jobId)
+            {
+                  return res.status(400).json({
+                       success : false ,
+                       message : 'JOB Id Required'
+                  })
+            } 
 
         // Check for job seeker status
         if (!jobSeeker_status || !statusLabels[jobSeeker_status]) {
@@ -2176,7 +2186,7 @@ const export_candidate = async (req, res) => {
         }
 
         // Fetch candidates based on gender
-        const candidates = await appliedjobModel.find({ gender });
+        const candidates = await appliedjobModel.find({ gender ,  jobId : jobId  });
 
         // Filter candidates by job seeker status
         const filteredCandidates = candidates.filter(candidate => candidate.jobSeeker_status == jobSeeker_status);
@@ -2513,11 +2523,46 @@ const getJob = async (req, res) => {
                 message: 'job not found'
             })
         }
+        
+
+        const loc_lat_long = await sl_loc_model.findOne({ loc: job.location })
 
         return res.status(200).json({
             success: true,
             message: 'job Details',
-            Details: job
+            Details: {
+                _id : job._id,
+                jobId : job.jobId,
+                job_title : job.job_title,
+                company_name : job.company_name,
+                emp_Id : job.emp_Id,
+                Number_of_emp_needed : job.Number_of_emp_needed,
+                job_type : job.job_type,
+                job_schedule : job.job_schedule,
+                salary_pay : job.salary_pay,
+                job_Description : job.job_Description,
+                job_Responsibility : job.job_Responsibility,
+                company_address : job.company_address,
+                employee_email : job.employee_email,
+                startDate : job.startDate,
+                endDate : job.endDate,
+                phone_no : job.phone_no,
+                key_qualification : job.key_qualification,
+                acadmic_qualification : job.acadmic_qualification,
+                Experience : job.Experience,
+                template_type : job.template_type,
+                company_Industry : job.company_Industry,
+                location : job.location,
+                status : job.status,
+                fav_status : job.fav_status,
+                job_image : job.job_image,
+                hr_email : job.hr_email,
+                hiring_manager_email : job.hiring_manager_email,
+                createdAt : job.createdAt,
+                updatedAt : job.updatedAt,
+                job_location_latitude : loc_lat_long.lat,
+                job_location_longitude : loc_lat_long.long
+            }
         })
 
     } catch (error) {
@@ -2603,6 +2648,7 @@ const searchJob = async (req, res) => {
         if (Experience) {
             filter.Experience = { $regex: Experience, $options: 'i' };
         }
+
         if (company_Industry) {
             filter.company_Industry = company_Industry;
         }
@@ -3166,7 +3212,7 @@ const dashboard_counts = async (req, res) => {
         }
 
         // check for all clients
-        const all_clients = await employeeModel.find({})
+        const all_clients = await employeeModel.find({ status: { $ne: 2 } })
         if (!all_clients) {
             return res.status(400).json({
                 success: false,
@@ -3691,6 +3737,8 @@ const candidate_recruitment_process_for_uploaded_candidate = async (req, res) =>
 };
 
 
+   
+
 // Api for get All successfull candidate 
 
 const get_successfull_candidate = async (req, res) => {
@@ -3710,7 +3758,7 @@ const get_successfull_candidate = async (req, res) => {
         // Check if no candidates found
 
         if (all_successfull_candidate.length === 0) {
-            return res.status(400).json({
+            return res.status(200).json({
                 success: false,
                 message: 'No candidate found'
             });
@@ -6909,15 +6957,32 @@ const download_word_Jd = async (req, res) => {
 
 let all_package_transaction = async (req, res) => {
     try {
-        // check for all package transaction of user
-        let all_transactions = await package_transaction_model.find({ payment_status: { $ne: 'STATE_PENDING' } }).sort({ createdAt: -1 }).lean()
-        if (!all_transactions) {
-            return res.status(400).json({
-                success: false,
-                message: 'No Transaction Found'
-            })
+        const { payment_status } = req.query;
+
+        // Default filter: Exclude 'STATE_PENDING' transactions
+        let filter = { payment_status: { $ne: 'STATE_PENDING' } };
+
+        // Apply specific filters based on payment_status value
+        if (payment_status === '1') {
+            filter.payment_status = 'STATE_COMPLETED';
+        } else if (payment_status === '2') {
+            filter.payment_status = 'STATE_FAILED';
         }
 
+        // Fetch all package transactions based on the filter
+        let all_transactions = await package_transaction_model
+            .find(filter)
+            .sort({ createdAt : -1 })
+            .lean();
+
+        if (!all_transactions || all_transactions.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No Transaction Found',
+            });
+        }
+
+        // Map and format the transactions
         return res.status(200).json({
             success: true,
             message: 'All Package Transaction',
@@ -6935,18 +7000,17 @@ let all_package_transaction = async (req, res) => {
                 kind: t.kind,
                 payment_info: t.payment_info,
                 currency: t.currency,
-
-            }))
-        })
+            })),
+        });
     } catch (error) {
-
         return res.status(500).json({
             success: false,
             message: 'Server error',
-            error_message: error.message
-        })
+            error_message: error.message,
+        });
     }
-}
+};
+
 
 
 module.exports = {
@@ -6964,7 +7028,7 @@ module.exports = {
     build_cv, get_all_candidate_for_client, export_client_jobs_candidate,
 
     // Psychometric
-    add_test_Category, getAll_psychometric_Category, Delete_category,
+    add_test_Category, getAll_psychometric_Category, Delete_category, 
 
     psychometric_test, getAll_psychometric_test_of_client,
     get_test, add_question_in_test, delete_question_in_psychometric_test, deletepsychometrcTest,

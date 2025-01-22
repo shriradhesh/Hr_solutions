@@ -37,7 +37,7 @@ app.use((req, res, next) => {
 
 // Router configuration
 
-app.use('/api', adminRouter)
+app.use('/api',  adminRouter)
 app.use('/api', userRouter)
 app.use('/api' , permissionRouter)
 

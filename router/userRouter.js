@@ -58,7 +58,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
         // Api for deleteJob_Description
                         router.delete('/deleteJob_Description/:Jd_id', authUser, role_check('/deleteJob_Description'), userController.deleteJob_Description)
           // Api for download_jd
-                        router.get('/download_jd/:jd_id' , userController.download_jd)
+                        router.get('/download_jd/:jd_id' , userController.download_jd) 
 
    
                                            /* psychomatric testing section */
@@ -66,7 +66,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
 
         // Api for add category
         router.post('/add_test_Category', userController.add_test_Category)
-        // Api for getAll_psychometric_Category\
+        // Api for getAll_psychometric_Category
                         router.get('/getAll_psychometric_Category', userController.getAll_psychometric_Category)
         // Api for Delete_category
                         router.delete('/Delete_category/:category_id', userController.Delete_category)
@@ -83,7 +83,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          // Api for deletepsychometrcTest
                         router.delete('/deletepsychometrcTest/:psychometric_id', userController.deletepsychometrcTest)
 
-                                       /* POST job section */
+                                                      /* POST job section */
         // Api for postJob
                 router.post('/postJob/:empId', authUser, role_check('/postJob'), upload.single('job_image') , userController.postJob)
         // Api for updateJob

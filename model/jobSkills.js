@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const jobSkillsSchema = new mongoose.Schema({
 
-      jobTitle : {
+        jobTitle : {
         type : String,
         required : true
     }  ,
