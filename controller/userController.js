@@ -156,7 +156,7 @@ const employeeSignup = async (req, res) => {
             })
         }
         // check for company
-        const existCompany = await employeeModel.findOne({ company_name: company_name })
+        const existCompany = await employeeModel.findOne({ company_name: company_name }) 
         if (existCompany) {
             return res.status(400).json({
                 success: false,
@@ -188,7 +188,7 @@ const employeeSignup = async (req, res) => {
                 });
             }
         }
-        
+
         // check for package
         var package = await clientPackageModel.findOne({ _id: package_id })
         if (!package) {
@@ -749,22 +749,32 @@ const emp_ChangePassword = async (req, res) => {
         if (!empId) {
             return res.status(400).json({
                 success: false,
-                message: 'missing empId'
+                message: 'Missing ClientId'
             })
         }
         // check for required fields
-        const requiredFields = ["oldPassword", "password", "confirmPassword"];
+          if(!oldPassword)
+          {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing Old Password'
+            })
+          }
+          if(!password)
+          {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing  Password'
+            })
+          }
 
-        for (const field of requiredFields) {
-            if (!req.body[field]) {
-                return res
-                    .status(400)
-                    .json({
-                        message: `Missing ${field.replace("_", " ")} `,
-                        success: false,
-                    });
-            }
-        }
+          if(!confirmPassword)
+          {
+            return res.status(400).json({
+                success: false,
+                message: 'Missing confirmPassword'
+            })
+          }
 
         // check for employee
         const emp = await employeeModel.findOne({ _id: empId })
@@ -772,7 +782,7 @@ const emp_ChangePassword = async (req, res) => {
         if (!emp) {
             return res.status(400).json({
                 success: false,
-                message: 'employee Details not found'
+                message: 'Client Details not found'
             })
         }
 
@@ -781,7 +791,7 @@ const emp_ChangePassword = async (req, res) => {
         if (password !== confirmPassword) {
             return res.status(400).json({
                 success: false,
-                message: 'confirmPassword incorrect'
+                message: 'Confirm Password Incorrect'
             })
         }
 
@@ -794,9 +804,10 @@ const emp_ChangePassword = async (req, res) => {
         if (!isOldPasswordValid) {
             return res.status(400).json({
                 success: false,
-                message: 'old Password incorrect '
+                message: 'Old Password Incorrect '
             })
-        }
+        }                  
+                
 
         // encrypt the newPassword
 
@@ -806,14 +817,14 @@ const emp_ChangePassword = async (req, res) => {
         await emp.save();
         return res.status(200).json({
             success: true,
-            message: "Password changed Successfully",
+            message: "Password Changed Successfully",
 
         });
 
     } catch (error) {
         return res.status(500).json({
             success: false,
-            message: 'server error',
+            message: 'Server Error',
             error_message: error.message
         })
     }
@@ -2248,6 +2259,7 @@ const export_candidate = async (req, res) => {
         ];
 
         // Add filtered candidates data to the worksheet
+        
         filteredCandidates.forEach((candidate) => {
             worksheet.addRow({
                 first_Name: candidate.first_Name,
@@ -2286,9 +2298,8 @@ const export_candidate = async (req, res) => {
 
 
 
+                                                            /*Job Seeker sections */
 
-
-/*Job Seeker sections */
 // Api for get all Jobs
 
 const getAll_Jobs = async (req, res) => {
@@ -2296,6 +2307,7 @@ const getAll_Jobs = async (req, res) => {
         // Extract job status filter from query
         const job_status = req.query.job_status;
         const filter = {};
+
         if (job_status) {
             filter.status = job_status;
         }
@@ -2304,12 +2316,11 @@ const getAll_Jobs = async (req, res) => {
         const allJobs = await jobModel.find({ ...filter }).sort({ createdAt: -1 }); // Sort by latest createdAt
 
         if (allJobs.length === 0) {
-            return res.status(404).json({
+            return res.status(400).json({
                 success: false,
                 message: 'No jobs found',
             });
         }
-
 
         // Prepare job title counts and map data
         const jobTitle_Count = new Map();
@@ -2340,7 +2351,7 @@ const getAll_Jobs = async (req, res) => {
                     company_name: job.company_name,
                     Number_of_emp_needed: job.Number_of_emp_needed,
                     job_type: job.job_type,
-                    job_schedule: job.job_schedule,
+                    job_schedule: job.job_schedule, 
                     salary_pay,
                     job_Description: job.job_Description,
                     job_Responsibility: job.job_Responsibility || null,
@@ -2512,7 +2523,8 @@ const getJob = async (req, res) => {
                 message: 'jobId required'
             })
         }
-        // check for job
+
+        // check for job 
 
         const job = await jobModel.findOne({
             jobId: jobId
@@ -2583,6 +2595,7 @@ cron.schedule('* * * * *', async () => {
         currentDate.setHours(0, 0, 0, 0);
 
         // Find jobs with endDate less than the current date
+
         const expiredJob = await jobModel.find({
             endDate: {
                 $lt: currentDate,
@@ -4116,10 +4129,8 @@ const share_cv = async (req, res) => {
             });
         }
 
-
-
         if (shareVia === 1) {
-
+                   
 
             // Check for required fields
             if (!to || (typeof to === 'string' && !validator.isEmail(to)) || (Array.isArray(to) && to.length === 0)) {
@@ -5371,6 +5382,12 @@ const courses_user_enroll = async (req, res) => {
             }
         }
 
+        if (!isValidEmail(email)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please Enter valid Email'
+            })
+        }
         const hashedPassword = await bcrypt.hash(password, 10)
 
         // check for already exist user
@@ -6666,10 +6683,10 @@ const download_certificate = async (req, res) => {
             format: 'A4',
             printBackground: true,
             margin: {
-                top: '20px',
-                right: '20px',
-                bottom: '20px',
-                left: '20px'
+                    top: '20px',
+                    right: '20px',
+                    bottom: '20px',
+                    left: '20px'
             }
         });
 
@@ -6707,8 +6724,7 @@ const export_client_jobs_filteredcandidate = async (req, res) => {
                 message: 'Client ID is required',
             });
         }
-
-
+        
 
         // Check for client existence 
         const client = await employeeModel.findOne({ _id: client_id });
@@ -6718,6 +6734,7 @@ const export_client_jobs_filteredcandidate = async (req, res) => {
                 message: 'Client not found',
             });
         }
+
 
         // Construct filter for applied job candidates 
         const filter = {};
@@ -6756,7 +6773,7 @@ const export_client_jobs_filteredcandidate = async (req, res) => {
             jobId: { $in: totalJobs.map(job => job.jobId) },
             ...filter,
         });
-
+                
         if (totalCandidates.length === 0) {
 
             return res.status(400).json({
@@ -6836,6 +6853,7 @@ const export_client_jobs_filteredcandidate = async (req, res) => {
 };
 
 // Api for download Jd in word
+
 
 const download_word_Jd = async (req, res) => {
     try {
@@ -6952,9 +6970,84 @@ const download_word_Jd = async (req, res) => {
 };
 
 
+/*
+const download_word_Jd = async (req, res) => {
+    try {
+        const jd_id = req.params.jd_id;
+        const jd_download_count = req.query.jd_download_count;
 
-// Api for get all transaction for packages
+        if (!jd_id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Job ID required',
+            });
+        }
 
+        const jd = await jobDescription_model.findById(jd_id);
+        if (!jd) {
+            return res.status(400).json({
+                success: false,
+                message: 'Job Description not found',
+            });
+        }
+
+        jd.jd_download_count = jd_download_count;
+        await jd.save();
+
+        // Generate HTML content for JD
+        const htmlContent = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Job Description</title>
+            </head>
+            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px; background-color: #f9f9f9;">
+                <div style="max-width: 800px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);">
+                    <h1 style="color: #0078d7; margin-bottom: 20px;">${jd.jobTitle}</h1>
+
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="color: #333; border-bottom: 2px solid #0078d7; padding-bottom: 5px; margin-bottom: 15px;">Job Description</h2>
+                        <p>${jd.job_Description}</p>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="color: #333; border-bottom: 2px solid #0078d7; padding-bottom: 5px; margin-bottom: 15px;">Job Responsibilities</h2>
+                        <ul style="padding-left: 20px;">
+                            ${jd.Responsibilities}
+                        </ul>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+
+        // Convert the HTML content to DOCX using mammoth
+        const docxBuffer = await mammoth.convertToHtml({ html: htmlContent })
+            .then((result) => result.value)
+            .catch((err) => {
+                console.error('Error during conversion:', err);
+                throw new Error('Error converting HTML to DOCX');
+            });
+
+        // Set the headers to prompt a download in the browser
+        res.setHeader('Content-Disposition', 'attachment; filename=job_description.docx');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        
+        // Send the buffer as the response
+        res.send(docxBuffer);
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message,
+        });
+    }
+};
+
+*/
 let all_package_transaction = async (req, res) => {
     try {
         const { payment_status } = req.query;
@@ -6974,13 +7067,14 @@ let all_package_transaction = async (req, res) => {
             .find(filter)
             .sort({ createdAt : -1 })
             .lean();
-
+   
         if (!all_transactions || all_transactions.length === 0) {
             return res.status(400).json({
                 success: false,
                 message: 'No Transaction Found',
             });
         }
+
 
         // Map and format the transactions
         return res.status(200).json({
@@ -7002,14 +7096,19 @@ let all_package_transaction = async (req, res) => {
                 currency: t.currency,
             })),
         });
+
     } catch (error) {
-        return res.status(500).json({
+        return res.status(500).json({   
             success: false,
             message: 'Server error',
             error_message: error.message,
         });
     }
 };
+
+
+
+
 
 
 
@@ -7027,7 +7126,8 @@ module.exports = {
     get_saved_candidate_profile, update_candidate_rating, get_female_candidate_for_client, get_male_candidate_for_client,
     build_cv, get_all_candidate_for_client, export_client_jobs_candidate,
 
-    // Psychometric
+    // Psychometric 
+
     add_test_Category, getAll_psychometric_Category, Delete_category, 
 
     psychometric_test, getAll_psychometric_test_of_client,
@@ -7037,8 +7137,8 @@ module.exports = {
     update_topic_status, enroll_user_course_topic_quiz, save_user_quiz_record_of_course_topic,
     get_particular_enrolled_course_details, get_enrolled_user_detail, generate_avg_score_of_enroll_user,
 
-    download_certificate, export_client_jobs_filteredcandidate, download_word_Jd,
+    download_certificate, export_client_jobs_filteredcandidate , download_word_Jd, 
 
-    add_Main_JobTitle, all_main_jobTitle, delete_main_jobTitle, all_package_transaction, update_detail
+    add_Main_JobTitle, all_main_jobTitle, delete_main_jobTitle , all_package_transaction, update_detail
 
 } 

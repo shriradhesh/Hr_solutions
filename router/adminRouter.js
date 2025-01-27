@@ -229,7 +229,7 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
 
                     router.post("/cms_labour_tool", authUser, role_check('/cms_labour_tool'),  Admin_and_staffController.cms_labour_tool)
         // Api for get_cms_labour_tool_details
-                    router.get("/get_cms_labour_tool_details",  authUser, role_check('/get_cms_labour_tool_details'), Admin_and_staffController.get_cms_labour_tool_details)
+                    router.get("/get_cms_labour_tool_details",   Admin_and_staffController.get_cms_labour_tool_details)
 
         // Api for create and update cms_online_cources
         router.post("/cms_online_courses", upload.single('image'), authUser, role_check('/cms_online_courses'),  Admin_and_staffController.cms_online_cources)
@@ -384,7 +384,8 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
      // Api for export_course_transaction
      router.get('/export_course_transaction', Admin_and_staffController.export_course_transaction)
 
-     
+     // Api for get_talent_pool_count_for_client
+     router.get('/get_talent_pool_count_for_client/:client_id' , Admin_and_staffController.get_talent_pool_count_for_client)
   
 
         

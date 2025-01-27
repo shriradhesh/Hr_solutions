@@ -42,6 +42,8 @@ const add_endPoints = async (req, res) => {
         // Find or create permission document
         let permissionDoc = await permissionModel.findOne(query);
 
+
+        
         if (!permissionDoc) {
             // Create a new document if none exists
             const permissions = endpoints.map(endpoint => ({ endpoint, permission: 1 }));

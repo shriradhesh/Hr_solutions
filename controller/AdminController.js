@@ -290,7 +290,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                     })
                  }
             }
-
+                    
         // Api for changePassword
                   const admin_ChangePassword = async( req ,res)=>{
                        try {
@@ -8561,13 +8561,14 @@ const jobseeker_count_of_client_job = async (req, res) => {
 
                      // check for email content 
                      const emailContent = await emailTemplateModel.findOne({ email_title })
-                     if(!emailContent)
-                     {
-                        return res.status(400).json({
-                               success : false ,
-                               message : `No email Template Found for  ${email_title}`
-                        })
-                     }
+
+                    //  if(!emailContent)
+                    //  {
+                    //     return res.status(400).json({
+                    //            success : false ,
+                    //            message : `No email Template Found for  ${email_title}`
+                    //     })
+                    //  }
 
                      return res.status(200).json({
                            sucess : true ,
@@ -8877,8 +8878,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                             const statusMessages = {
                                 1: "Activated",
                                 0: "Deactivated",
-                                4: "Activated_Deactivated", 
-                                
+                                4: "All",                                
                             };
                     
                             if (!statusMessages[status]) {
@@ -8887,20 +8887,15 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                     message: "Invalid client_status value",
                                 });
                             }
-                            let clients;
-                if (status === 4) {
-                    // Fetch both Activated (1) and Deactivated (0) clients
-                    jobs = await employeeModel.find({
-                        status: { $in: [1, 0] },
-                    });
-                } else {
-                    // Fetch jobs with the specific status
-                     clients = await employeeModel.find({ status });
-                }
-                                 
-                    
-                          
-                            
+                            let clients
+                            if(status === 4)
+                            {
+                                   clients = await employeeModel.find({ status : { $ne : 2 }})
+                            }else
+                            {
+                                     // Fetch clients with the given status
+                                clients  = await employeeModel.find({ status });
+                            }                           
                     
                             // Create Excel workbook and worksheet
                             const workbook = new ExcelJs.Workbook();
@@ -8961,120 +8956,123 @@ const jobseeker_count_of_client_job = async (req, res) => {
                     
         // Api for export all jobs
 
-        const export_Jobs = async (req, res) => {
-            try {
-                const { job_status } = req.query;
-        
-                // Validate and parse job_status
-                if (!job_status || isNaN(job_status)) {
-                    return res.status(400).json({
-                        success: false,
-                        message: "Invalid or missing job_status value",
-                    });
-                }
-        
-                const status = parseInt(job_status, 10);
-                const statusMessages = {
-                    1: "Activated",
-                    3: "Deactivated",
-                    4: "Activated_Deactivated", 
-                };
-        
-                if (!statusMessages[status]) {
-                    return res.status(400).json({
-                        success: false,
-                        message: "Invalid job_status value",
-                    });
-                }
-        
-                let jobs;
-                if (status === 4) {
-                    // Fetch both Activated (1) and Deactivated (3) jobs
-                    jobs = await jobModel.find({
-                        status: { $in: [1, 3] },
-                    });
-                } else {
-                    // Fetch jobs with the specific status
-                    jobs = await jobModel.find({ status });
-                }
-        
-                // Create Excel workbook and worksheet
-                const workbook = new ExcelJs.Workbook();
-                const worksheet = workbook.addWorksheet("Jobs");
-        
-                // Define the Excel Header
-                worksheet.columns = [
-                    { header: "Job Id", key: "jobId" },
-                    { header: "Job Title", key: "job_title" },
-                    { header: "Company Name", key: "company_name" },
-                    { header: "Number of Employees Needed", key: "Number_of_emp_needed" },
-                    { header: "Job Type", key: "job_type" },
-                    { header: "Job Schedule", key: "job_schedule" },
-                    { header: "Salary Pay", key: "salary_pay" },
-                    { header: "Job Description", key: "job_Description" },
-                    { header: "Job Responsibility", key: "job_Responsibility" },
-                    { header: "Company Address", key: "company_address" },
-                    { header: "Company Email", key: "employee_email" },
-                    { header: "Job Start Date", key: "startDate" },
-                    { header: "Job End Date", key: "endDate" },
-                    { header: "Client Phone Number", key: "phone_no" },
-                    { header: "Key Qualification", key: "key_qualification" },
-                    { header: "Acadmic Qualification", key: "acadmic_qualification" },
-                    { header: "Experience Needed", key: "Experience" },
-                    { header: "Company Industry", key: "company_Industry" },
-                    { header: "Job Location", key: "location" },
-                    { header: "HR Email", key: "hr_email" },
-                    { header: "Hiring Manager Email", key: "hiring_manager_email" },
-                ];
-        
-                // Add Jobs data to the worksheet
-                jobs.forEach((job) => {
-                    worksheet.addRow({
-                        jobId: job.jobId,
-                        job_title: job.job_title,
-                        company_name: job.company_name,
-                        Number_of_emp_needed: job.Number_of_emp_needed,
-                        job_type: job.job_type,
-                        job_schedule: job.job_schedule,
-                        salary_pay: `Sl ${job.salary_pay[0].Minimum_pay} - Sl ${job.salary_pay[0].Maximum_pay} / ${job.salary_pay[0].Rate}`,
-                        job_Description: job.job_Description,
-                        job_Responsibility: job.job_Responsibility,
-                        company_address: job.company_address,
-                        employee_email: job.employee_email,
-                        startDate: job.startDate,
-                        endDate: job.endDate,
-                        phone_no: job.phone_no,
-                        key_qualification: job.key_qualification,
-                        acadmic_qualification: job.acadmic_qualification,
-                        Experience: job.Experience,
-                        company_Industry: job.company_Industry,
-                        location: job.location,
-                        hr_email: job.hr_email,
-                        hiring_manager_email: job.hiring_manager_email,
-                    });
-                });
-        
-                // Set response headers for downloading the Excel file
-                res.setHeader(
-                    "Content-Type",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                );
-                res.setHeader(
-                    "Content-Disposition",
-                    `attachment; filename=${statusMessages[status]}_jobs.xlsx`
-                );
-        
-                // Generate and send the Excel File as a response
-                await workbook.xlsx.write(res);
-        
-                // End the response
-                res.end();
-            } catch (error) {
-                console.error("Error exporting Jobs:", error);
-                res.status(500).json({ error: "Internal server error" });
-            }
-        };
-        
+                    const export_Jobs = async (req, res) => {
+                        try {
+                            const { job_status } = req.query;
+                    
+                            // Validate and parse job_status
+                            if (!job_status || isNaN(job_status)) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: "Invalid or missing job_status value",
+                                });
+                            }
+                    
+                            const status = parseInt(job_status, 10);
+                            const statusMessages = {
+                                1: "Activated",
+                                3: "Deactivated",
+                                4: "All",                                
+                            };
+
+                    
+                            if (!statusMessages[status]) {
+                                return res.status(400).json({
+                                    success: false,
+                                    message: "Invalid job_status value",
+                                });
+                            }
+                            let jobs
+
+                            if(status === 4)
+                            {
+                                jobs = await jobModel.find({ status : { $ne : 2 }})
+                            }else
+                            {
+                                        // Fetch clients with the given status
+                                     jobs  = await jobModel.find({ status });
+                            } 
+                          
+                            
+                    
+                            // Create Excel workbook and worksheet
+                            const workbook = new ExcelJs.Workbook();
+                            const worksheet = workbook.addWorksheet("Jobs");
+                    
+                            // Define the Excel Header
+                            worksheet.columns = [
+                                { header: "Job Id", key: "jobId" },
+                                { header: "Job Title", key: "job_title" },
+                                { header: "Company Name", key: "company_name" },                   
+                                { header: "Number of Employees Needed", key: "Number_of_emp_needed" },
+                                { header: "Job Type", key: "job_type" },
+                                { header: "Job Schedule", key: "job_schedule" },
+                                { header: "Salary Pay", key: "salary_pay" },
+                                { header: "Job Description", key: "job_Description" },
+                                { header: "Job Responsibility", key: "job_Responsibility" },
+                                { header: "Company Address", key: "company_address" },
+                                { header: "Company Email", key: "employee_email" },
+                                { header: "Job Start Date", key: "startDate" },
+                                { header: "Job End Date", key: "endDate" },
+                                { header: "Client Phone Number", key: "phone_no" },
+                                { header: "Key Qualification", key: "key_qualification" },
+                                { header: "Acadmic Qualification", key: "acadmic_qualification" },
+                                { header: "Experience Needed", key: "Experience" },
+                                { header: "Company Industry", key: "company_Industry" },
+                                { header: "JOb Location", key: "location" },
+                                { header: "HR Email", key: "hr_email" },
+                                { header: "Hiring Manager Email", key: "hiring_manager_email" },   
+
+                            ];
+                        
+                            // Add JObs data to the worksheet
+                            jobs.forEach((job) => {
+                                worksheet.addRow({
+                                    jobId: job.jobId,
+                                    job_title: job.job_title,
+                                    company_name: job.company_name,
+                                    Number_of_emp_needed: job.Number_of_emp_needed,
+                                    job_type: job.job_type,
+                                    job_schedule: job.job_schedule,
+                                    salary_pay: `Sl${job.salary_pay[0].Minimum_pay} - Sl ${job.salary_pay[0].Maximum_pay} / ${job.salary_pay[0].Rate}`,
+                                    job_Description: job.job_Description,
+                                    job_Responsibility: job.job_Responsibility,
+                                    company_address: job.company_address,
+                                    employee_email: job.employee_email,
+                                    startDate: job.startDate,
+                                    endDate: job.endDate,
+                                    phone_no: job.phone_no,
+                                    key_qualification: job.key_qualification,
+                                    acadmic_qualification: job.acadmic_qualification,
+                                    Experience: job.Experience,
+                                    company_Industry: job.company_Industry,
+                                    location: job.location,
+                                    hr_email: job.hr_email,
+                                    hiring_manager_email: job.hiring_manager_email,
+                                });
+                            });
+                    
+                            // Set response headers for downloading the Excel file
+                            res.setHeader(
+                                "Content-Type",
+                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                            );
+                            res.setHeader(
+                                "Content-Disposition",
+                                `attachment; filename=${statusMessages[status]}_jobs.xlsx`
+                            );
+                    
+                            // Generate and send the Excel File as a response
+                            await workbook.xlsx.write(res);
+                    
+                            // End the response
+                            res.end();
+                        } catch (error) {
+                            console.error("Error exporting Jobs:", error);
+                            res.status(500).json({ error: "Internal server error" });
+                        }
+                    };
+                    
         // Api for export all Hr Admin
           
         const export_package_transaction = async (req, res) => {
@@ -9214,6 +9212,8 @@ const jobseeker_count_of_client_job = async (req, res) => {
                         }
                     };
 
+
+
                     const export_Hr_staff = async (req, res) => {
                         try {           
                     
@@ -9231,8 +9231,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                 { header: "Phone Number", key: "phone_no" },                   
                                 { header: "profile Image", key: "profileImage" },
                                 { header: "Role", key: "role" },
-                                { header: "Status", key: "status" },                               
-
+                                { header: "Status", key: "status" },                              
 
                             ];
                     
@@ -9291,8 +9290,8 @@ const jobseeker_count_of_client_job = async (req, res) => {
         
             
                 const newLocation = new sl_loc_model({ 
-                    loc : loc,
-                     lat : lat,
+                       loc : loc,
+                       lat : lat,
                       long : long });
 
                 await newLocation.save();
@@ -9330,7 +9329,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                             message: "Invalid or missing transaction_status value.",
                         });
                 }
-        
+                 
                 // Map transaction_status to corresponding payment_status
                 const payment_status = statusMapping[transaction_status];
         
@@ -9340,9 +9339,9 @@ const jobseeker_count_of_client_job = async (req, res) => {
                 
                 // Create Excel workbook and worksheet
                 const workbook = new ExcelJs.Workbook();
-                const worksheet = workbook.addWorksheet("course_transaction");
+                const worksheet = workbook.addWorksheet("course_transaction"); 
         
-                // Define the Excel Header
+                // Define the Excel Header           
                 worksheet.columns = [
                     { header: "Booking Id", key: "booking_id" },
                     { header: "Course Name", key: "course_name" },
@@ -9353,7 +9352,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                     { header: "Payment Time", key: "payment_time" },
                     { header: "Currency", key: "currency" },
                 ];
-        
+                    
                 // Add Course Transaction data to the worksheet
                 course_transaction.forEach((ct) => {
                     worksheet.addRow({
@@ -9392,7 +9391,77 @@ const jobseeker_count_of_client_job = async (req, res) => {
         };
 
         
-        
+// Api for get telenet pool count for client
+const get_talent_pool_count_for_client = async (req, res) => {
+    try {
+          const { client_id } = req.params;
+          
+          // Check for clientId
+          if (!client_id) {
+              return res.status(400).json({
+                  success: false,
+                  message: 'client Id Required'
+              });
+          }
+
+          // Check for client
+          const client = await employeeModel.findOne({ _id: client_id });
+          if (!client) {
+              return res.status(400).json({
+                  success: false,
+                  message: 'Client Details not found'
+              });
+          }
+
+          // Check total job posted by client
+          const totalJobs = await jobModel.find({  emp_Id: client_id  });
+
+          const currentYear = new Date().getFullYear();
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const details = [];
+
+          for (let i = 0; i < 12; i++) {
+              const startDate = new Date(currentYear, i, 1);
+              const endDate = new Date(currentYear, i + 1, 0);
+
+              // Fetch all male talent pool
+              const all_talent_pool = await appliedjobModel.find({
+                  jobId: { $in: totalJobs.map(job => job.jobId) },
+                  gender: 'Male',
+                  createdAt: { $gte: startDate, $lte: endDate }
+              });
+
+              // Fetch female talent pool
+              const female_screened = await appliedjobModel.find({
+                  jobId: { $in: totalJobs.map(job => job.jobId) },
+                  gender: 'Female',
+                  createdAt: { $gte: startDate, $lte: endDate }
+              });
+
+              const talentPoolCount = all_talent_pool.length;
+              const femaleScreenedCount = female_screened.length;
+
+              details.push({
+                  month: monthNames[i],
+                  talentPool_count: talentPoolCount,
+                  Female_screened_count: femaleScreenedCount
+              });
+          }
+
+          return res.status(200).json({
+              success: true,
+              message: 'Talent Pool Details for client',
+              details: details
+          });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: 'Server error'
+        });
+    }
+};
+     
                     
 module.exports = {
     login , getAdmin, updateAdmin , admin_ChangePassword , addStaff , getAll_Staffs , getAllEmp , active_inactive_emp ,
@@ -9401,13 +9470,13 @@ module.exports = {
     send_notification ,  create_services , getService ,  create_privacy_policy , get_admin_privacy_policy,
     create_term_condition , get_admin_term_condition , getAll_candidates , AdminforgetPassOTP , AdminverifyOTP , adminResetPass ,
     getAdminNotification , unseen_admin_notification_count ,seen_notification , get_FAQdetails , createFAQ , DeleteFAQ , get_contactUS, DeleteContactUS ,
-    Overtime , leave_allowence , calculate_EOSB , net_salary , fav_job, get_All_favourite_jobs , addJob_skills , alljobSkills , deletejobskill ,
+    Overtime , leave_allowence , calculate_EOSB , net_salary , fav_job , get_All_favourite_jobs , addJob_skills , alljobSkills , deletejobskill ,
     getJs , 
             
-                /* Report ad Aalysis */
+                /* Report and Analysis */
     jobseeker_count , getclient_count , get_talent_pool_count , get_female_screened_count , jobseeker_count_city_wise , 
     
-                        /*  CMS PAGE */
+                                    /*  CMS PAGE */
 
      create_testimonial , getAll_testimonial , get_testimonial , update_testimonial , delete_testimonial,
      cms_job_posting_section1 , getJobs_posted_procedure_section1 , cms_need_any_job_section,
@@ -9427,13 +9496,12 @@ module.exports = {
      course_quiz_test , get_quiz_test_of_course, course_quiz ,
       delete_question_in_test , delete_test, addQuestion_in_Quiz_test ,
      add_topics , delete_course_topic , all_topics_of_course , edit_topic , update_question_of_quiz,  
-     get_transaction , get_all_courses_details ,  jobseeker_count_of_client_job,
+     get_transaction , get_all_courses_details ,  jobseeker_count_of_client_job, 
 
      create_email_template , getall_emailContent , emailContent_of_title ,
      add_clientPackage , get_allPackages , active_inactive_Package , updatepackage , getActivePackages , 
      export_clients , export_Jobs , export_Hr_staff  , export_Enrolled_user , add_sl_loc , export_package_transaction,
-     export_course_transaction
-     
+     export_course_transaction     , get_talent_pool_count_for_client
      
 }
 
