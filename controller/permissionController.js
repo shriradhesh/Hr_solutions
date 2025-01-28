@@ -18,13 +18,13 @@ const add_endPoints = async (req, res) => {
                 message: 'endPoints must be a non-empty array',
             });
         }
+
         if (role === 'HR Coordinator' && !staff_id) {
             return res.status(400).json({
                 success: false,
                 message: `Staff Id is required for role: ${role}`,
             });
-        }
-
+        }   
         // Check if the staff exists 
         if (role === 'HR Coordinator') {
             const staff = await Admin_and_staffsModel.findOne({ staff_id }); 
@@ -41,8 +41,6 @@ const add_endPoints = async (req, res) => {
 
         // Find or create permission document
         let permissionDoc = await permissionModel.findOne(query);
-
-
         
         if (!permissionDoc) {
             // Create a new document if none exists
@@ -89,7 +87,7 @@ const updatePermission = async (req, res) => {
                 message: "Role is required",
             });
         }
-
+            
         // Validate permissions array
         if (!permissions || !Array.isArray(permissions) || permissions.length === 0) {
             return res.status(400).json({
@@ -97,14 +95,14 @@ const updatePermission = async (req, res) => {
                 message: "Permissions must be a non-empty array",
             });
         }
-
+            
                 if (role === "HR Coordinator" && !staff_id) {
             return res.status(400).json({
                 success: false,
                 message: `Staff Id is required for role: ${role}`,
             });
         }
-
+              
         // check for staff_id 
 
         if (role === "HR Coordinator") {
@@ -114,16 +112,16 @@ const updatePermission = async (req, res) => {
                     success: false,
                     message: `Staff not found with the staff_id: ${staff_id}`,
                 });
-            }
+            } 
         }
-        
+               
         const query = role === "HR Coordinator" ? { role, staff_id } : { role };
 
         // Find or create permission document
         let permissionDoc = await permissionModel.findOne(query);
 
         if (!permissionDoc) {
-        
+             
             const formattedPermissions = permissions.map(({ endpoint, allow }) => ({ endpoint, permission: allow ? 1 : 0 }));
             await permissionModel.create({ role, staff_id, permissions: formattedPermissions });
         } else {
@@ -195,7 +193,7 @@ const updatePermission = async (req, res) => {
             }
      }
 
-
+           
      // APi for get permissions for role
 
               const get_added_permission_for_staff = async( req , res )=> {
@@ -208,7 +206,7 @@ const updatePermission = async (req, res) => {
                                    message : 'Staff Id Required'
                               })
                            }
-
+                                 
                            // check for staff 
                            const check_staff = await permissionModel.findOne({ staff_id : staff_id })
                            if(!check_staff)
@@ -218,13 +216,18 @@ const updatePermission = async (req, res) => {
                                    message : 'No Permission found yet for Staff'
                               })
                            }
+                                                                                     
+                                // Extract only the endpoints with permission value 1
+                                const filteredEndpoints = check_staff.permissions
+                                .filter(permission => permission.permission === 1)
+                                .map(permission => permission.endpoint);
 
                            return res.status(200).json({
                                success : true ,
                                message : 'Staff Permission',
                                role : check_staff.role,
                                staff_id : check_staff.staff_id,
-                               permissions : check_staff.permissions
+                               permissions : filteredEndpoints
                            })
                     } catch (error) {
                           return res.status(500).json({
@@ -234,4 +237,6 @@ const updatePermission = async (req, res) => {
                           })
                     }
               }
-module.exports = { add_endPoints , updatePermission  , get_permissions_data , get_added_permission_for_staff}
+
+
+module.exports = { add_endPoints , updatePermission  , get_permissions_data , get_added_permission_for_staff }

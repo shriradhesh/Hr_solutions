@@ -7048,7 +7048,7 @@ const download_word_Jd = async (req, res) => {
 };
 
 */
-let all_package_transaction = async (req, res) => {
+ let all_package_transaction = async (req, res) => {
     try {
         const { payment_status } = req.query;
 
@@ -7096,7 +7096,7 @@ let all_package_transaction = async (req, res) => {
                 currency: t.currency,
             })),
         });
-
+               
     } catch (error) {
         return res.status(500).json({   
             success: false,

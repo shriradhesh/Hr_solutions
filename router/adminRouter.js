@@ -243,13 +243,13 @@ router.post('/adminResetPass/:adminId', Admin_and_staffController.adminResetPass
 
                                      /* labour LAW  */
        // Api for Overtime
-               router.post('/Overtime', authUser, role_check('/Overtime'),  Admin_and_staffController.Overtime)
+               router.post('/Overtime',  Admin_and_staffController.Overtime)
        // Api for leave_allowence
-               router.post('/leave_allowence', authUser, role_check('/leave_allowence'),  Admin_and_staffController.leave_allowence)
+               router.post('/leave_allowence',   Admin_and_staffController.leave_allowence)
        // Api for calculate_EOSB
-               router.post('/calculate_EOSB', authUser, role_check('/calculate_EOSB'),  Admin_and_staffController.calculate_EOSB)
+               router.post('/calculate_EOSB',   Admin_and_staffController.calculate_EOSB)
         // calculate new salary
-               router.post('/net_salary',  authUser, role_check('/net_salary'), Admin_and_staffController.net_salary)
+               router.post('/net_salary',  Admin_and_staffController.net_salary)
 
                                     /* Report & Analysis */
         // Api for jobseeker_count

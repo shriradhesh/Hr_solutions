@@ -9154,7 +9154,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                 res.status(500).json({ success: false, error: "Internal server error" , errro_message : error.message});
             }
         };
-        
+                   
         
         
                     const export_Enrolled_user = async (req, res) => {
@@ -9231,7 +9231,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                 { header: "Phone Number", key: "phone_no" },                   
                                 { header: "profile Image", key: "profileImage" },
                                 { header: "Role", key: "role" },
-                                { header: "Status", key: "status" },                              
+                                { header: "Status", key: "status" },                           
 
                             ];
                     
@@ -9310,6 +9310,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                 });
             }
         };
+ 
 
         const export_course_transaction = async (req, res) => {
             try {
@@ -9325,10 +9326,10 @@ const jobseeker_count_of_client_job = async (req, res) => {
                 // Check if transaction_status is valid
                 if (!transaction_status || !statusMapping[transaction_status]) {
                         return res.status(400).json({
-                            success: false,
+                            success: false, 
                             message: "Invalid or missing transaction_status value.",
                         });
-                }
+                } 
                  
                 // Map transaction_status to corresponding payment_status
                 const payment_status = statusMapping[transaction_status];
@@ -9405,7 +9406,7 @@ const get_talent_pool_count_for_client = async (req, res) => {
           }
 
           // Check for client
-          const client = await employeeModel.findOne({ _id: client_id });
+          const client = await employeeModel.findOne({ _id: client_id })
           if (!client) {
               return res.status(400).json({
                   success: false,
@@ -9414,12 +9415,12 @@ const get_talent_pool_count_for_client = async (req, res) => {
           }
 
           // Check total job posted by client
-          const totalJobs = await jobModel.find({  emp_Id: client_id  });
+          const totalJobs = await jobModel.find({  emp_Id : client_id  });
 
           const currentYear = new Date().getFullYear();
           const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          const details = [];
-
+          const details = []; 
+                    
           for (let i = 0; i < 12; i++) {
               const startDate = new Date(currentYear, i, 1);
               const endDate = new Date(currentYear, i + 1, 0);
@@ -9447,7 +9448,7 @@ const get_talent_pool_count_for_client = async (req, res) => {
                   Female_screened_count: femaleScreenedCount
               });
           }
-
+               
           return res.status(200).json({
               success: true,
               message: 'Talent Pool Details for client',
