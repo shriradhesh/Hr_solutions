@@ -9,22 +9,20 @@ const role_check = (requiredEndpoint) => async (req, res, next) => {
         if (userRole === 'HR Coordinator') {
             query.staff_id = staffId;
         }
-
         // Fetch the permission document for the user
         const permission = await permissionModel.findOne(query);
 
         if (!permission) {
             return res.status(400).json({
                 success: false,
-                message: `No permissions found for role: ${userRole}.`,
+                message: `Dear ${userRole}, you are not authorized to access this section!.`,
             });
         }
-
+                
         // Check if the required endpoint exists and has permission > 0
         const hasAccess = permission.permissions.some(
             (p) => p.endpoint === requiredEndpoint && p.permission > 0
-        );
-
+              );
         if (!hasAccess) {
             return res.status(400).json({
                 success: false,
@@ -32,7 +30,9 @@ const role_check = (requiredEndpoint) => async (req, res, next) => {
             });
         }
 
-        next(); // User is authorized
+        next(); 
+        
+
     } catch (error) {
         console.error(error);
         res.status(500).json({

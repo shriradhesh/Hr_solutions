@@ -15,10 +15,12 @@ const authenticate = (req, res, next) => {
     if (isTokenBlacklisted(token)) 
         {
         return res.status(400).json({
-              success : false,
-              message: 'Token has been invalidated'
+          success : false,
+          message: 'Token has been invalidated'
              });
     }
+
+
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
              // current date and time

@@ -37,7 +37,7 @@ router.post('/verifyOTP', userController.verifyOTP)
 
 // reset password and token verify
 
-router.post('/clientResetPass/:clientId', userController.clientResetPass)
+router.post('/clientResetPass/:clientId', userController.clientResetPass) 
         
 
                                                  /*job title section */
@@ -48,7 +48,8 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
         // Api for deletejobTitle
                          router.delete('/deletejobTitle/:jobtitle_id',  authUser, role_check('/deletejobTitle'), userController.deletejobTitle)
 
-                                                /* job Description */
+                                                  /* job Description */
+
         // Api for add jD
                          router.post('/addJob_Description', authUser, role_check('/addJob_Description'), userController.addJob_Description)
         // Api for alljobDescription
@@ -107,6 +108,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
                                       /* JOb Seeker section */
         // Api for allJobs
                 router.get('/getAll_Jobs', userController.getAll_Jobs)
+
         // Api for searchJob
                 router.post('/searchJob', userController.searchJob)
         // Api for filter job
@@ -168,7 +170,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          // Api for uploadResume
                  router.post('/uploadResume', upload.single('uploadResume') , userController.uploadResume)
         // Api for get_upload_section_candidates
-                 router.get('/get_upload_section_candidates', userController.get_upload_section_candidates)
+                 router.get('/get_upload_section_candidates', authUser, role_check('/get_upload_section_candidates'),  userController.get_upload_section_candidates)
         // Api for candidate_recruitment_process_for_uploaded_candidate
                  router.post('/candidate_recruitment_process_for_uploaded_candidate/:candidateId' , userController.candidate_recruitment_process_for_uploaded_candidate)
         // Api for get_successfull_candidate
@@ -214,7 +216,7 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          // Api for courses_user_enroll
          router.post('/courses_user_enroll', upload.single('profileImage') , userController.courses_user_enroll)
          // Api for all_enrolled_user
-         router.get('/all_enrolled_user', userController.all_enrolled_user)
+         router.get('/all_enrolled_user', authUser, role_check('/all_enrolled_user'), userController.all_enrolled_user)
          // Api for enrolled_user_login
          router.post('/enrolled_user_login',  userController.enrolled_user_login)
          // Api for enroll_course
@@ -230,12 +232,12 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          // Api for update_topic_status
          router.post('/update_topic_status/:user_id/:topic_id' , authUser, role_check('/update_topic_status'), userController.update_topic_status)
 
-                  // Api for enroll_user_course_topic_quiz
+         // Api for enroll_user_course_topic_quiz
           router.get('/enroll_user_course_topic_quiz/:enroll_user_id/:topic_id', userController.enroll_user_course_topic_quiz )
 
- // Api for save_user_quiz_record_of_course_topic
-  router.post('/save_user_quiz_record_of_course_topic/:enroll_user_id/:course_id', userController.save_user_quiz_record_of_course_topic)
- 
+        // Api for save_user_quiz_record_of_course_topic
+        router.post('/save_user_quiz_record_of_course_topic/:enroll_user_id/:course_id', userController.save_user_quiz_record_of_course_topic)
+        
           // Api for get_particular_enrolled_course_details
           router.get('/get_particular_enrolled_course_details/:user_id/:course_id' , userController.get_particular_enrolled_course_details)
 
@@ -264,10 +266,18 @@ router.post('/clientResetPass/:clientId', userController.clientResetPass)
          router.delete('/delete_main_jobTitle/:main_jobtitle_id' , authUser, role_check('/delete_main_jobTitle'), userController.delete_main_jobTitle )
 
          // Api for all_package_transaction
-         router.get('/all_package_transaction', userController.all_package_transaction)
+         router.get('/all_package_transaction',authUser, role_check('/all_package_transaction'), userController.all_package_transaction)
 
          // Api for update_detail
          router.post('/update_detail', userController.update_detail)
+
+
+         // Api for getAll_Jobs_admin
+
+         router.get('/getAll_Jobs_admin', authUser, role_check('/getAll_Jobs_admin'), userController.getAll_Jobs_admin)
+         // Api for all_main_jobTitle_main
+
+         router.get('/all_main_jobTitle_main', authUser, role_check('/all_main_jobTitle_main'), userController.all_main_jobTitle_main)
 
 
 module.exports = router

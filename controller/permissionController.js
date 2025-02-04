@@ -64,6 +64,7 @@ const add_endPoints = async (req, res) => {
             success: true,
             message: 'Endpoints added successfully',
         });
+
     } catch (error) {
         // Error response
         return res.status(500).json({
@@ -174,7 +175,7 @@ const updatePermission = async (req, res) => {
                                   message : 'Permissions Record not found'
                                })
                          }
-
+                           
                          return res.status(200).json({
                                success : true ,
                                message : 'Permissions Records',
@@ -193,6 +194,8 @@ const updatePermission = async (req, res) => {
             }
      }
 
+
+      
            
      // APi for get permissions for role
 
@@ -237,6 +240,7 @@ const updatePermission = async (req, res) => {
                           })
                     }
               }
+
 
 
 module.exports = { add_endPoints , updatePermission  , get_permissions_data , get_added_permission_for_staff }

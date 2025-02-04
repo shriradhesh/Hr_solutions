@@ -106,6 +106,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                     message: "Password is Required",
                 });
             }
+
             // Find Admin by email
             const admin_and_staffs = await Admin_and_staffsModel.findOne({ email: email  });
     
@@ -115,6 +116,8 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                     message: "Email incorrect"
                 });
             }
+
+
     
             // Check if the stored password is in plain text
             if (admin_and_staffs.password && admin_and_staffs.password.startsWith("$2b$")) {
@@ -136,6 +139,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                          message : 'Your account is suspended. Please contact the super admin for further details'
                     })
                 }
+
             } else {
                 // Convert plain text password to bcrypt hash
                 const saltRounds = 10;
@@ -173,7 +177,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
             res.status(500).json({
                 success: false,
                 message: "server error",
-                error_message : error.message
+                error_message : error.message 
                 
             });
         }
@@ -709,7 +713,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                 `;
         
                 const notifications = [];
-        
+
                 // Send the same notification to all clients
                 for (const client of allClients) {
                     // Send email to client
@@ -725,7 +729,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                     
                     notifications.push(savedNotification);
                 }
-        
+             
                 // Respond with success message
                 return res.status(200).json({
                     success: true,
@@ -746,8 +750,10 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
 
         // APi for send Notification to all client nd particular client
              const send_notification = async( req , res)=>{
-                   try {
-                          const superAdmin_Id = req.params.superAdmin_Id
+                 try {
+                     const superAdmin_Id = req.params.superAdmin_Id
+                     const super_adminChoice = req.body.super_adminChoice
+
                         if(!superAdmin_Id)
                         {
                             return res.status(400).json({
@@ -769,7 +775,6 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                     })
                  }
 
-            const super_adminChoice = req.body.super_adminChoice
              let notificationFunction 
              if(super_adminChoice === 1)
              {
@@ -815,7 +820,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
             const addStaff = async( req , res)=>{
                 try {
                       const adminId = req.params.adminId
-                      const {name , email , password , phone_no ,role  } = req.body
+                      const { name , email , password , phone_no , role  } = req.body
                     
                     // check for adminId
                     if(!adminId){
@@ -823,10 +828,10 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                                success : false,
                                message : 'admin Id required'
                         })
-                    }
+                    } 
 
                      // check for required fields
-                     const requiredFields = [ "name", "email", "password" ,"phone_no", "role" ]; 
+                     const requiredFields = [ "name", "email", "password" , "phone_no", "role" ]; 
 
                      for (const field of requiredFields) {
                      if (!req.body[field]) {
@@ -850,7 +855,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                                 })
                      } 
 
-                      // bcrypt the password
+                      // bcrypt the password 
 
                       const hashedPassword = await bcrypt.hash(password , 10)
 
@@ -861,14 +866,15 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                         const fileExtension = path.extname(req.file.filename).toLowerCase();
 
                         // List of allowed extensions
-                        const allowedExtensions = ['.jpg', '.jpeg', '.png'];
+                        const allowedExtensions = ['.jpg', '.jpeg', '.png']
 
                         // Check if the file extension is in the allowed list
                         if (allowedExtensions.includes(fileExtension)) {
-                            // If valid, update the profile image
+                           
                             profileImage = req.file.filename;
+                            
                         } else {
-                            // If not valid, throw an error
+                           
                             return res.status(400).json({
                                 success : false ,
                                 message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
@@ -892,12 +898,12 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                      const newstaff = new Admin_and_staffsModel({
                            staff_id,
                            name,
-                          email,
-                          password : hashedPassword,
-                          profileImage : profileImage,
-                          phone_no,
-                          role,
-                          status : 1
+                           email,
+                           password : hashedPassword,
+                           profileImage : profileImage,
+                           phone_no,
+                           role,
+                           status : 1
 
                      }) 
 
@@ -945,7 +951,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
             }
 
 
-            // Api for get all staffs members Details
+              // Api for get all staffs members Details
       
              const getAll_Staffs = async( req ,res)=>{
                 try {
@@ -959,13 +965,14 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                               success : false ,
                               message : 'Staffs not found'
                         })
-                       }
-
+                       }                       
+       
                        return res.status(200).json({
                          success : true ,
                          message : 'All Staffs',
                          allStaffs : allStaffs
                        })
+                                    
                 } catch (error) {
                     return res.status(500).json({
                           success : false ,
@@ -1064,6 +1071,8 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                          }
                   }
 
+                  
+
                     // Api for update staff Panel
             const updatestaff = async( req , res)=>{
                 try {
@@ -1118,7 +1127,9 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                        if(profileImage)
                        {
                         exist_staff.profileImage = profileImage
-                       }
+                       }                      
+                        
+
                        await exist_staff.save()
 
                        return res.status(200).json({
@@ -1133,8 +1144,6 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                    })
                 }
            }
-
-                
 
 
              // Api for changePassword
@@ -1164,7 +1173,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                          });
                      }
                      }
-
+                               
                          // check for staff
                      const staff = await Admin_and_staffsModel.findOne({ _id : staff_id })
                        
@@ -1199,6 +1208,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                               message : 'old Password incorrect '
                          })
                        }
+                
 
                         // encrypt the newPassword
 
@@ -1221,13 +1231,14 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                
             </table>
             `;
+
             // Send email to the staff
             await sendstaffEmail (staff.email, `Password Changed successfully ..!`, staffEmailContent);
                
                  await staff.save();
                  return res.status(200).json({
                      success: true,
-                     message: "Password changed Successfully",
+                     message: "Password changed Successfully", 
                     
                  });
                  
@@ -1325,7 +1336,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                 emailContentText = emailContent 
                 emailRecipient = candidate.user_Email ;
                 break;
-    
+                       
 
                 case 'Schedule_Interview':
                     candidate_status = 5;
@@ -1361,7 +1372,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                 subject: emailSubjectText,
                 html: emailContentText
             };
-    
+                     
             await send_candidateEmail(emailOptions);
     
             // Update candidate status
@@ -1401,7 +1412,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
             if (job_Heading) {
                 filter1.job_Heading = job_Heading;
             }
-            if (company_name) {
+            if (company_name) {                              
                 filter1.company_name = company_name;
             }
             if (relevant_experience) {
@@ -1504,7 +1515,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
         
                 // Fetch all employees based on the filter
                 const allEmp = await employeeModel.find(filter);
-        
+                        
                 // Check if no employees are found
                 if (allEmp.length === 0) {
                     return res.status(400).json({
@@ -1512,9 +1523,10 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                         message: 'No employees found',
                     });
                 }
-        
+                        
                 // Fetch all packages associated with employees
                 const packageIds = allEmp.map(emp => emp.package_id);
+                
                 const packages = await clientPackageModel.find({ _id: { $in: packageIds } });
         
                 // Create a mapping of package details by ID for quick access
@@ -1533,6 +1545,8 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                                 $lte: emp.package_end_date,
                             },
                         });
+
+                           
         
                         const package = packageMap[emp.package_id] || {}; 
         
@@ -1565,7 +1579,85 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
             }
         };
         
+        // Api for get all clients for admin
+
+        const getAllEmp_admin = async (req, res) => {
+            try {
+                let status = req.query.status; 
         
+                // Initialize the filter object
+                let filter = { status: { $ne: 2 } }; 
+        
+                // Apply specific status filtering if provided
+                if (status !== undefined) {
+                    filter = { status: parseInt(status) }; 
+                }
+        
+                // Fetch all employees based on the filter
+                const allEmp = await employeeModel.find(filter);
+                        
+                // Check if no employees are found
+                if (allEmp.length === 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'No employees found',
+                    });
+                }
+                        
+                // Fetch all packages associated with employees
+                const packageIds = allEmp.map(emp => emp.package_id);
+                
+                const packages = await clientPackageModel.find({ _id: { $in: packageIds } });
+        
+                // Create a mapping of package details by ID for quick access
+                const packageMap = packages.reduce((map, pkg) => {
+                    map[pkg._id] = pkg;
+                    return map;
+                }, {});
+        
+                // Fetch job count for each employee and package details
+                const allClientWithJobCount = await Promise.all(
+                    allEmp.map(async (emp) => {
+                        const jobCount = await jobModel.countDocuments({
+                            emp_Id: emp._id,
+                            createdAt: {
+                                $gte: emp.package_active_date,
+                                $lte: emp.package_end_date,
+                            },
+                        });
+
+                           
+        
+                        const package = packageMap[emp.package_id] || {}; 
+        
+                        // Exclude sensitive data like passwords
+                        const { password, ...empData } = emp.toObject();
+        
+                        return {
+                            ...empData,
+                            jobCount,
+                            job_active_days: package.valid_days || 0,
+                            portel_access_days: package.access_portal || 0,
+                        };
+                    })
+                );
+        
+                // Sort employees in descending order by createdAt
+                allClientWithJobCount.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        
+                return res.status(200).json({
+                    success: true,
+                    message: 'All Employees',
+                    Details: allClientWithJobCount,
+                });
+            } catch (error) {
+                return res.status(500).json({
+                    success: false,
+                    message: 'Server error',
+                    error_message: error.message,
+                });
+            }
+        };
         
         
        // Active inactive particular employee
@@ -1806,6 +1898,60 @@ const active_inactive_job = async (req, res) => {
                                 }
                             }
 
+                            const getAllFemale_Candidate_admin = async ( req , res)=>{
+                                try {
+                                       const { jobSeeker_status } = req.query
+                                       const filter = {}
+
+                                    if(jobSeeker_status)
+                                    {
+                                        filter.jobSeeker_status = jobSeeker_status;
+                                    }
+                                    // check for all Female candidates
+                                    const allFemale_Candidate = await appliedjobModel.find({
+                                            gender : "Female",
+                                            ...filter
+                                    })
+                                    if(!allFemale_Candidate)
+                                    {
+                                        return res.status(400).json({
+                                            success : false,
+                                            message : 'No Female Candidates profile Found'
+                                        })
+                                    }
+                                    const sortedallFemale_Candidate = allFemale_Candidate.sort(( a , b) => b.createdAt - a.createdAt )
+                                    return res.status(200).json({
+                                        success : true ,
+                                        message : 'Female candidate Profile',
+                                        allFemale_CandidateCount : sortedallFemale_Candidate.length,
+                                        Details: sortedallFemale_Candidate.map((candidate) => ({
+                                        _id : candidate._id,
+                                        first_Name: candidate.first_Name,
+                                        last_Name: candidate.last_Name,
+                                        user_Email: candidate.user_Email,
+                                        city: candidate.city,
+                                        state: candidate.state,
+                                        phone_no: candidate.phone_no,
+                                        gender: candidate.gender,
+                                        resume: candidate.uploadResume,
+                                        Highest_Education: candidate.Highest_Education,
+                                        relevant_Experience: candidate.job_experience, 
+                                        Total_experience: candidate.Total_experience,
+                                        jobId : candidate.jobId,
+                                        candidateStatus : candidate.candidateStatus,
+                                        saved_status : candidate.saved_status,
+                                       candidate_rating : candidate.candidate_rating
+
+                                    }))
+                                });
+                                } catch (error) {
+                                    return res.status(500).json({
+                                            success : false ,
+                                            message : 'server error',
+                                            error_message : error.message
+                                    })
+                                }
+                            }
                                                    /* Privacy & Policy Section */
 
                                                    
@@ -1943,7 +2089,49 @@ const active_inactive_job = async (req, res) => {
                     }
                 }
 
+                const get_admin_privacy_policy_admin = async( req ,res)=>{
+                    try {
+                       
+                         const adminId = req.params.adminId
+                     // check for adminId
+                 if(!adminId)
+                 {
+                     return res.status(400).json({
+                          success : false ,
+                          message : 'adminId Required'
+                     })
+                 }
 
+                    // check Admin privacy policy
+                 const Admin_privacy_policy = await privacy_policyModel.findOne({
+                          AdminId : adminId
+                 })
+                     if(!Admin_privacy_policy)
+                    {
+                             return res.status(400).json({
+                                  success : false ,
+                                  message : 'no privacy policy found '
+                             })
+                     }
+                    return res.status(200).json({
+                          success : true ,
+                          message : 'Admin Privacy & Policy',
+                          Details : {
+                               _id : Admin_privacy_policy._id,    
+                               admin_id : Admin_privacy_policy.AdminId,
+                               Heading : Admin_privacy_policy.Heading,
+                              Description : Admin_privacy_policy.Description
+                          }
+                    })
+
+                    } catch (error) {
+                        return res.status(500).json({
+                            success : false ,
+                            message : 'server error',
+                            error_message : error.message
+                        })
+                    }
+                }
             
 
                                                          /* Term & Conditions Section */
@@ -2082,7 +2270,48 @@ const active_inactive_job = async (req, res) => {
                     }
                 }
                            
+                const get_admin_term_condition_admin = async( req , res)=>{
+    
+                    try {
+                               const adminId = req.params.adminId
+                          // check for adminId
+                          if(!adminId)
+                          {
+                              return res.status(400).json({
+                                       success : false ,
+                                       message : 'adminId required'
+                              })
+                          }
+                          // check for client term & condition
+                      const emp_t_c = await term_condition.findOne({
+                                    AdminId : adminId
+                      })
+                          if(!emp_t_c)
+                          {
+                              return res.status(400).json({
+                                   success : false ,
+                                   message : 'Term & conditions not found'
+                              })
+                          }
                 
+                          return res.status(200).json({
+                                success : true,
+                                message : 'term & Conditions',
+                                Details : {
+                                       _id : emp_t_c._id,
+                                        Admin_id : emp_t_c.AdminId,
+                                       Heading :  emp_t_c.Heading,
+                                        Description : emp_t_c.Description
+                                }
+                          })
+                    } catch (error) {
+                         return res.status(500).json({
+                                    success : false ,
+                                    message : 'server error',
+                                    error_message : error.message
+                         })
+                    }
+                }
           
                                                             /*  Service Page */
         
@@ -2132,6 +2361,7 @@ const active_inactive_job = async (req, res) => {
                         success: true,
                         message: 'Service updated successfully'
                     });
+
                 } else {
                        // check for required fields
                        if(!Heading)
@@ -2176,7 +2406,7 @@ const active_inactive_job = async (req, res) => {
                     const newService = new services({
                         Heading : Heading,
                         Description : Description,                     
-                        Description1 : Description1,                     
+                        Description1 : Description1,                    
                     
                         AdminId : adminId ,
                         image
@@ -2245,7 +2475,54 @@ const active_inactive_job = async (req, res) => {
                     })
                    }
                }
-                                        
+            // APi for get services details
+            const getService_admin = async ( req , res)=>{
+                try {
+                       const adminId = req.params.adminId
+                     // check for admin Id
+                     if(!adminId)
+                     {
+                         return res.status(400).json({
+                              success : false ,
+                              message : 'adminId required'
+                         })
+                     }
+                     // check for admin services
+
+                     const checkService = await services.findOne({
+                              AdminId : adminId
+                     })
+
+                        if(!checkService)
+                        {
+                         return res.status(400).json({
+                              success : false ,
+                              message : 'no services Found'
+                         })
+                        }
+
+                        return res.status(200).json({
+                          success : true ,
+                          message : 'services',
+                          Details : {
+                                _id : checkService._id,
+                                AdminId : checkService.AdminId,
+                                Heading :  checkService.Heading,
+                                Description : checkService.Description,                                 
+                                Description1 : checkService.Description1,                                 
+                                image : checkService.image
+                          }
+                        })
+                } catch (error) {
+                 return res.status(500).json({
+                         success : false ,
+                         message : 'server error',
+                         error_message : error.message
+                 })
+                }
+            }        
+               
+      
                                                  /* CMS Page */
             /* Testimonial Section */
         
@@ -2262,7 +2539,7 @@ const active_inactive_job = async (req, res) => {
                     });
                 }
         
-                if (!title) { // Corrected condition to check for the existence of the title field
+                if (!title) { 
                     return res.status(400).json({
                         success: false,
                         message: 'title required'
@@ -2277,20 +2554,20 @@ const active_inactive_job = async (req, res) => {
                 }
         
                 let user_image = null;
-                  // Update profileImage if a new file is provided
+                
                   if (req.file && req.file.filename) {
-                    // Get the file extension
+                    
                     const fileExtension = path.extname(req.file.filename).toLowerCase();
 
-                    // List of allowed extensions
+                  
                     const allowedExtensions = ['.jpg', '.jpeg', '.png'];
 
-                    // Check if the file extension is in the allowed list
+                  
                     if (allowedExtensions.includes(fileExtension)) {
-                        // If valid, update the profile image
+                       
                         user_image = req.file.filename;
                     } else {
-                        // If not valid, throw an error
+                       
                         return res.status(400).json({
                             success : false ,
                             message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
@@ -2351,6 +2628,36 @@ const active_inactive_job = async (req, res) => {
                     })
                    }
             }
+ 
+            const getAll_testimonial_admin = async( req ,res)=>{
+                try {
+                        // check for all testimonial 
+                     const all_testimonial = await cms_testimonialModel.find({
+                           
+                     })
+                     if(!all_testimonial)
+                     {
+                         return res.status(400).json({
+                               success : false ,
+                               message : 'no testimonial Details found'
+                         })
+                     }
+                     const sortedall_testimonial = all_testimonial.sort(( a , b ) => b.createdAt - a.createdAt )
+                     return res.status(200).json({
+                            success : true ,
+                            message : 'all testimonial',
+                            Details : sortedall_testimonial
+                     })
+                 
+                } catch (error) {
+                 return res.status(500).json({
+                       success : false,
+                       message : 'server error',
+                       error_message : error.message
+                 })
+                }
+         }
+
 
             // get particular testimonial Detail
               
@@ -2606,6 +2913,42 @@ const active_inactive_job = async (req, res) => {
                    }
           }
 
+          const getJobs_posted_procedure_section1_admin = async( req ,res)=>{
+            try {
+                     const adminId = req.params.adminId
+                 // check for adminId
+                 if(!adminId)
+                 {
+                     return res.status(400).json({
+                          success : false ,
+                          message : 'admin Id required'
+                     })
+                 }
+
+                 // check for details
+             const gjpps1 = await cms_job_posting_sectionModel.findOne({
+                       AdminId : adminId
+             })
+             if(!gjpps1)
+             {
+                 return res.status(400).json({
+                      success : false ,
+                      message : 'no Details found'
+                 })
+             }
+               return res.status(200).json({
+                  success : true ,
+                  message : 'Details',
+                  Details : gjpps1
+               })
+            } catch (error) {
+             return res.status(500).json({
+                   success : false ,
+                   message : 'server error',
+                   error_message : error.message
+             })
+            }
+   }
 
 
            /* job posting procedure section 2 ---- need any job ?? */
@@ -2744,6 +3087,46 @@ const active_inactive_job = async (req, res) => {
                         })
                     }
            }
+
+           // APi for get cms_need_any_job_section_admin
+           const get_cms_need_any_job_section_admin = async( req ,res)=>{
+            try {
+                        const adminId = req.params.adminId
+                        // check for adminId
+                if(!adminId)
+                {
+                    return res.status(400).json({
+                         success : false ,
+                         message : 'adminId Required'
+                    })
+                }
+
+                // check for details
+                const checkDetails = await cms_need_any_job_section_Model.findOne({
+                     AdminId : adminId
+                })
+
+                if(!checkDetails)
+                {
+                    return res.status(400).json({
+                         success : false ,
+                         message : 'Details not found'
+                    })
+                }
+
+                return res.status(200).json({
+                     success : false ,
+                     message : 'Details',
+                     Details : checkDetails
+                })
+            } catch (error) {
+                return res.status(500).json({
+                      success : false ,
+                      message : 'server error',
+                      error_message : error.message
+                })
+            }
+   }
         
               /* job posting procedure section  ----post your job ?? */
 
@@ -2885,7 +3268,47 @@ const active_inactive_job = async (req, res) => {
                       })
                    }
                }
-                    
+               const get_cms_post_your_job_admin = async (req , res) => {
+                try {
+                         const adminId = req.params.adminId
+
+                         // check for adminId
+                 if(!adminId)
+                 {
+                     return res.status(400).json({
+                            success : false , message : 'adminId required'
+                     })
+                 }
+
+                 // check for details
+                 const getDetails = await cms_postjobModel.findOne({
+                        AdminId : adminId
+                 })
+
+                 if(!getDetails)
+                 {
+                     return res.status(400).json({
+                          success : false ,
+                          message : 'Details not found'
+                     })
+                 }
+
+                 return res.status(200).json({
+                           success : true ,
+                           message : 'Details',
+                           Details : getDetails
+                 })
+
+
+                } catch (error) {
+                   return res.status(500).json({
+                         success : false,
+                         message : 'server Error',
+                         error_message : error.message
+                           
+                   })
+                }
+            } 
                
            /* job posting procedure section  ---- job market data ?? */
 
@@ -3046,7 +3469,48 @@ const active_inactive_job = async (req, res) => {
                })
             }
         }
+  
+        const get_cms_job_market_data_admin = async (req , res) => {
+            try {
+                     const adminId = req.params.adminId
 
+                     // check for adminId
+             if(!adminId)
+             {
+                 return res.status(400).json({
+                        success : false , message : 'adminId required'
+                 })
+             }
+
+             // check for details
+             const getDetails = await cms_jobMarketData.findOne({
+                    AdminId : adminId
+             })
+
+             if(!getDetails)
+             {
+                 return res.status(400).json({
+                      success : false ,
+                      message : 'Details not found'
+                 })
+             }
+
+             return res.status(200).json({
+                       success : true ,
+                       message : 'Details',
+                       Details : getDetails
+             })
+
+
+            } catch (error) {
+               return res.status(500).json({
+                     success : false,
+                     message : 'server Error',
+                     error_message : error.message
+                       
+               })
+            }
+        }
            /* Cms Blog section */
 
         //    section1
@@ -3149,13 +3613,13 @@ const active_inactive_job = async (req, res) => {
                              }
                    }
 
-            //    section2
+                                                    //    section2   
 
             // Api for cms Blog section2
 
             const cmsBlog_section2 = async( req ,res)=>{
                   try {
-                         const { name , Heading , Description  } = req.body
+                         const { name , Heading , Description  } = req.body 
                         
                         // check for required fields
                     if(!name)
@@ -3165,6 +3629,7 @@ const active_inactive_job = async (req, res) => {
                              message : 'name Required'
                         })
                     }
+
                     if(!Heading)
                     {
                         return res.status(400).json({
@@ -3256,6 +3721,32 @@ const active_inactive_job = async (req, res) => {
                   }
            }
 
+           const getBlogDetails_admin = async( req , res)=>{
+            try {
+                    const allBlogs = await cmsBlogsection2Model.find({
+                              
+                    })
+                    if(!allBlogs)
+                    {
+                      return res.status(400).json({
+                             success : false ,
+                             message : 'no Blogs Details found'
+                      })
+                    }
+
+                      return res.status(200).json({
+                           success : true ,
+                           message : 'all Blogs Details',
+                           Blogs : allBlogs
+                      })
+            } catch (error) {
+               return res.status(500).json({
+                     success : false ,
+                     message : 'server error',
+                     error_message : error.message
+               })
+            }
+     }
         // update particular Blog details
         const update_cms_blog = async (req, res) => {
             try {
@@ -3472,7 +3963,44 @@ const active_inactive_job = async (req, res) => {
                         })
                      }
         }
-    
+        const getcms_headquarter_admin = async( req , res)=>{
+            try {
+                    const adminId = req.params.adminId
+               // check for adminId
+               if(!adminId)
+               {
+                   return res.status(400).json({ 
+                      success : false ,
+                      message : 'adminId required'
+                   })
+               }
+
+                  // check for details
+
+                  const checkDetails = await cmsHeadquarte_model.findOne({
+                         AdminId : adminId
+                  })
+                    if(!checkDetails)
+                    {
+                       return res.status(400).json({
+                             success : false ,
+                             message : 'Details not found'
+                       })
+                    }
+
+                    return res.status(200).json({
+                        success : true ,
+                        message : 'Details',
+                        Details : checkDetails
+                    })
+            } catch (error) {
+               return res.status(500).json({
+                    success : false ,
+                    message : 'server error',
+                    error_message : error.message
+               })
+            }
+}
 
                                /* Admin notitification */
         // Api for get admin notification
@@ -3744,6 +4272,34 @@ const active_inactive_job = async (req, res) => {
             }
      }
 
+       // Api for get hr consultancy details for admin
+
+       const getHr_consultancy_Details_admin = async( req , res)=>{
+        try {
+                const allDetails = await cms_hr_consultancy_Model.find({
+                          
+                })
+                if(!allDetails)
+                {
+                  return res.status(400).json({
+                         success : false ,
+                         message : 'no Details found'
+                  })
+                }
+
+                  return res.status(200).json({
+                       success : true ,
+                       message : 'allDetails ',
+                       Details : allDetails
+                  })
+        } catch (error) {
+           return res.status(500).json({
+                 success : false ,
+                 message : 'server error',
+                 error_message : error.message
+           })
+        }
+ }
         // Api for training and development
 
             
@@ -3866,6 +4422,35 @@ const active_inactive_job = async (req, res) => {
                })
             }
      }
+
+     // Api for get training and Development Details
+             
+     const get_training_development_Details_admin = async( req , res)=>{
+        try {
+                const allDetails = await cms_t_d_Model.find({
+                          
+                })
+                if(!allDetails)
+                {
+                  return res.status(400).json({
+                         success : false ,
+                         message : 'no Details found'
+                  })
+                }
+
+                  return res.status(200).json({
+                       success : true ,
+                       message : 'allDetails ',
+                       Details : allDetails
+                  })
+        } catch (error) {
+           return res.status(500).json({
+                 success : false ,
+                 message : 'server error',
+                 error_message : error.message
+           })
+        }
+ }
 
 
      // Api for recruitment and selection
@@ -4295,6 +4880,33 @@ const active_inactive_job = async (req, res) => {
  }
 
 
+ const get_hr_teleconsultation_Details_admin = async( req , res)=>{
+        try {
+                const allDetails = await cms_Hr_teleconsultation_model.findOne({
+                          
+                })
+                if(!allDetails)
+                {
+                  return res.status(400).json({
+                         success : false ,
+                         message : 'no Details found'
+                  })
+                }
+
+                  return res.status(200).json({
+                       success : true ,
+                       message : 'allDetails ',
+                       Details : allDetails
+                  })
+        } catch (error) {
+           return res.status(500).json({
+                 success : false ,
+                 message : 'server error',
+                 error_message : error.message
+           })
+        }
+ }
+
  // Api for our mission
  const cms_our_mission = async (req, res) => {
     try {
@@ -4381,6 +4993,35 @@ const get_ourMission_details = async( req , res)=>{
                  error_message : error.message
             })
         }
+}
+
+const get_ourMission_details_admin = async( req , res)=>{
+    try {
+         // check for details
+         const checkDetails = await cms_our_mission_Model.find({
+             
+         })
+
+         if(!checkDetails)
+            {
+                return res.status(400).json({
+                     success : false ,
+                     message : 'no Details found'
+                })
+            }
+
+            return res.status(200).json({
+                 success : true ,
+                 message : 'our mission',
+                 Details : checkDetails
+            })
+    } catch (error) {
+        return res.status(500).json({
+             success : false ,
+             message : 'server error',
+             error_message : error.message
+        })
+    }
 }
 
 
@@ -4474,6 +5115,34 @@ const get_ourVission_details = async( req , res)=>{
         }
 }
 
+const get_ourVission_details_admin = async( req , res)=>{
+    try {
+         // check for details
+         const checkDetails = await cms_our_vission_Model.find({
+             
+         })
+
+         if(!checkDetails)
+            {
+                return res.status(400).json({
+                     success : false ,
+                     message : 'no Details found'
+                })
+            }
+
+            return res.status(200).json({
+                 success : true ,
+                 message : 'our vission',
+                 Details : checkDetails
+            })
+    } catch (error) {
+        return res.status(500).json({
+             success : false ,
+             message : 'server error',
+             error_message : error.message
+        })
+    }
+}
  // Why choose us ??
  const cms_why_choose_us = async (req, res) => {
     try {
@@ -4557,7 +5226,30 @@ const get_ourVission_details = async( req , res)=>{
                }
            }
 
+           const getDetails_why_choose_us_admin = async ( req , res)=>{
+            try {
+                   const getDetails = await cms_why_choose_us_Model.findOne({})
+                   if(!getDetails)
+                     {
+                          return res.status(400).json({
+                              success : false ,
+                              message : 'no details found'
+                          })
+                     }
 
+                     return res.status(200).json({
+                          success : true ,
+                          message : 'Details found',
+                          Details : getDetails
+                     })
+            } catch (error) {
+               return res.status(500).json({
+                  success : false ,
+                  message : 'server error',
+                  error_message : error.message
+               })
+            }
+        }
   // about us
             const cms_aboutUs = async( req , res ) =>{
                    try {
@@ -4653,7 +5345,34 @@ const get_aboutUS_details = async( req , res)=>{
     }
 }
 
+const get_aboutUS_details_admin = async( req , res)=>{
+    try {
+         // check for details
+         const checkDetails = await cms_aboutUs_Model.find({
+             
+         })
 
+         if(!checkDetails)
+            {
+                return res.status(400).json({
+                     success : false ,
+                     message : 'no Details found'
+                })
+            }
+
+            return res.status(200).json({
+                 success : true ,
+                 message : 'our mission',
+                 Details : checkDetails
+            })
+    } catch (error) {
+        return res.status(500).json({
+             success : false ,
+             message : 'server error',
+             error_message : error.message
+        })
+    }
+}
 
 
 // our commitment
@@ -4752,7 +5471,34 @@ error_message : error.message
 }
 
 
-
+const get_ourCommitment_details_admin = async( req , res)=>{
+    try {
+    // check for details
+    const checkDetails = await cms_our_commitment_Model.find({
+    
+    })
+    
+    if(!checkDetails)
+    {
+     return res.status(400).json({
+          success : false ,
+          message : 'no Details found'
+     })
+    }
+    
+    return res.status(200).json({
+      success : true ,
+      message : 'our commitment',
+      Details : checkDetails
+    })
+    } catch (error) {
+    return res.status(500).json({
+    success : false ,
+    message : 'server error',
+    error_message : error.message
+    })
+    }
+    }
 
 // our get_started_today
 const cms_get_started_today = async( req , res ) =>{
@@ -4849,6 +5595,34 @@ error_message : error.message
 }
 }
 
+const get_started_todayDetails_admin = async( req , res)=>{
+    try {
+    // check for details
+    const checkDetails = await cms_get_started_today_Model.find({
+    
+    })
+    
+    if(!checkDetails)
+    {
+     return res.status(400).json({
+          success : false ,
+          message : 'no Details found'
+     })
+    }
+    
+    return res.status(200).json({
+      success : true ,
+      message : 'get_started_today',
+      Details : checkDetails
+    })
+    } catch (error) {
+    return res.status(500).json({
+    success : false ,
+    message : 'server error',
+    error_message : error.message
+    })
+    }
+    }
 
                                               /* FAQ Page */
 
@@ -5920,7 +6694,32 @@ const package_transaction_model = require('../model/package_transaction')
             }
      }
 
+     const get_cms_elite_talent_pool_admin = async( req , res)=>{
+        try {
+                const allDetails = await cms_elite_talent_pool_Model.find({
+                          
+                })
+                if(!allDetails)
+                {
+                  return res.status(400).json({
+                         success : false ,
+                         message : 'no Details found'
+                  })
+                }
 
+                  return res.status(200).json({
+                       success : true ,
+                       message : 'allDetails ',
+                       Details : allDetails
+                  })
+        } catch (error) {
+           return res.status(500).json({
+                 success : false ,
+                 message : 'server error',
+                 error_message : error.message
+           })
+        }
+ }
 
             // Api for make job favourate
 
@@ -6104,6 +6903,32 @@ const package_transaction_model = require('../model/package_transaction')
             }
      }
 
+     const get_cms_footer_content_admin = async( req , res)=>{
+        try {
+                const allDetails = await cms_footer_contentModel.find({
+                          
+                })
+                if(!allDetails)
+                {
+                  return res.status(400).json({
+                         success : false ,
+                         message : 'no Details found'
+                  })
+                }
+
+                  return res.status(200).json({
+                       success : true ,
+                       message : 'allDetails ',
+                       Details : allDetails
+                  })
+        } catch (error) {
+           return res.status(500).json({
+                 success : false ,
+                 message : 'server error',
+                 error_message : error.message
+           })
+        }
+ }
 
 
      // Api for cms Acadmic credentials verifiers
@@ -6225,7 +7050,9 @@ const package_transaction_model = require('../model/package_transaction')
                 error_message: error.message
             });
         }
-    };
+      };
+
+
  
 
 
@@ -6233,9 +7060,9 @@ const package_transaction_model = require('../model/package_transaction')
          
        const get_acadmic_credentials_verifier = async( req , res)=>{
         try {
-                const allDetails = await cms_acadmic_credentials_verifier_Model.findOne({
-                          
+                const allDetails = await cms_acadmic_credentials_verifier_Model.findOne({                        
                 })
+                
                 if(!allDetails)
                 {
                   return res.status(400).json({
@@ -6249,17 +7076,47 @@ const package_transaction_model = require('../model/package_transaction')
                        message : 'allDetails ',
                        Details : allDetails
                   })
+
+
         } catch (error) {
            return res.status(500).json({
                  success : false ,
                  message : 'server error',
                  error_message : error.message
-           })
+           })    
         }
  }
 
+ const get_acadmic_credentials_verifier_admin = async( req , res)=>{
+    try {
+            const allDetails = await cms_acadmic_credentials_verifier_Model.findOne({                        
+            })
+            
+            if(!allDetails)
+            {
+              return res.status(400).json({
+                     success : false ,
+                     message : 'no Details found'
+              })
+            }
 
-                                               /* news letter */
+              return res.status(200).json({
+                   success : true ,
+                   message : 'allDetails ',
+                   Details : allDetails
+              })
+
+
+    } catch (error) {
+       return res.status(500).json({
+             success : false ,
+             message : 'server error',
+             error_message : error.message
+       })    
+    }
+}
+
+                                                                /* news letter */
             // Api for newsletter 
 
             const newsLetter = async ( req , res )=> {
@@ -6282,6 +7139,7 @@ const package_transaction_model = require('../model/package_transaction')
                                email : email
                          })
 
+
                          if(existEmail)
                              {
                                  return res.status(400).json({
@@ -6295,8 +7153,8 @@ const package_transaction_model = require('../model/package_transaction')
                          const save_data = new cms_newsletter_Model({
                               email
                          })
-
-                         await save_data.save()
+                                                           
+                          await save_data.save()
 
                          return res.status(200).json({
                               success : true ,
@@ -6339,6 +7197,7 @@ const package_transaction_model = require('../model/package_transaction')
                   }
                }
 
+            
 
 // APi for carrer advice 
               const new_carrer_advice = async ( req , res)=> {
@@ -6352,7 +7211,7 @@ const package_transaction_model = require('../model/package_transaction')
                                  success : false ,
                                  message : 'Heading Required'
                             })
-                        }
+                        } 
                     if(!Description)
                         {
                             return res.status(400).json({
@@ -6375,7 +7234,7 @@ const package_transaction_model = require('../model/package_transaction')
                                 // If valid, update the profile image
                                image = req.file.filename;
                             } else {
-                                // If not valid, throw an error
+                                   // If not valid, throw an error
                                 return res.status(400).json({
                                     success : false ,
                                     message :  'Invalid file type. Only .jpg, .jpeg, and .png files are allowed.'
@@ -6391,14 +7250,14 @@ const package_transaction_model = require('../model/package_transaction')
                              image
                          })
 
-                         await newData.save()
+                         await newData.save() 
 
                          return res.status(200).json({
                              success : true ,
                              message : 'new Data added successfully',
                              Data : newData
                          })
-            
+                            
                  } catch (error) {
                      return res.status(500).json({
                          success : false ,
@@ -6418,7 +7277,6 @@ const package_transaction_model = require('../model/package_transaction')
                             return res.status(400).json({
                                  success : false ,
                                  message : 'No Career Details found'
-
                             })
                         }
 
@@ -6435,6 +7293,31 @@ const package_transaction_model = require('../model/package_transaction')
                   })
               }
          }
+
+         const all_carrer_details_admin = async ( req , res)=> {
+            try {
+                   const all_details = await carrer_advice_model.find()
+                   if(!all_details)
+                      {
+                          return res.status(400).json({
+                               success : false ,
+                               message : 'No Career Details found'
+                          })
+                      }
+
+                  return res.status(200).json({
+                       success : true ,
+                       message  : 'carrer Details',
+                       Details : all_details
+                  })
+            } catch (error) {
+                return res.status(500).json({
+                   success : false ,
+                   message : 'server error',
+                   error_message : error.message
+                })
+            }
+       }
 
     // Api for delete particular carrer Advice Detail
 
@@ -6732,6 +7615,37 @@ const package_transaction_model = require('../model/package_transaction')
     }
 };
 
+const alljobSkills_admin = async (req, res) => {
+    try {
+        // Fetch all jobSkills from the database
+        const jobSkilss = await jobSkills_Model.find({});
+        
+        // Check if jobSkilss array is empty
+        if (jobSkilss.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "No jobSkilss found",
+            });
+        } else {
+            // Map jobSkilss to required format
+            const formattedjobSkilss = jobSkilss.map(jobT => ({
+                jobTitle: jobT.jobTitle,
+                jobSkilss: jobT.skill_Name,
+                _id: jobT._id
+            }));
+            
+            // Send formatted jobTitles as response
+            res.status(200).json({
+                success: true,
+                message: "All jobSkilss",
+                details: formattedjobSkilss
+            });
+        }
+    } catch (error) {
+        // Handle server error
+        res.status(500).json({ success: false, message: "Server error", error_message: error.message });
+    }
+};
 
 // Api for delete particular job skills
     
@@ -6902,6 +7816,31 @@ const cms_labour_tool = async ( req , res )=> {
            }
      }
 
+     const get_cms_labour_tool_details_admin = async ( req , res) => {
+        try {
+               const getDetails = await cms_labour_tool_Model.findOne({})
+
+               if(!getDetails)
+               {
+                 return res.status(400).json({
+                      success : false ,
+                      message : 'Details not found'
+                 })
+               }
+
+               return res.status(200).json({
+                  success : true ,
+                  message : 'cms Labour tool Details',
+                  Details : getDetails
+               })
+        } catch (error) {
+           return res.status(500).json({
+              success : false ,
+              message : 'server error',
+              error_message : error.message
+           })
+        }
+  }
 
      // Api for create and update cms online courses
 
@@ -7682,6 +8621,31 @@ const cms_labour_tool = async ( req , res )=> {
             }
       }
     
+      const get_cms_Home_admin = async ( req , res) => {
+        try {
+               const getDetails = await cms_home_Model.findOne({})
+
+               if(!getDetails)
+               {
+                 return res.status(400).json({
+                      success : false ,
+                      message : 'Details not found'
+                 })
+               }
+
+               return res.status(200).json({
+                  success : true ,
+                  message : 'cms Home details',
+                  Details : getDetails
+               })
+        } catch (error) {
+           return res.status(500).json({
+              success : false ,
+              message : 'server error',
+              error_message : error.message
+           })
+        }
+  }
 
 // Function to improve spacing and readability in text
 const improveTextFormatting = (text) => {
@@ -7750,7 +8714,7 @@ const candidate_cv_rating = async (req, res) => {
         if (!candidate) {
             return res.status(400).json({ success: false, message: 'Candidate not found' });
         }
-
+                
         const candidate_cv = candidate.uploadResume;
 
         if (!candidate_cv) {
@@ -8028,6 +8992,7 @@ const candidate_cv_rating = async (req, res) => {
                              message : 'All Quiz Test of Course',
                              detail : all_quiz_test
                         })
+
                } catch (error) {
                    return res.status(500).json({
                         success : false ,
@@ -8163,7 +9128,7 @@ const candidate_cv_rating = async (req, res) => {
                     message: 'questionId Required'
                 });
             }
-    
+  
             // Check for test existence
             const exist_test = await online_course_quiz_Model.findById(test_id);
             if (!exist_test) {
@@ -8184,7 +9149,7 @@ const candidate_cv_rating = async (req, res) => {
                     message: 'Question not found',
                 });
             }
-    
+
             // Remove question from the question bank
             exist_test.questions_Bank.splice(questionIndex, 1);
     
@@ -8234,12 +9199,14 @@ const candidate_cv_rating = async (req, res) => {
                          message : 'Test Not Found'
                     })
                    }
+  
 
-                      await test.deleteOne()
+                   await test.deleteOne()
                       return res.status(200).json({
                          success : true ,
                          message : 'Test Deleted successfully'
                       })
+                      
            } catch (error) {
                return res.status(500).json({
                       success : false ,
@@ -8262,6 +9229,7 @@ const candidate_cv_rating = async (req, res) => {
           
               // Default filter: Exclude 'STATE_PENDING' transactions
               let filter = { payment_status: { $ne: 'STATE_PENDING' } };
+
           
               // Apply specific filters based on payment_status value
               if (payment_status === '1') {
@@ -8275,14 +9243,14 @@ const candidate_cv_rating = async (req, res) => {
                 .find(filter)
                 .sort({ createdAt: -1 })
                 .lean();
-          
+
               // Check if no transactions were found
               if (all_transactions.length === 0) {
                 return res.status(400).json({
                   success: false,
                   message: 'No transactions found!'
                 });
-              }
+              } 
           
               // Return successful response
               return res.status(200).json({
@@ -8290,6 +9258,9 @@ const candidate_cv_rating = async (req, res) => {
                 message: 'Transactions retrieved successfully',
                 all_transactions
               });
+
+
+
             } catch (error) {
               // Handle server error
               return res.status(500).json({
@@ -8300,8 +9271,7 @@ const candidate_cv_rating = async (req, res) => {
             }
           };
           
-           
-                        
+                                  
              
              
             
@@ -8560,7 +9530,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                      }
 
                      // check for email content 
-                     const emailContent = await emailTemplateModel.findOne({ email_title })
+                     const emailContent = await emailTemplateModel.findOne({ email_title }) 
 
                     //  if(!emailContent)
                     //  {
@@ -8579,6 +9549,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                    email_body : emailContent.email_body
                            }
                      })
+
             } catch (error) {
                   return res.status(500).json({
                       success : false ,
@@ -8604,7 +9575,9 @@ const jobseeker_count_of_client_job = async (req, res) => {
                         message: `Required ${field.replace('_', ' ')}`,
                     });
                 }
-            }                        
+            }    
+            
+            
     
             // Check if package already exists (case-insensitive)
             const existPackage = await clientPackageModel.findOne({
@@ -8751,6 +9724,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                    success : true ,
                                    message : message 
                              })
+
                     } catch (error) {
                           return res.status(500).json({
                                success : false ,
@@ -8824,12 +9798,13 @@ const jobseeker_count_of_client_job = async (req, res) => {
                             const getYearlyPackages = await clientPackageModel.find({  package_type : 'Yearly' ,  status : 1 })
                             const getWeeklyPackages = await clientPackageModel.find({  package_type : 'Weekly' ,  status : 1 })
    
-                          
+                        
                                         
                             return res.status(200).json({
                                   success : true ,
                                   message : 'All packages',
                                   yearly_packages : getYearlyPackages.map((e)=> ({
+
                                     package_id : e._id,
                                     package_name : e.package_name ,
                                     features : e.features,                                       
@@ -8840,6 +9815,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                     job_active_days : e.valid_days
                            })),
                            weekly_packages : getWeeklyPackages.map((e)=> ({
+
                                     package_id : e._id,
                                     package_name : e.package_name ,
                                     features : e.features,                                    
@@ -8887,6 +9863,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                     message: "Invalid client_status value",
                                 });
                             }
+
                             let clients
                             if(status === 4)
                             {
@@ -8895,7 +9872,8 @@ const jobseeker_count_of_client_job = async (req, res) => {
                             {
                                      // Fetch clients with the given status
                                 clients  = await employeeModel.find({ status });
-                            }                           
+                            }       
+
                     
                             // Create Excel workbook and worksheet
                             const workbook = new ExcelJs.Workbook();
@@ -9133,6 +10111,9 @@ const jobseeker_count_of_client_job = async (req, res) => {
                         currency: pt.currency,
                     });
                 });
+                  
+                   
+                
         
                 // Set response headers for downloading the Excel file
                 res.setHeader(
@@ -9151,7 +10132,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                 res.end();
             } catch (error) {
                
-                res.status(500).json({ success: false, error: "Internal server error" , errro_message : error.message});
+                res.status(500).json({ success: false, error: "Internal server error" , error_message : error.message});
             }
         };
                    
@@ -9177,6 +10158,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                 { header: "phone Number", key: "phone_no" },                           
 
                             ];
+
                     
                             // Add Enroll_user data to the worksheet
                             Enroll_user.forEach((hr) => {
@@ -9224,6 +10206,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                             const workbook = new ExcelJs.Workbook();
                             const worksheet = workbook.addWorksheet("Hr_staff");
                     
+
                             // Define the Excel Header
                             worksheet.columns = [
                                 { header: "Name", key: "name" },
@@ -9253,6 +10236,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                 "Content-Type",
                                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                             );
+
                             res.setHeader(
                                 "Content-Disposition",
                                 `attachment; filename=all_hr_staff.xlsx`
@@ -9261,7 +10245,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                             // Generate and send the Excel File as a response
                             await workbook.xlsx.write(res);
                     
-                            // End the response
+                            // End the response 
                             res.end();
                         } catch (error) {
                             console.error("Error exporting Jobs:", error);
@@ -9286,8 +10270,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                         success: false,
                         message: 'Location record already exists.'
                     });
-                }
-        
+                }        
             
                 const newLocation = new sl_loc_model({ 
                        loc : loc,
@@ -9301,7 +10284,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                     message: 'Location added successfully.',
                    
                 });
-        
+                    
             } catch (error) {
                 return res.status(500).json({
                     success: false,
@@ -9311,6 +10294,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
             }
         };
  
+
 
         const export_course_transaction = async (req, res) => {
             try {
@@ -9335,12 +10319,13 @@ const jobseeker_count_of_client_job = async (req, res) => {
                 const payment_status = statusMapping[transaction_status];
         
                 // Fetch transactions with the given payment_status
-                const course_transaction = await course_transaction_model.find({ payment_status });
+                const course_transaction = await course_transaction_model.find({ payment_status });  
         
                 
                 // Create Excel workbook and worksheet
                 const workbook = new ExcelJs.Workbook();
                 const worksheet = workbook.addWorksheet("course_transaction"); 
+
         
                 // Define the Excel Header           
                 worksheet.columns = [
@@ -9432,6 +10417,8 @@ const get_talent_pool_count_for_client = async (req, res) => {
                   createdAt: { $gte: startDate, $lte: endDate }
               });
 
+              
+
               // Fetch female talent pool
               const female_screened = await appliedjobModel.find({
                   jobId: { $in: totalJobs.map(job => job.jobId) },
@@ -9502,7 +10489,23 @@ module.exports = {
      create_email_template , getall_emailContent , emailContent_of_title ,
      add_clientPackage , get_allPackages , active_inactive_Package , updatepackage , getActivePackages , 
      export_clients , export_Jobs , export_Hr_staff  , export_Enrolled_user , add_sl_loc , export_package_transaction,
-     export_course_transaction     , get_talent_pool_count_for_client
+     export_course_transaction    , get_talent_pool_count_for_client ,
+
+
+
+
+     // Admin
+
+     getAllEmp_admin , getService_admin , getHr_consultancy_Details_admin , get_training_development_Details_admin ,
+     get_hr_teleconsultation_Details_admin  , get_cms_elite_talent_pool_admin , getAll_testimonial_admin ,
+     getJobs_posted_procedure_section1_admin , get_cms_need_any_job_section_admin , 
+     get_cms_post_your_job_admin , get_cms_job_market_data_admin , get_cms_footer_content_admin , 
+     all_carrer_details_admin , get_cms_labour_tool_details_admin , get_cms_Home_admin , 
+     getcms_headquarter_admin , get_aboutUS_details_admin , get_ourMission_details_admin ,
+     get_ourVission_details_admin , get_ourCommitment_details_admin ,
+      getDetails_why_choose_us_admin , get_started_todayDetails_admin ,
+     get_acadmic_credentials_verifier_admin , alljobSkills_admin , getBlogDetails_admin ,
+     getAllFemale_Candidate_admin , get_admin_privacy_policy_admin , get_admin_term_condition_admin
      
 }
 

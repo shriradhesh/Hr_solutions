@@ -163,7 +163,7 @@ const employeeSignup = async (req, res) => {
                 message: 'Company Details already exists'
             })
         }
-
+                
 
         //hashed the password
         const hashedPassword = await bcrypt.hash(password, 10)
@@ -377,12 +377,12 @@ const update_detail = async (req, res) => {
             transaction = await package_transaction_model.findOne({ booking_id: booking_id })
             if (transaction) {
 
-                transaction.client_id = clientId,
+                    transaction.client_id = clientId,
                     transaction.client_name = client.name,
                     transaction.company = client.company_name,
                     transaction.package_id = client.package_id
-                transaction.package_name = client.package_name
-                transaction.payment_status = 'STATE_COMPLETED'
+                    transaction.package_name = client.package_name
+                    transaction.payment_status = 'STATE_COMPLETED'
 
                 await transaction.save()
 
@@ -437,31 +437,33 @@ const update_detail = async (req, res) => {
                 } catch (notificationError) {
                     console.error('Error creating notification:', notificationError);
                 }
-
             }
+
             else {
 
                 return res.status(400).json({
                     success: false,
                     message: 'transaction Not Found'
                 })
-
             }
-        }
-        else {
-            transaction = await package_transaction_model.findOne({ booking_id: booking_id })
+         }
+            
+                else {
+                    transaction = await package_transaction_model.findOne({ booking_id: booking_id })
 
-            transaction.client_id = clientId,
-                transaction.client_name = client.name,
-                transaction.company = client.company_name,
-                transaction.package_id = client.package_id
-            transaction.package_name = client.package_name
-            transaction.payment_status = 'STATE_FAILED'
+                        transaction.client_id = clientId,
+                        transaction.client_name = client.name,
+                        transaction.company = client.company_name,
+                        transaction.package_id = client.package_id
+                        transaction.package_name = client.package_name
+                        transaction.payment_status = 'STATE_FAILED' 
 
-            await transaction.save()
-        }
+                        await transaction.save()
+                }
 
-        return res.status(200).json({
+     
+
+        return res.status(200).json({  
             success: true,
             message: 'details updated'
         })
@@ -555,7 +557,10 @@ const Emp_login = async (req, res) => {
             })
         }
 
+             
         let package_key = '';
+        
+           
         if (package.package_type === 'Weekly') {
             const weekNumber = parseInt(package.package_name.match(/\d+/), 10);
             package_key = `w${weekNumber}`;
@@ -589,7 +594,7 @@ const Emp_login = async (req, res) => {
             emp.password = hashedPassword;
             await emp.save();
         }
-
+         
 
         return res.json({
             success: true,
@@ -641,6 +646,7 @@ const getEmployeeDetails = async (req, res) => {
             })
         }
 
+          
         // check for emp
         const emp = await employeeModel.findOne({ _id: empId })
         if (!emp) {
@@ -649,11 +655,13 @@ const getEmployeeDetails = async (req, res) => {
                 message: 'employee not found'
             })
         }
+        
         return res.status(200).json({
             success: true,
             message: 'employee Details',
             Details: emp
         })
+
     } catch (error) {
         return res.status(500).json({
             success: 'server error',
@@ -1170,6 +1178,37 @@ const all_main_jobTitle = async (req, res) => {
     }
 };
 
+const all_main_jobTitle_main = async (req, res) => {
+    try {
+        // Fetch all jobTitles from the database
+        const jobTitles = await main_jobTitleModel.find({});
+
+        // Check if jobTitles array is empty
+        if (jobTitles.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "No JobTitles found",
+            });
+        } else {
+            // Map jobTitles to required format
+            const formattedJobTitles = jobTitles.map(jobT => ({
+                Main_jobTitle: jobT.Main_jobTitle,
+                _id: jobT._id
+            }));
+
+            // Send formatted jobTitles as response
+            res.status(200).json({
+                success: true,
+                message: "All Main JobTitles",
+                details: formattedJobTitles
+            });
+        }
+    } catch (error) {
+        // Handle server error
+        res.status(500).json({ success: false, message: "Server error", error_message: error.message });
+    }
+};
+
 // Api for delete main job Title
 const delete_main_jobTitle = async (req, res) => {
     try {
@@ -1194,6 +1233,8 @@ const delete_main_jobTitle = async (req, res) => {
             .json({ success: false, message: "server error", error_message: error.message });
     }
 };
+
+
 /* job Description Section  */
 // Api for add job Description
 
@@ -1307,7 +1348,7 @@ const getJd = async (req, res) => {
                 message: 'job Title Required'
             })
         }
-
+                    
         // check for job Descreption for jobTItle
         const JD = await jobDescription_model.findOne({
             jobTitle: jobTitle
@@ -1397,9 +1438,23 @@ const postJob = async (req, res) => {
 
         } = req.body;
 
-        skills = JSON.parse(skills),
+            skills = JSON.parse(skills),
             acadmic_qualification = JSON.parse(acadmic_qualification)
-
+           
+            if (!isValidEmail(hiring_manager_email)) {
+                return res.status(400).json({
+                    success : false ,
+                    message : 'Enter valid Email for Hiring Manager'
+                })
+            }   
+            if (!isValidEmail(hr_email)) {
+                return res.status(400).json({
+                    success : false ,
+                    message : 'Enter valid Email for HR'
+                })
+            }   
+      
+               
 
         if (!empId) {
             return res.status(400).json({
@@ -1415,6 +1470,7 @@ const postJob = async (req, res) => {
                 message: 'Client details not found or account is suspended'
             });
         }
+           
         // Determine job post limit based on the package
         const packageJobLimits = {
             'Starter Package': 5,
@@ -1432,6 +1488,7 @@ const postJob = async (req, res) => {
                 $lte: employee.package_end_date,
             },
         });
+        
 
         if (jobs.length >= jobCountPerPackage) {
             return res.status(400).json({
@@ -1439,7 +1496,7 @@ const postJob = async (req, res) => {
                 message: `client's job post limit is exceeded.`,
             });
         }
-
+        
         // Check for academic qualification post limit as per employee package
         const packageLimits = {
             'Starter Package': 1,
@@ -1463,7 +1520,7 @@ const postJob = async (req, res) => {
         const formattedStartDate = new Date(startDate);
         const formattedEndDate = new Date(endDate);
 
-
+          
         // Check if the jobTitle exists in the jobTitleMOdel
         const existingjobTitle = await main_jobTitleModel.findOne({ Main_jobTitle: job_title });
 
@@ -1482,25 +1539,16 @@ const postJob = async (req, res) => {
             startDate: { $lte: formattedStartDate },
             endDate: { $gte: formattedEndDate }
         });
+
+     
+           
         if (existJob) {
             return res.status(400).json({
                 success: false,
                 message: 'Similar job already exists within the specified time period'
             });
         }
-        if (!isValidEmail(hiring_manager_email)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Enter valid Email for Hiring Manager'
-            })
-        }
-        if (!isValidEmail(hr_email)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Enter valid Email for HR'
-            })
-        }
-
+        
         // Generate a random job
         function generateRandomNumber(length) {
             let result = '';
@@ -1519,7 +1567,8 @@ const postJob = async (req, res) => {
         if (req.file) {
             job_image = req.file.filename
         }
-
+          
+            
         const newJob = new jobModel({
             emp_Id: empId,
             jobId: finalString,
@@ -1547,8 +1596,8 @@ const postJob = async (req, res) => {
             // isPsychometricTest  ,
             // psychometric_Test : psychometric_Test || '',
             job_image: job_image || '',
-            hiring_manager_email,
-            hr_email
+            hiring_manager_email : hiring_manager_email,
+            hr_email : hr_email
         });
 
 
@@ -1584,8 +1633,8 @@ const postJob = async (req, res) => {
             success: true,
             message: 'Job posted successfully',
             jobId: newJob.jobId,
-
         });
+
     } catch (error) {
         console.error(error);
         return res.status(500).json({
@@ -2212,14 +2261,17 @@ const export_candidate = async (req, res) => {
                 header: "First Name",
                 key: "first_Name",
             },
+
             {
                 header: "Last Name",
                 key: "last_Name",
             },
+
             {
                 header: "User Email",
                 key: "user_Email",
             },
+
             {
                 header: "City",
                 key: "city",
@@ -2298,7 +2350,7 @@ const export_candidate = async (req, res) => {
 
 
 
-                                                            /*Job Seeker sections */
+                                                               /*Job  sections */
 
 // Api for get all Jobs
 
@@ -2313,7 +2365,7 @@ const getAll_Jobs = async (req, res) => {
         }
 
         // Fetch jobs based on filter
-        const allJobs = await jobModel.find({ ...filter }).sort({ createdAt: -1 }); // Sort by latest createdAt
+        const allJobs = await jobModel.find({ ...filter }).sort({ createdAt: -1 }); 
 
         if (allJobs.length === 0) {
             return res.status(400).json({
@@ -2321,7 +2373,7 @@ const getAll_Jobs = async (req, res) => {
                 message: 'No jobs found',
             });
         }
-
+      
         // Prepare job title counts and map data
         const jobTitle_Count = new Map();
 
@@ -2343,7 +2395,7 @@ const getAll_Jobs = async (req, res) => {
                 const maleCandidateCount = candidateDetails.filter((candidate) => candidate.gender === 'Male').length;
                 const femaleCandidateCount = candidateDetails.filter((candidate) => candidate.gender === 'Female').length;
 
-                // Return job data
+                // Return job data 
                 return {
                     jobId: job.jobId,
                     job_title: job.job_title,
@@ -2408,6 +2460,112 @@ const getAll_Jobs = async (req, res) => {
     }
 };
 
+
+const getAll_Jobs_admin = async (req, res) => {
+    try {
+        // Extract job status filter from query
+        const job_status = req.query.job_status;
+        const filter = {};
+
+        if (job_status) {
+            filter.status = job_status;
+        }
+
+        // Fetch jobs based on filter
+        const allJobs = await jobModel.find({ ...filter }).sort({ createdAt: -1 }); 
+
+        if (allJobs.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No jobs found',
+            });
+        }
+      
+        // Prepare job title counts and map data
+        const jobTitle_Count = new Map();
+
+        const jobsData = await Promise.all(
+            allJobs.map(async (job) => {
+
+                // Salary pay formatting
+                const salary_pay = `${job.salary_pay[0].Minimum_pay} - ${job.salary_pay[0].Maximum_pay}, ${job.salary_pay[0].Rate}`;
+
+                // Normalize job title for counting
+                const normalized_title = job.job_title.trim().toLowerCase();
+                jobTitle_Count.set(normalized_title, (jobTitle_Count.get(normalized_title) || 0) + 1);
+
+                // Fetch applied candidates for this job
+                const candidateDetails = await appliedjobModel.find({ jobId: job.jobId });
+                const loc_lat_long = await sl_loc_model.findOne({ loc: job.location })
+
+                // Count male and female candidates
+                const maleCandidateCount = candidateDetails.filter((candidate) => candidate.gender === 'Male').length;
+                const femaleCandidateCount = candidateDetails.filter((candidate) => candidate.gender === 'Female').length;
+
+                // Return job data 
+                return {
+                    jobId: job.jobId,
+                    job_title: job.job_title,
+                    //    sub_job_title : job.sub_job_title ,
+                    company_name: job.company_name,
+                    Number_of_emp_needed: job.Number_of_emp_needed,
+                    job_type: job.job_type,
+                    job_schedule: job.job_schedule, 
+                    salary_pay,
+                    job_Description: job.job_Description,
+                    job_Responsibility: job.job_Responsibility || null,
+                    company_address: job.company_address,
+                    employee_email: job.employee_email,
+                    requirement_timeline: job.requirement_timeline,
+                    startDate: job.startDate,
+                    endDate: job.endDate,
+                    phone_no: job.phone_no,
+                    key_qualification: job.key_qualification,
+                    acadmic_qualification: job.acadmic_qualification,
+                    Experience: job.Experience,
+                    template_type: job.template_type,
+                    company_Industry: job.company_Industry,
+                    job_photo: job.job_photo,
+                    status: job.status,
+                    empId: job.emp_Id,
+                    isPsychometricTest: job.isPsychometricTest,
+                    psychometric_Test: job.psychometric_Test,
+                    maleCandidateCount,
+                    femaleCandidateCount,
+                    fav_status: job.fav_status,
+                    job_image: job.job_image || '',
+                    location: job.location,
+                    hiring_manager_email: job.hiring_manager_email,
+                    hr_email: job.hr_email,
+                    job_location_latitude: loc_lat_long ? loc_lat_long.lat : null,
+                    job_location_longitude: loc_lat_long ? loc_lat_long.long : null,
+                };
+            })
+        );
+
+        // Convert job title counts to array
+        const job_title_array = Array.from(jobTitle_Count.entries()).map(([title, count]) => ({
+            title,
+            count,
+        }));
+
+        // Return successful response
+        return res.status(200).json({
+            success: true,
+            message: 'All Jobs',
+            JobsCount: allJobs.length,
+            //    job_title_array,
+            allJobs: jobsData,
+        });
+    } catch (error) {
+        // Handle server errors
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error_message: error.message,
+        });
+    }
+};
 
 
 // All active job count with there title
@@ -2637,6 +2795,7 @@ const searchJob = async (req, res) => {
         //         message: 'Job Title required'
         //     });
         // }
+
         // // if (!company_address) {
         //     return res.status(400).json({
         //         success: false,
@@ -2687,6 +2846,7 @@ const searchJob = async (req, res) => {
             JobsCount: jobs.length,
             Details: jobs
         });
+        
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -2698,68 +2858,46 @@ const searchJob = async (req, res) => {
 
 
 // Api for filter job
-
 const filterJob = async (req, res) => {
     try {
         const { job_title, company_address } = req.body;
         const { job_type, Experience, company_Industry, job_schedule } = req.query;
 
-        // // Check for required fields
-        // if (!job_title) {
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: 'Job Title required'
-        //     });
-        // }
-        // if (!company_address) {
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: 'Company address Required'
-        //     });
-        // }
+        // Initialize filter with status
+        const filter = { status: 1 };
 
-        const filter = {};
+        if (job_type) filter.job_type = job_type;
+        if (job_schedule) filter.job_schedule = job_schedule;
+        if (Experience) filter.Experience = { $regex: Experience, $options: 'i' };
+        if (company_Industry) filter.company_Industry = company_Industry;
+        if (job_title) filter.job_title = { $regex: job_title.trim(), $options: 'i' };
+        if (company_address) filter.company_address = { $regex: company_address.trim(), $options: 'i' };
 
-        if (job_type) {
-            filter.job_type = job_type;
-        }
-        if (job_schedule) {
-            filter.job_schedule = job_schedule;
-        }
-        if (Experience) {
-            // Convert Experience to a regular expression for partial matching
-            filter.Experience = { $regex: Experience, $options: 'i' };
-        }
-        if (company_Industry) {
-            filter.company_Industry = company_Industry;
-        }
+        console.log("Final Filter Query:", JSON.stringify(filter, null, 2)); 
 
-        // Use regular expressions to perform partial matches
-        const jobs = await jobModel.find({
-            status: 1,
-            job_title: { $regex: job_title, $options: 'i' }, // Case insensitive
-            company_address: { $regex: company_address, $options: 'i' },
-            ...filter
-        });
+        const jobs = await jobModel.find(filter);
 
-        if (jobs.length === 0) {
-            return res.status(400).json({
+        if (!jobs.length) {
+            return res.status(404).json({
                 success: false,
-                message: 'No jobs found'
+                message: 'No jobs found',
             });
         }
+
 
         return res.status(200).json({
             success: true,
             message: 'Job Details',
             JobsCount: jobs.length,
-            Details: jobs
+            Details: jobs,
         });
+
     } catch (error) {
+        console.error("Error in filterJob:", error.message); 
         return res.status(500).json({
             success: false,
             message: 'Server error',
-            error_message: error.message
+            error_message: error.message,
         });
     }
 };
@@ -2769,7 +2907,8 @@ const filterJob = async (req, res) => {
 
 
 
-/* Applied job section */
+
+                                                                                    /* Applied job section */
 
 // APi for apply on job
 
@@ -3425,6 +3564,7 @@ const client_dashboardCount = async (req, res) => {
             femaleCandidateCount: femaleCandidates.length,
             totalCandidateCount: totalCandidates.length
         });
+        
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -3584,7 +3724,6 @@ const uploadResume = async (req, res) => {
             'first_Name',
             'last_Name',
             'email',
-
             'phone_no',
             'gender',
             'job_title',
@@ -3646,7 +3785,7 @@ const uploadResume = async (req, res) => {
             gender,
             job_Heading: job_title,
             Highest_Education,
-            upload_Resume: uploadResume.filename, // Save the filename
+            upload_Resume: uploadResume.filename, 
             candidate_status,
             jobSeeker_status,
             home_address,
@@ -3680,6 +3819,7 @@ const get_upload_section_candidates = async (req, res) => {
                 message: 'No Candidate found'
             })
         }
+
 
         return res.status(200).json({
             success: true,
@@ -3791,7 +3931,7 @@ const get_successfull_candidate = async (req, res) => {
             phone_no: c.phone_no,
             Highest_Education: c.Highest_Education,
             jobSeeker_status: c.jobSeeker_status
-        }));
+        }))
 
         // Send the response
         return res.status(200).json({
@@ -4385,7 +4525,7 @@ const get_saved_candidate_profile = async (req, res) => {
         });
     }
 };
-
+          
 // Api for update candidate rating 
 const update_candidate_rating = async (req, res) => {
     try {
@@ -4399,7 +4539,7 @@ const update_candidate_rating = async (req, res) => {
                 message: 'Candidate ID is required'
             });
         }
-
+                     
         // Check if rating is provided and valid
         if (rating === undefined || isNaN(rating) || rating < 1 || rating > 5) {
             return res.status(400).json({
@@ -4417,6 +4557,7 @@ const update_candidate_rating = async (req, res) => {
             });
         }
 
+
         // Update candidate rating
         candidate.candidate_rating = rating;
         await candidate.save();
@@ -4433,6 +4574,8 @@ const update_candidate_rating = async (req, res) => {
         });
     }
 };
+           
+
 
 // Api for get female candidate for client 
 const get_female_candidate_for_client = async (req, res) => {
@@ -4446,7 +4589,7 @@ const get_female_candidate_for_client = async (req, res) => {
                 message: 'Client Id is required'
             });
         }
-
+                
         // Check for client existence
         const client = await employeeModel.findById(client_id);
         if (!client) {
@@ -4472,6 +4615,7 @@ const get_female_candidate_for_client = async (req, res) => {
             message: 'Female Candidate Details',
             femaleCandidate: femaleCandidates
         });
+
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -5537,6 +5681,7 @@ const enroll_course = async (req, res) => {
         let { course_id, booking_id, status } = req.body;
 
         // Check if course_id is provided
+
         if (!course_id) {
             return res.status(400).json({
                 success: false,
@@ -5551,7 +5696,9 @@ const enroll_course = async (req, res) => {
                 message: 'User Id is required'
             });
         }
+
         const enroll_user = await courses_user_enroll_Model.findById(user_id);
+
         if (!enroll_user) {
 
             return res.status(400).json({
@@ -5562,6 +5709,7 @@ const enroll_course = async (req, res) => {
 
         // Check for the existence of the course
         const course = await cms_online_courses_Model.findById(course_id);
+
         if (!course) {
             return res.status(400).json({
                 success: false,
@@ -5577,8 +5725,8 @@ const enroll_course = async (req, res) => {
                 transaction.course_id = course_id
                 transaction.enroll_user_id = user_id
                 transaction.user_name = `${enroll_user.first_name} ${enroll_user.last_name}`,
-                    transaction.course_name = course.Heading,
-                    transaction.payment_status = 'STATE_COMPLETED'
+                transaction.course_name = course.Heading,
+                transaction.payment_status = 'STATE_COMPLETED'
 
                 await transaction.save()
 
@@ -5647,12 +5795,14 @@ const enroll_course = async (req, res) => {
                         topic_status: index === 0 ? 1 : 0
                     };
                 });
+                
                 const manage_topic = new user_enrolled_course_toic_manage_Model({
                     enroll_user_id: enroll_user._id,
                     course_name: course.Heading,
                     course_id: course._id,
                     topic: course.topic
                 })
+
                 await manage_topic.save()
                 // Check each topic's _id and find corresponding quizzes
                 for (const topic of course.topic) {
@@ -5678,8 +5828,9 @@ const enroll_course = async (req, res) => {
                     success: true,
                     message: 'User successfully enrolled in the course'
                 });
-
             }
+
+
             else {
                 return res.status(400).json({
                     success: false,
@@ -5710,8 +5861,9 @@ const enroll_course = async (req, res) => {
                     message: `Transaction not found for the booking_id  : ${booking_id}`
                 })
             }
-
         }
+         
+
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -5972,7 +6124,7 @@ const topic_quiz = async (req, res) => {
             })
         }
 
-        const topic_q = await online_course_quiz_Model.find({ topic_id }).sort({ createdAt: -1 }).lean()
+        const topic_q = await online_course_quiz_Model.find({ topic_id }).sort({ createdAt : -1 }).lean()
 
         if (!topic_q) {
             return res.status(400).json({
@@ -6036,7 +6188,7 @@ const enroll_user_course_topic_quiz = async (req, res) => {
                 message: 'No quiz found for the specified topic'
             });
         }
-
+                    
         // Respond with the quiz details
         return res.status(200).json({
             success: true,
@@ -6331,11 +6483,13 @@ const get_particular_enrolled_course_details = async (req, res) => {
 
         // Extract the topics if found
         const courseTopics = userCourseTopic ? userCourseTopic.topic : 'Course topics not found';
+
         // Fetch user quiz records for the specified course and user
         const userResponses = await user_enrolled_course_toic_quiz_manage_Model.find({
             enroll_user_id: user_id,
             course_id: course_id,
         });
+
 
         // Check if there are any records
         if (userResponses.length === 0) {
@@ -6355,12 +6509,13 @@ const get_particular_enrolled_course_details = async (req, res) => {
         let totalDays;
         let formattedDate;
         let user_name
+
         const user_totalMarks = userResponses.reduce((sum, response) => {
             const score = parseInt(response.answer_percent);
-            return sum + (isNaN(score) ? 0 : score); // Default to 0 if NaN
+            return sum + (isNaN(score) ? 0 : score);  // Default to 0 if NaN 
         }, 0);
-        const averageMarks = user_totalMarks / total_marks
 
+        const averageMarks = user_totalMarks / total_marks 
 
         // Fetch user quiz records for the specified course and user
         const check_last_topic_status = await user_enrolled_course_toic_manage_Model.find({
@@ -6417,7 +6572,6 @@ const get_particular_enrolled_course_details = async (req, res) => {
             user_name: user_name,
             number_of_quiz: total_marks
 
-
         };
 
         // Return the response with particular course details
@@ -6448,7 +6602,7 @@ const get_enrolled_user_detail = async (req, res) => {
                 message: 'Enroll User Id Required'
             })
         }
-
+        
         // check for enroll user 
         const enroll_user = await courses_user_enroll_Model.findOne({ _id: enroll_user_id })
         if (!enroll_user) {
@@ -6577,14 +6731,14 @@ const download_certificate = async (req, res) => {
                 message: 'Enroll User Id Required'
             });
         }
-
+               
         if (!course_id) {
             return res.status(400).json({
                 success: false,
                 message: 'course_id Required'
             });
         }
-
+             
         // check for user
         const user = await courses_user_enroll_Model.findOne({ _id: user_id });
         if (!user) {
@@ -6592,24 +6746,24 @@ const download_certificate = async (req, res) => {
                 success: false,
                 message: 'Enroll User not found'
             });
-        }
-
+        } 
+        
         // check for the course
-        const course = await user_enrolled_course_toic_manage_Model.findOne({ enroll_user_id: user_id, course_id: course_id });
+        const course = await user_enrolled_course_toic_manage_Model.findOne({ enroll_user_id : user_id, course_id: course_id });
         if (!course) {
             return res.status(400).json({
                 success: false,
                 message: 'course not found for the user'
             });
         }
-
+               
         const course_start_time = course.createdAt;
         const course_end_time = course.updatedAt;
 
         const startTime = new Date(course_start_time);
         const endTime = new Date(course_end_time);
 
-        // Calculate the time difference in milliseconds
+        // Calculate the time difference in milliseconds 
         const timeDifference = endTime - startTime;
 
         // Convert milliseconds to days
@@ -6676,7 +6830,7 @@ const download_certificate = async (req, res) => {
                 `;
 
         // Launch Puppeteer to generate the PDF
-        const browser = await puppeteer.launch({ headless: true }); // Ensure headless mode
+        const browser = await puppeteer.launch({ headless: true }); // Ensure headless mode 
         const page = await browser.newPage();
         await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
         const pdfBuffer = await page.pdf({
@@ -6723,9 +6877,8 @@ const export_client_jobs_filteredcandidate = async (req, res) => {
                 success: false,
                 message: 'Client ID is required',
             });
-        }
-        
-
+        }        
+ 
         // Check for client existence 
         const client = await employeeModel.findOne({ _id: client_id });
         if (!client) {
@@ -6734,14 +6887,13 @@ const export_client_jobs_filteredcandidate = async (req, res) => {
                 message: 'Client not found',
             });
         }
-
-
+                       
         // Construct filter for applied job candidates 
-        const filter = {};
+        const filter = { };
 
-        // Date range filter (checks `createdAt` in `appliedjobModel`)
+        // Date range filter (checks `createdAt` in `appliedjobModel`) 
         if (from_date || to_date) {
-            filter.createdAt = {};
+            filter.createdAt = { };
             if (from_date) filter.createdAt.$gte = new Date(from_date);
             if (to_date) filter.createdAt.$lte = new Date(to_date);
         }
@@ -6751,7 +6903,8 @@ const export_client_jobs_filteredcandidate = async (req, res) => {
             filter.gender = gender;
         }
 
-        // Construct regex-based filters for `district` and `job_Type`
+
+        // Construct regex-based filters for `district` and `job_Type` 
         if (district) {
             filter.city = { $regex: district, $options: 'i' };
         }
@@ -6784,6 +6937,7 @@ const export_client_jobs_filteredcandidate = async (req, res) => {
         else {
 
             // Create Excel workbook and worksheet
+
             const workbook = new ExcelJs.Workbook();
             const worksheet = workbook.addWorksheet("Candidates");
 
@@ -6803,7 +6957,7 @@ const export_client_jobs_filteredcandidate = async (req, res) => {
                 { header: "CV", key: "uploadResume", width: 25 },
                 { header: "Candidate Rating", key: "candidate_rating", width: 15 },
             ];
-
+               
             // Add data to the worksheet
             totalCandidates.forEach(candidate => {
                 worksheet.addRow({
@@ -6822,7 +6976,7 @@ const export_client_jobs_filteredcandidate = async (req, res) => {
                     candidate_rating: candidate.candidate_rating,
                 });
             });
-
+               
 
             // Set response headers for downloading the Excel file
             res.setHeader(
@@ -6835,7 +6989,7 @@ const export_client_jobs_filteredcandidate = async (req, res) => {
             );
 
             // Generate and send the Excel file as a response
-            await workbook.xlsx.write(res);
+            await workbook.xlsx.write(res); 
 
             // End the response
             res.end();
@@ -6866,7 +7020,7 @@ const download_word_Jd = async (req, res) => {
                 message: 'Job ID required',
             });
         }
-
+              
         const jd = await jobDescription_model.findById(jd_id);
         if (!jd) {
             return res.status(400).json({
@@ -6874,93 +7028,96 @@ const download_word_Jd = async (req, res) => {
                 message: 'Job Description not found',
             });
         }
+
+
         jd.jd_download_count = jd_download_count
         await jd.save()
-        res.end()
+    
 
-        //     const { jobTitle, job_Description, Responsibilities } = jd;
+            const { jobTitle, job_Description, Responsibilities } = jd;
 
-        //     // Convert HTML content to plain text
-        //     const plainJobDescription = convert(job_Description || '', { wordwrap: false });
-        //     const plainResponsibilities = convert(Responsibilities || '', { wordwrap: false });
+            // Convert HTML content to plain text
+            const plainJobDescription = convert(job_Description || '', { wordwrap: false });
+            const plainResponsibilities = convert(Responsibilities || '', { wordwrap: false });
 
-        //     // Create a new Word document
-        //     const doc = new Document({
-        //         sections: [
-        //             {
-        //                 children: [
-        //                     // Add job title
-        //                     new Paragraph({
-        //                         children: [
-        //                             new TextRun({
-        //                                 text: jobTitle,
-        //                                 bold: true,
-        //                                 size: 32, // Font size in half-points
-        //                             }),
-        //                         ],
-        //                         spacing: {
-        //                             after: 200,
-        //                         },
-        //                     }),
+            const doc = new Document({
+                sections: [
+                    {
+                        children: [
+                            // Job Title
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: jobTitle,
+                                        bold: true,
+                                        size: 32,
+                                        color: "0078d7", 
+                                    }),
+                                ],
+                                                                                
+                                spacing: { after: 200 },
+                            }),
 
-        //                     // Add job description heading
-        //                     new Paragraph({
-        //                         children: [
-        //                             new TextRun({
-        //                                 text: 'Job Description',
-        //                                 bold: true,
-        //                                 size: 28,
-        //                             }),
-        //                         ],
-        //                         spacing: {
-        //                             after: 100,
-        //                         },
-        //                     }),
+                            // Job Description Heading
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: 'Job Description',
+                                        bold: true,
+                                        size: 28,
+                                    }),
+                                ],
+                                spacing: { after: 100 },
+                            }),
 
-        //                     // Add job description content
-        //                     ...plainJobDescription.split('\n').map(line =>
-        //                         new Paragraph({
-        //                             children: [new TextRun({ text: line, size: 24 })],
-        //                         })
-        //                     ),
-
-        //                     // Add responsibilities heading
-        //                     new Paragraph({
-        //                         children: [
-        //                             new TextRun({
-        //                                 text: 'Job Responsibilities',
-        //                                 bold: true,
-        //                                 size: 28,
-        //                             }),
-        //                         ],
-        //                         spacing: {
-        //                             after: 100,
-        //                         },
-        //                     }),
-
-        //                     // Add responsibilities content
-        //                     ...plainResponsibilities.split('\n').map(line =>
-        //                         new Paragraph({
-        //                             children: [new TextRun({ text: line, size: 24 })],
-        //                         })
-        //                     ),
-        //                 ],
-        //             },
-        //         ],
-        //     });
-
-        //     // Generate the Word document as a buffer
-        //     const buffer = await Packer.toBuffer(doc);
-
-        //     // Set response headers
-        //     res.set({
-        //         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        //         'Content-Disposition': `attachment; filename=job_description.docx`,
-        //     });
-
-        //     // Send the Word document
-        //     res.send(buffer);
-    } catch (error) {
+        
+        
+                            // Job Description Content
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: job_Description,
+                                        size: 24,
+                                    }),
+                                ],
+                                spacing: { after: 200 },
+                            }),
+        
+                            // Job Responsibilities Heading
+                            new Paragraph({
+                                children: [
+                                    new TextRun({
+                                        text: 'Job Responsibilities',
+                                        bold: true,
+                                        size: 28,
+                                    }),
+                                ],
+                                spacing: { after: 100 },
+                            }),
+        
+                            // Job Responsibilities Content
+                            ...Responsibilities.split('\n').map(responsibility =>
+                                new Paragraph({
+                                    children: [new TextRun({ text: `• ${responsibility}`, size: 24 })],
+                                })
+                            ),
+                        ],
+                    },
+                ],
+            });
+        
+            // Generate the Word document as a buffer
+            const buffer = await Packer.toBuffer(doc);
+        
+            // Set response headers
+            res.set({
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'Content-Disposition': `attachment; filename=job_description.docx`,
+            });
+        
+            res.send(buffer);
+        }
+        catch (error) {
         return res.status(500).json({
             success: false,
             message: 'Server error',
@@ -6971,6 +7128,28 @@ const download_word_Jd = async (req, res) => {
 
 
 /*
+const sanitizeHtml = require('sanitize-html');
+
+// Input HTML with dynamic content
+const htmlInput = `
+  <p>We are seeking a highly skilled <strong>Node.js Developer</strong> to join our team.</p>
+  <p>The ideal candidate will be responsible for designing, developing, and maintaining applications.</p>
+`;
+
+const sanitizedHtml = sanitizeHtml(htmlInput, {
+  allowedTags: [ 'p', 'strong', 'em', 'u', 'br', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'a' ],
+  allowedAttributes: {
+    'a': [ 'href' ],
+    'img': [ 'src', 'alt' ]
+  }
+});
+
+console.log(sanitizedHtml);
+
+
+const htmlDocx = require("html-docx-js");
+const sanitizeHtml = require('sanitize-html');
+
 const download_word_Jd = async (req, res) => {
     try {
         const jd_id = req.params.jd_id;
@@ -6994,7 +7173,28 @@ const download_word_Jd = async (req, res) => {
         jd.jd_download_count = jd_download_count;
         await jd.save();
 
-        // Generate HTML content for JD
+        // Dynamic content: HTML content comes from the database with HTML tags already present
+        let jobDescriptionContent = jd.job_Description;  // This contains HTML tags
+        let responsibilitiesContent = jd.Responsibilities;  // This contains HTML tags
+
+        // Sanitize HTML content to ensure proper closing tags and allowed tags
+        jobDescriptionContent = sanitizeHtml(jobDescriptionContent, {
+            allowedTags: ['p', 'strong', 'em', 'u', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'br', 'a', 'img'],
+            allowedAttributes: {
+                'a': ['href'],
+                'img': ['src', 'alt']
+            }
+        });
+
+        responsibilitiesContent = sanitizeHtml(responsibilitiesContent, {
+            allowedTags: ['p', 'strong', 'em', 'u', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'br', 'a', 'img'],
+            allowedAttributes: {
+                'a': ['href'],
+                'img': ['src', 'alt']
+            }
+        });
+
+        // Generate HTML content for JD with safe tags
         const htmlContent = `
             <!DOCTYPE html>
             <html lang="en">
@@ -7002,40 +7202,49 @@ const download_word_Jd = async (req, res) => {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Job Description</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        line-height: 1.6;
+                        color: #333;
+                    }
+                    h1 {
+                        color: #0078d7;
+                    }
+                    ul {
+                        padding-left: 20px;
+                    }
+                    ul li {
+                        margin-bottom: 5px;
+                    }
+                </style>
             </head>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; padding: 20px; background-color: #f9f9f9;">
+            <body style="background-color: #f9f9f9;">
                 <div style="max-width: 800px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);">
-                    <h1 style="color: #0078d7; margin-bottom: 20px;">${jd.jobTitle}</h1>
+                    <h1>${jd.jobTitle}</h1>
 
                     <div style="margin-bottom: 20px;">
-                        <h2 style="color: #333; border-bottom: 2px solid #0078d7; padding-bottom: 5px; margin-bottom: 15px;">Job Description</h2>
-                        <p>${jd.job_Description}</p>
+                        <h2 style="border-bottom: 2px solid #0078d7; padding-bottom: 5px; margin-bottom: 15px;">Job Description</h2>
+                        <div>${jobDescriptionContent}</div>  <!-- Dynamically render HTML content -->
                     </div>
 
                     <div style="margin-bottom: 20px;">
-                        <h2 style="color: #333; border-bottom: 2px solid #0078d7; padding-bottom: 5px; margin-bottom: 15px;">Job Responsibilities</h2>
-                        <ul style="padding-left: 20px;">
-                            ${jd.Responsibilities}
-                        </ul>
+                        <h2 style="border-bottom: 2px solid #0078d7; padding-bottom: 5px; margin-bottom: 15px;">Job Responsibilities</h2>
+                        <div>${responsibilitiesContent}</div>  <!-- Dynamically render HTML content -->
                     </div>
                 </div>
             </body>
             </html>
         `;
 
-        // Convert the HTML content to DOCX using mammoth
-        const docxBuffer = await mammoth.convertToHtml({ html: htmlContent })
-            .then((result) => result.value)
-            .catch((err) => {
-                console.error('Error during conversion:', err);
-                throw new Error('Error converting HTML to DOCX');
-            });
+        // Convert HTML to DOCX
+        const docxBuffer = htmlDocx.asBlob(htmlContent); // Convert HTML to DOCX format
 
-        // Set the headers to prompt a download in the browser
+        // Set headers to prompt download
         res.setHeader('Content-Disposition', 'attachment; filename=job_description.docx');
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         
-        // Send the buffer as the response
+        // Send the DOCX buffer as response
         res.send(docxBuffer);
 
     } catch (error) {
@@ -7055,7 +7264,7 @@ const download_word_Jd = async (req, res) => {
         // Default filter: Exclude 'STATE_PENDING' transactions
         let filter = { payment_status: { $ne: 'STATE_PENDING' } };
 
-        // Apply specific filters based on payment_status value
+        // Apply specific filters based on payment_status value 
         if (payment_status === '1') {
             filter.payment_status = 'STATE_COMPLETED';
         } else if (payment_status === '2') {
@@ -7067,14 +7276,13 @@ const download_word_Jd = async (req, res) => {
             .find(filter)
             .sort({ createdAt : -1 })
             .lean();
-   
+    
         if (!all_transactions || all_transactions.length === 0) {
             return res.status(400).json({
                 success: false,
                 message: 'No Transaction Found',
             });
-        }
-
+        }           
 
         // Map and format the transactions
         return res.status(200).json({
@@ -7139,6 +7347,12 @@ module.exports = {
 
     download_certificate, export_client_jobs_filteredcandidate , download_word_Jd, 
 
-    add_Main_JobTitle, all_main_jobTitle, delete_main_jobTitle , all_package_transaction, update_detail
+    add_Main_JobTitle, all_main_jobTitle, delete_main_jobTitle , all_package_transaction, update_detail ,
+
+
+
+    // Admin API
+
+    getAll_Jobs_admin , all_main_jobTitle_main
 
 } 

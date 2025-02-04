@@ -111,20 +111,16 @@ const jobSchema = new mongoose.Schema({
       type : String
   },
 
-        hr_email : {
-            type : String,
-            unique : true ,
-            trim : true , 
-            lowercase : true 
-        },
-        hiring_manager_email : {
-            type : String,
-            unique : true ,
-            trim : true ,
-            lowercase : true 
-        }
+        hr_email : String,              
+          
+        
+        hiring_manager_email :  String     
+           
+        
     
+       
 } , { timestamps : true});
+
 
 const jobModel = mongoose.model('Job', jobSchema)
 
