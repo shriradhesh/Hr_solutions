@@ -981,6 +981,7 @@ const sl_loc_model = require('../model/sl_loc_lat_long')
                     })
                 }
              }
+
              
      // Api for active inactive particular staff member
 
@@ -4121,6 +4122,7 @@ const active_inactive_job = async (req, res) => {
             }
         };
 
+
     // Api for cms_hr_consultancy
             
            const cms_Hr_consultancy = async (req, res) => {
@@ -4907,6 +4909,8 @@ const active_inactive_job = async (req, res) => {
         }
  }
 
+
+
  // Api for our mission
  const cms_our_mission = async (req, res) => {
     try {
@@ -5250,6 +5254,8 @@ const get_ourVission_details_admin = async( req , res)=>{
                })
             }
         }
+
+
   // about us
             const cms_aboutUs = async( req , res ) =>{
                    try {
@@ -9361,7 +9367,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
            // check for all jobs of client 
            const all_jobs = await jobModel.find({ emp_Id : clientId
             })
-            if(!all_jobs)
+            if(!all_jobs)                    
             {
                 return res.status(400).json({
                       success : false ,
@@ -9412,6 +9418,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
       });
     }
   }
+
 
 
   // Api for create email template
@@ -10134,10 +10141,8 @@ const jobseeker_count_of_client_job = async (req, res) => {
                
                 res.status(500).json({ success: false, error: "Internal server error" , error_message : error.message});
             }
-        };
-                   
-        
-        
+        };                
+
                     const export_Enrolled_user = async (req, res) => {
                         try {         
                             
@@ -10158,7 +10163,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                 { header: "phone Number", key: "phone_no" },                           
 
                             ];
-
+                                
                     
                             // Add Enroll_user data to the worksheet
                             Enroll_user.forEach((hr) => {
@@ -10172,7 +10177,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
                                 
                                 });
                             });
-                    
+                            
                             // Set response headers for downloading the Excel file
                             res.setHeader(
                                 "Content-Type",
@@ -10185,15 +10190,15 @@ const jobseeker_count_of_client_job = async (req, res) => {
                     
                             // Generate and send the Excel File as a response
                             await workbook.xlsx.write(res);
-                    
+                            
                             // End the response
+
                             res.end();
                         } catch (error) {
                             console.error("Error exporting Enroll User:", error);
                             res.status(500).json({ error: "Internal server error" });
                         }
                     };
-
 
 
                     const export_Hr_staff = async (req, res) => {
@@ -10207,15 +10212,15 @@ const jobseeker_count_of_client_job = async (req, res) => {
                             const worksheet = workbook.addWorksheet("Hr_staff");
                     
 
-                            // Define the Excel Header
+                            // Define the Excel Header 
+                            
                             worksheet.columns = [
                                 { header: "Name", key: "name" },
                                 { header: "Email", key: "email" },
                                 { header: "Phone Number", key: "phone_no" },                   
                                 { header: "profile Image", key: "profileImage" },
                                 { header: "Role", key: "role" },
-                                { header: "Status", key: "status" },                           
-
+                                { header: "Status", key: "status" },                          
                             ];
                     
                             // Add Hr Staff data to the worksheet
@@ -10294,6 +10299,7 @@ const jobseeker_count_of_client_job = async (req, res) => {
             }
         };
  
+
 
 
         const export_course_transaction = async (req, res) => {
@@ -10399,6 +10405,7 @@ const get_talent_pool_count_for_client = async (req, res) => {
               });
           }
 
+
           // Check total job posted by client
           const totalJobs = await jobModel.find({  emp_Id : client_id  });
 
@@ -10464,7 +10471,7 @@ module.exports = {
                 /* Report and Analysis */
     jobseeker_count , getclient_count , get_talent_pool_count , get_female_screened_count , jobseeker_count_city_wise , 
     
-                                    /*  CMS PAGE */
+                                           /*  CMS PAGE  */
 
      create_testimonial , getAll_testimonial , get_testimonial , update_testimonial , delete_testimonial,
      cms_job_posting_section1 , getJobs_posted_procedure_section1 , cms_need_any_job_section,

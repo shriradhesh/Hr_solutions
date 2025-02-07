@@ -4048,6 +4048,7 @@ const download_jd = async (req, res) => {
                 message: 'Job Description not found',
             });
         }
+        
 
         jd.jd_download_count = jd_download_count
         await jd.save()
@@ -7009,146 +7010,133 @@ const export_client_jobs_filteredcandidate = async (req, res) => {
 // Api for download Jd in word
 
 
-const download_word_Jd = async (req, res) => {
-    try {
-        const jd_id = req.params.jd_id;
-        const jd_download_count = req.query.jd_download_count
+// const download_word_Jd = async (req, res) => {
+//     try {
+//         const jd_id = req.params.jd_id;
+//         const jd_download_count = req.query.jd_download_count
 
-        if (!jd_id) {
-            return res.status(400).json({
-                success: false,
-                message: 'Job ID required',
-            });
-        }
+//         if (!jd_id) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Job ID required',
+//             });
+//         }
               
-        const jd = await jobDescription_model.findById(jd_id);
-        if (!jd) {
-            return res.status(400).json({
-                success: false,
-                message: 'Job Description not found',
-            });
-        }
+//         const jd = await jobDescription_model.findById(jd_id);
+//         if (!jd) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Job Description not found',
+//             });
+//         }
 
 
-        jd.jd_download_count = jd_download_count
-        await jd.save()
+//         jd.jd_download_count = jd_download_count
+//         await jd.save()
     
 
-            const { jobTitle, job_Description, Responsibilities } = jd;
+//             const { jobTitle, job_Description, Responsibilities } = jd;
 
-            // Convert HTML content to plain text
-            const plainJobDescription = convert(job_Description || '', { wordwrap: false });
-            const plainResponsibilities = convert(Responsibilities || '', { wordwrap: false });
+//             // Convert HTML content to plain text
+//             const plainJobDescription = convert(job_Description || '', { wordwrap: false });
+//             const plainResponsibilities = convert(Responsibilities || '', { wordwrap: false });
 
-            const doc = new Document({
-                sections: [
-                    {
-                        children: [
-                            // Job Title
-                            new Paragraph({
-                                children: [
-                                    new TextRun({
-                                        text: jobTitle,
-                                        bold: true,
-                                        size: 32,
-                                        color: "0078d7", 
-                                    }),
-                                ],
+
+            
+
+//             const doc = new Document({
+//                 sections: [
+//                     {
+//                         children: [
+//                             // Job Title
+//                             new Paragraph({
+//                                 children: [
+//                                     new TextRun({
+//                                         text: jobTitle,
+//                                         bold: true,
+//                                         size: 32,
+//                                         color: "0078d7", 
+//                                     }),
+//                                 ],
                                                                                 
-                                spacing: { after: 200 },
-                            }),
+//                                 spacing: { after: 200 },
+//                             }),
 
-                            // Job Description Heading
-                            new Paragraph({
-                                children: [
-                                    new TextRun({
-                                        text: 'Job Description',
-                                        bold: true,
-                                        size: 28,
-                                    }),
-                                ],
-                                spacing: { after: 100 },
-                            }),
+//                             // Job Description Heading
+//                             new Paragraph({
+//                                 children: [
+//                                     new TextRun({
+//                                         text: 'Job Description',
+//                                         bold: true,
+//                                         size: 28,
+//                                     }),
+//                                 ],
+//                                 spacing: { after: 100 },
+//                             }),
 
         
         
-                            // Job Description Content
-                            new Paragraph({
-                                children: [
-                                    new TextRun({
-                                        text: job_Description,
-                                        size: 24,
-                                    }),
-                                ],
-                                spacing: { after: 200 },
-                            }),
+//                             // Job Description Content
+//                             new Paragraph({
+//                                 children: [
+//                                     new TextRun({
+//                                         text: job_Description,
+//                                         size: 24,
+//                                     }),
+//                                 ],
+//                                 spacing: { after: 200 },
+//                             }),
         
-                            // Job Responsibilities Heading
-                            new Paragraph({
-                                children: [
-                                    new TextRun({
-                                        text: 'Job Responsibilities',
-                                        bold: true,
-                                        size: 28,
-                                    }),
-                                ],
-                                spacing: { after: 100 },
-                            }),
+//                             // Job Responsibilities Heading
+//                             new Paragraph({
+//                                 children: [
+//                                     new TextRun({
+//                                         text: 'Job Responsibilities',
+//                                         bold: true,
+//                                         size: 28,
+//                                     }),
+//                                 ],
+//                                 spacing: { after: 100 },
+//                             }),
         
-                            // Job Responsibilities Content
-                            ...Responsibilities.split('\n').map(responsibility =>
-                                new Paragraph({
-                                    children: [new TextRun({ text: `• ${responsibility}`, size: 24 })],
-                                })
-                            ),
-                        ],
-                    },
-                ],
-            });
+//                             // Job Responsibilities Content
+//                             ...Responsibilities.split('\n').map(responsibility =>
+//                                 new Paragraph({
+//                                     children: [new TextRun({ text: `• ${responsibility}`, size: 24 })],
+//                                 })
+//                             ),
+//                         ],
+//                     },
+//                 ],
+//             });
         
-            // Generate the Word document as a buffer
-            const buffer = await Packer.toBuffer(doc);
+//             // Generate the Word document as a buffer
+//             const buffer = await Packer.toBuffer(doc);
         
-            // Set response headers
-            res.set({
-                'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'Content-Disposition': `attachment; filename=job_description.docx`,
-            });
+//             // Set response headers
+//             res.set({
+//                 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+//                 'Content-Disposition': `attachment; filename=job_description.docx`,
+//             });
         
-            res.send(buffer);
-        }
-        catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error_message: error.message,
-        });
-    }
-};
+//             res.send(buffer);
+//         }
+//         catch (error) {
+//         return res.status(500).json({
+//             success: false,
+//             message: 'Server error',
+//             error_message: error.message,
+//         });
+//     }
+// };
 
 
-/*
+
 const sanitizeHtml = require('sanitize-html');
-
-// Input HTML with dynamic content
-const htmlInput = `
-  <p>We are seeking a highly skilled <strong>Node.js Developer</strong> to join our team.</p>
-  <p>The ideal candidate will be responsible for designing, developing, and maintaining applications.</p>
-`;
-
-const sanitizedHtml = sanitizeHtml(htmlInput, {
-  allowedTags: [ 'p', 'strong', 'em', 'u', 'br', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'a' ],
-  allowedAttributes: {
-    'a': [ 'href' ],
-    'img': [ 'src', 'alt' ]
-  }
-});
-
-console.log(sanitizedHtml);
-
 
 const htmlDocx = require("html-docx-js");
-const sanitizeHtml = require('sanitize-html');
+
+
 
 const download_word_Jd = async (req, res) => {
     try {
@@ -7162,7 +7150,7 @@ const download_word_Jd = async (req, res) => {
             });
         }
 
-        const jd = await jobDescription_model.findById(jd_id);
+        const jd = await jobDescription_model.findById(jd_id );
         if (!jd) {
             return res.status(400).json({
                 success: false,
@@ -7174,10 +7162,35 @@ const download_word_Jd = async (req, res) => {
         await jd.save();
 
         // Dynamic content: HTML content comes from the database with HTML tags already present
-        let jobDescriptionContent = jd.job_Description;  // This contains HTML tags
-        let responsibilitiesContent = jd.Responsibilities;  // This contains HTML tags
+        let jobDescriptionContent = jd.job_Description;  
+        let responsibilitiesContent = jd.Responsibilities;  
+
+          const htmlInput = `
+                <div>
+                    <h1>${jd.jobTitle}</h1>
+
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="border-bottom: 2px solid #0078d7; padding-bottom: 5px; margin-bottom: 15px;">Job Description</h2>
+                        <div>${jobDescriptionContent}</div>  
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <h2 style="border-bottom: 2px solid #0078d7; padding-bottom: 5px; margin-bottom: 15px;">Job Responsibilities</h2>
+                        <div>${responsibilitiesContent}</div>  
+                    </div>
+                </div>
+          `
+
+                    const sanitizedHtml = sanitizeHtml(htmlInput, {
+            allowedTags: [ 'p', 'strong', 'em', 'u', 'br', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'img', 'a' ],
+            allowedAttributes: {
+                'a': [ 'href' ],
+                'img': [ 'src', 'alt' ]
+            }
+            }); 
 
         // Sanitize HTML content to ensure proper closing tags and allowed tags
+      
         jobDescriptionContent = sanitizeHtml(jobDescriptionContent, {
             allowedTags: ['p', 'strong', 'em', 'u', 'ul', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'br', 'a', 'img'],
             allowedAttributes: {
@@ -7195,57 +7208,108 @@ const download_word_Jd = async (req, res) => {
         });
 
         // Generate HTML content for JD with safe tags
-        const htmlContent = `
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Job Description</title>
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        line-height: 1.6;
-                        color: #333;
-                    }
-                    h1 {
-                        color: #0078d7;
-                    }
-                    ul {
-                        padding-left: 20px;
-                    }
-                    ul li {
-                        margin-bottom: 5px;
-                    }
-                </style>
-            </head>
-            <body style="background-color: #f9f9f9;">
-                <div style="max-width: 800px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);">
-                    <h1>${jd.jobTitle}</h1>
+ const htmlContent = `
+    <!DOCTYPE html>
+<html lang="en">
 
-                    <div style="margin-bottom: 20px;">
-                        <h2 style="border-bottom: 2px solid #0078d7; padding-bottom: 5px; margin-bottom: 15px;">Job Description</h2>
-                        <div>${jobDescriptionContent}</div>  <!-- Dynamically render HTML content -->
-                    </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HR Solution</title>
+  <style>
+    @media print {
+      .page-break { page-break-before: always; } /* Ensures content splits properly */
+      thead { display: table-header-group; }  /* Repeats header */
+      tfoot { display: table-footer-group; }  /* Repeats footer */
+    }
+  </style>
+</head>
 
-                    <div style="margin-bottom: 20px;">
-                        <h2 style="border-bottom: 2px solid #0078d7; padding-bottom: 5px; margin-bottom: 15px;">Job Responsibilities</h2>
-                        <div>${responsibilitiesContent}</div>  <!-- Dynamically render HTML content -->
-                    </div>
-                </div>
-            </body>
-            </html>
+<body style="margin: 0; padding: 0; box-sizing: border-box; color: #666; font-family: 'Roboto';">
+
+  <table
+    style="width: 210mm; height: 297mm; margin: 0 auto; background-color: #ffffff; border-collapse: collapse;box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;">
+    <!-- Header Section -->
+
+    <tr style="height:20mm;>
+      <td colspan="2" style="padding: 30px 90px 15px; opacity: 0.4;">
+        <table style="width: 100%; border-collapse: collapse; border-bottom: 2px solid #dbb85c;">
+          <tr style="vertical-align: bottom;">
+            <td style="width: 50%; padding-bottom: 15px;">
+              <img src="https://itdevelopmentservices.com/hrsolution/static/media/logo.f2c7bc8da87c4d436402.png"
+                alt="Logo" width="160" height="80">
+            </td>
+            <td style="width: 50%; padding-bottom: 15px;">
+              <table>
+                <tr>
+                  <td style="font-size: 13px;font-weight: 600;color: #dbb85c;vertical-align: baseline;">
+                    +232 (88) 353535 <br> +232 (77) 065 065
+                  </td>
+                  <td style="font-size: 13px;font-weight: 600;color: #020951;text-align: left;padding-left: 25px;">
+                    1 Jangah Close, Main<br>Peninsular Road, <br>Freetown, Sierra Leone
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+     
+    <!-- Body Section -->
+
+    <tr style="height:230mm;>
+      <td colspan="2"
+        style="background-image: url(https://sisccltd.com/hrsolutions/bg.png); background-repeat: no-repeat; background-position: center; background-size: contain; background-color: #ffffffeb; background-blend-mode: overlay; height: 100%; padding: 30px 90px; vertical-align: baseline;">
+            <h5> ${htmlInput} </h5>
+      </td>
+    </tr>
+
+
+   <tr style="height: 37mm; vertical-align: bottom;">
+  <td colspan="2" style="padding: 0; margin: 0;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr>
+        <td style="width: 100%; text-align: center;">
+          <img src="https://sisccltd.com/hrsolutions/footer12.png" 
+               alt="Footer Image" 
+               width="800" 
+               height="auto" 
+                style="max-width: 100%;  object-fit: cover;">
+        </td>
+      </tr>
+      <tr>
+        <td style="text-align: right; padding-right: 90px; color: #fff; 
+                   font-size: 13px; line-height: 18px; font-weight: 600; 
+                   letter-spacing: 0.5px;">
+          Professionalism<br>Defined...
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+
+</tr>
+
+
+  </table>
+</body>
+</html>               
+          
         `;
+        
+
 
         // Convert HTML to DOCX
         const docxBuffer = htmlDocx.asBlob(htmlContent); // Convert HTML to DOCX format
 
-        // Set headers to prompt download
         res.setHeader('Content-Disposition', 'attachment; filename=job_description.docx');
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         
-        // Send the DOCX buffer as response
-        res.send(docxBuffer);
+        // Ensure proper buffer handling
+        res.write(Buffer.from(await docxBuffer.arrayBuffer())); 
+        res.end();
 
     } catch (error) {
         return res.status(500).json({
@@ -7256,7 +7320,7 @@ const download_word_Jd = async (req, res) => {
     }
 };
 
-*/
+
  let all_package_transaction = async (req, res) => {
     try {
         const { payment_status } = req.query;
